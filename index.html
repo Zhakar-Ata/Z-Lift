@@ -577,6 +577,87 @@ mark { background: color-mix(in srgb, var(--warn) 35%, transparent); color: inhe
 .tl-card .tl-head strong { font-size: 13.8px; }
 .tl-card p { font-size: 13px; color: var(--text-2); }
 
+/* ============ MOBILE POLISH (v4) ============ */
+@media (max-width: 640px) {
+  .content { padding: 14px 12px 80px; }
+  /* stat cards: 2 columns on phones */
+  .grid-4 { grid-template-columns: 1fr 1fr !important; gap: 10px; }
+  .stat-card { padding: 12px; gap: 10px; }
+  .stat-icon { width: 40px; height: 40px; font-size: 18px !important; }
+  .stat-value { font-size: 18px; }
+  .stat-label { font-size: 11.5px; }
+  /* toolbar: search full-width, chips scroll horizontally, button full width */
+  .toolbar { gap: 8px; }
+  .toolbar .search { flex-basis: 100%; min-width: 0; order: 1; }
+  .toolbar .chip-row {
+    order: 3; width: 100%; overflow-x: auto; flex-wrap: nowrap;
+    padding-bottom: 3px; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .toolbar .chip-row::-webkit-scrollbar { display: none; }
+  .chip { flex-shrink: 0; }
+  .toolbar > .btn { order: 2; flex: 1; }
+  /* hero */
+  .hero { padding: 18px 16px; border-radius: 16px; }
+  .hero h3 { font-size: 19px; }
+  .hero-row { gap: 8px 14px; font-size: 12.3px; }
+  .hero-actions .btn { flex: 1; justify-content: center; }
+  /* list rows: stack side info under the body */
+  .row-item { flex-wrap: wrap; padding: 12px 13px; gap: 8px 12px; }
+  .row-body { flex: 1 1 calc(100% - 58px); }
+  .row-side {
+    width: 100%; display: flex; align-items: center; gap: 8px;
+    justify-content: space-between; text-align: start; margin-top: 2px;
+  }
+  .row-side .date { margin-top: 0; }
+  /* detail page actions */
+  .detail-head .actions { width: 100%; }
+  .detail-head .actions .btn { flex: 1; }
+  /* modals become bottom sheets */
+  .modal-overlay { padding: 0; align-items: flex-end; }
+  .modal { max-width: 100% !important; max-height: 93vh; border-radius: 22px 22px 0 0; animation: sheetIn .25s ease; }
+  @keyframes sheetIn { from { transform: translateY(48px); opacity: .5; } }
+  .modal-body { padding: 16px 16px; }
+  .modal-head { padding: 15px 16px 12px; }
+  .modal-foot { padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); flex-wrap: wrap; }
+  .modal-foot .btn { flex: 1; }
+  /* charts & misc */
+  .chart-bars { height: 105px; gap: 6px; }
+  .status-bars .sb-lbl { width: 86px; font-size: 11.3px; }
+  .tiles { gap: 10px; }
+  .tile { padding: 14px 8px; }
+  .tile strong { font-size: 13px; }
+  .section-title { margin: 20px 0 10px; }
+  .card { padding: 15px 14px; }
+  .kb-article { font-size: 13.5px; }
+  .check-progress-wrap { top: 62px; }
+  /* bigger touch targets */
+  .btn { padding: 11px 16px; min-height: 44px; }
+  .btn-sm { min-height: 38px; padding: 8px 13px; }
+  .icon-btn { width: 42px; height: 42px; }
+  .nav-item { padding: 12px 12px; }
+  .check-item input { width: 20px; height: 20px; }
+  .field input, .field select, .field textarea { padding: 12px 13px; font-size: 16px; }
+  /* 16px prevents iOS/Android zoom-on-focus */
+}
+/* very narrow phones */
+@media (max-width: 360px) {
+  .grid-4 { grid-template-columns: 1fr !important; }
+  .tiles { grid-template-columns: 1fr 1fr; }
+}
+/* safe areas when installed as PWA (notch / gesture bar) */
+@media (display-mode: standalone) {
+  .topbar { padding-top: calc(12px + env(safe-area-inset-top)); }
+  .sidebar-head { padding-top: calc(20px + env(safe-area-inset-top)); }
+  .content { padding-bottom: calc(70px + env(safe-area-inset-bottom)); }
+}
+/* fallbacks for older Android WebView without color-mix() */
+@supports not (color: color-mix(in srgb, red 50%, blue)) {
+  .topbar { background: var(--bg); }
+  .note-block, .safety-banner, .calc-result, .error-box,
+  .due-item.overdue, .due-item.soon { border-color: var(--border); }
+  .calc-result .r-row + .r-row { border-top-color: var(--border); }
+}
+
 </style>
 </head>
 <body>
