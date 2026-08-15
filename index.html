@@ -666,6 +666,18 @@ mark { background: color-mix(in srgb, var(--warn) 35%, transparent); color: inhe
 .check-item.ci-pass, .check-item.ci-fail { border-color: var(--border); }
 .check-item:active { transform: scale(.995); }
 
+/* ============ v6: kill horizontal page scroll (off-canvas sidebar overflow) ============ */
+html, body { overflow-x: hidden; max-width: 100%; }
+.app, .main { overflow-x: clip; max-width: 100vw; }
+.content { overflow-x: hidden; }
+.row-item, .card, .due-item { max-width: 100%; }
+.row-body, .row-body strong, .row-body .sub { min-width: 0; }
+/* long persian titles in list rows: wrap instead of clip on mobile */
+@media (max-width: 640px) {
+  .row-body strong { white-space: normal; line-height: 1.5; }
+  .row-body .sub { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+}
+
 </style>
 </head>
 <body>
