@@ -965,7 +965,12 @@ const I18N = {
     backupNagTitle: 'یادآوری پشتیبان‌گیری', backupNagMsg: 'روز از آخرین پشتیبان‌گیری گذشته است. داده‌ها فقط روی همین دستگاه هستند!',
     backupNagBtn: 'همین حالا بکاپ بگیر', backupNagLater: 'بعداً',
     faultStats: 'الگوی خرابی این آسانسور', faultStatsSub: 'بر اساس گزارش‌های سرویس ثبت‌شده',
-    kbReadMore: 'مطالعه در دانش فنی', today: 'امروز'
+    kbReadMore: 'مطالعه در دانش فنی', today: 'امروز',
+    storageFull: '⛔ حافظه دستگاه پر است! ذخیره انجام نشد — چند عکس قدیمی را حذف کنید و فوراً بکاپ بگیرید',
+    settings: 'تنظیمات شرکت', settingsSub: 'نام و مشخصات روی گزارش‌ها و فاکتورهای چاپی', 
+    setCompany: 'نام شرکت / مجموعه', setPhone: 'تلفن', setAddress: 'آدرس',
+    storageUsage: 'فضای مصرفی داده‌ها', storagePhotos: 'عکس', srContracts: 'قراردادها',
+    profInvoices: 'فاکتورهای این آسانسور', profContract: 'قرارداد سرویس این ساختمان'
   },
   en: {
     dir: 'ltr',
@@ -1122,6 +1127,11 @@ const I18N = {
     backupNagBtn: 'Back up now', backupNagLater: 'Later',
     faultStats: 'Fault pattern of this elevator', faultStatsSub: 'Based on logged service reports',
     kbReadMore: 'Read in knowledge base', today: 'Today',
+    storageFull: '⛔ Device storage full! Save failed — delete old photos and back up now',
+    settings: 'Company Settings', settingsSub: 'Shown on printed reports and invoices',
+    setCompany: 'Company name', setPhone: 'Phone', setAddress: 'Address',
+    storageUsage: 'Data storage used', storagePhotos: 'photos', srContracts: 'Contracts',
+    profInvoices: 'Invoices for this elevator', profContract: 'Service contract of this building',
     svcCustomer: 'Customer name', svcElevator: 'Elevator info (address, type, capacity...)',
     svcNoProject: 'No installation project — standalone customer', svcLinkProject: 'Link to installation project (optional)',
     viewServiceHistory: 'View service history for this elevator', requiredCustomer: 'Customer name (or a project) is required',
@@ -4022,6 +4032,33 @@ function renderProjectDetail(id) {
               <span class="sb-val">${faNum(n)}</span></div>`).join('')}</div></div>`;
         }
       }
+      /* invoices of this elevator */
+      const pInvs = state.invoices.filter(i => i.projectId === p.id).slice(0, 5);
+      if (pInvs.length) {
+        out += `<div class="section-title"><h3>🧾 ${t('profInvoices')}</h3></div>`;
+        out += pInvs.map(i => {
+          const tt2 = invTotals(i);
+          const mm = invStatusMeta(i);
+          return `<div class="due-item ${tt2.balance > 0 ? 'soon' : ''}" onclick="navigate('/invoices');setTimeout(()=>openInvoiceForm('${i.id}'),120)" style="cursor:pointer">
+            <span style="font-size:17px">🧾</span>
+            <div class="grow"><strong>${money(tt2.grand)} ${t('rial')}</strong>
+            <span class="d-sub">${fmtDate(i.date || i.createdAt)}${tt2.balance ? ' · ' + t('invBalance') + ': ' + money(tt2.balance) : ''}</span></div>
+            <span class="badge ${mm.cls}">${mm.icon} ${t(mm.key)}</span>
+          </div>`;
+        }).join('');
+      }
+      /* contract of this building */
+      const pCt = state.contracts.find(ct => ct.projectId === p.id);
+      if (pCt) {
+        const cst = ctStats(pCt);
+        out += `<div class="section-title"><h3>📄 ${t('profContract')}</h3></div>
+          <div class="due-item ${cst.overdue ? 'overdue' : ''}" onclick="navigate('/contracts');setTimeout(()=>openContractForm('${pCt.id}'),120)" style="cursor:pointer">
+            <span style="font-size:17px">📄</span>
+            <div class="grow"><strong>${esc(pCt.building)}</strong>
+            <span class="d-sub">${money(pCt.amount)} ${t('rial')} · ${faNum(cst.paidCount)}/${faNum(cst.total)} ${t('ctPaid')}</span></div>
+            ${cst.overdue ? `<span class="badge b-red">${faNum(cst.overdue)} ${t('ctOverdueMonths')}</span>` : `<span class="badge b-green">${cst.expired ? t('ctExpired') : t('ctActive')}</span>`}
+          </div>`;
+      }
       /* photos */
       out += `<div class="section-title"><h3>📷 ${t('photos')}</h3>
         <button class="btn btn-ghost btn-sm" onclick="openPhotoForm('${p.id}')">${IC.cam} ${t('addPhoto')}</button></div>`;
@@ -5848,6 +5885,10 @@ function drawGlobalSearch(qRaw) {
     .filter(i => (i.customer + ' ' + (i.note || '') + ' ' + (i.items || []).map(x => x.desc).join(' ')).toLowerCase().includes(q))
     .slice(0, 5).map(i => gsRow('🧾', esc(i.customer || '—'), money(invTotals(i).grand) + ' ' + t('rial'), `closeModal();navigate('/invoices');setTimeout(()=>openInvoiceForm('${i.id}'),120)`)));
 
+  grp(t('srContracts'), state.contracts
+    .filter(ct => (ct.building + ' ' + (ct.note || '')).toLowerCase().includes(q))
+    .slice(0, 5).map(ct => gsRow('📄', esc(ct.building), money(ct.amount) + ' ' + t('rial'), `closeModal();navigate('/contracts');setTimeout(()=>openContractForm('${ct.id}'),120)`)));
+
   grp(t('srNotes'), state.notes
     .filter(n => (n.title + ' ' + n.content + ' ' + n.tags.join(' ')).toLowerCase().includes(q))
     .slice(0, 5).map(n => gsRow('📝', esc(n.title), esc((n.content || '').slice(0, 60)), `closeModal();navigate('/notes');setTimeout(()=>openNoteForm('${n.id}'),120)`)));
@@ -6112,15 +6153,42 @@ function openBackupModal() {
   openModal(`
     <div class="modal-head"><h3>💾 ${t('backup')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body">
-      <div class="note-block" style="margin-bottom:16px">⚠️ ${t('backupHint')}</div>
-      <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="note-block" style="margin-bottom:14px">⚠️ ${t('backupHint')}</div>
+      ${(() => {
+        try {
+          const raw = localStorage.getItem('zlift_db') || '';
+          const mb = (raw.length * 2 / 1048576).toFixed(1);
+          const pct = Math.min(100, Math.round(raw.length * 2 / (5 * 1048576) * 100));
+          return `<div class="kv-cell" style="margin-bottom:14px"><div class="k">📊 ${t('storageUsage')}</div>
+            <div class="v" style="font-weight:600;font-size:13px">${faNum(mb)} MB · ${faNum((state.photos || []).length)} ${t('storagePhotos')}</div>
+            <div class="mini-progress" style="height:7px;margin-top:6px"><div class="fill" style="width:${pct}%;background:${pct > 75 ? 'var(--danger)' : 'var(--accent)'}"></div></div></div>`;
+        } catch (e) { return ''; }
+      })()}
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
         <button class="btn btn-primary" id="bkExport">⬇️ ${t('backupExport')}</button>
         <button class="btn btn-ghost" id="bkImport">⬆️ ${t('backupImport')}</button>
         <input type="file" id="bkFile" accept=".json,application/json" class="hidden" />
       </div>
+      <div class="section-title" style="margin:0 0 8px"><h3 style="font-size:14px">🏢 ${t('settings')}</h3></div>
+      <p style="font-size:11.8px;color:var(--text-3);margin-bottom:9px">${t('settingsSub')}</p>
+      <div class="field"><label>${t('setCompany')}</label><input id="set_company" value="${esc((state.settings || {}).company || '')}" /></div>
+      <div class="form-grid">
+        <div class="field"><label>${t('setPhone')}</label><input id="set_phone" value="${esc((state.settings || {}).phone || '')}" /></div>
+        <div class="field"><label>${t('setAddress')}</label><input id="set_address" value="${esc((state.settings || {}).address || '')}" /></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="setSave">💾 ${t('save')}</button>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">${t('close')}</button></div>`, { size: 'sm' });
 
+  $('#setSave').onclick = async () => {
+    try {
+      const d = await api('/settings', { method: 'PUT', body: {
+        company: $('#set_company').value, phone: $('#set_phone').value, address: $('#set_address').value
+      } });
+      state.settings = d.settings;
+      toast(t('saved'));
+    } catch (e) { toast(t('errGeneric'), 'err'); }
+  };
   $('#bkExport').onclick = async () => {
     try {
       localStorage.setItem('zlift_last_backup', String(Date.now()));
@@ -6347,7 +6415,22 @@ function _lsMigrateServices() {
   if (changed) _lsSave();
 }
 
-function _lsSave() { try { localStorage.setItem('zlift_db', JSON.stringify(_lsDB)); } catch (e) {} }
+function _lsSave() {
+  try { localStorage.setItem('zlift_db', JSON.stringify(_lsDB)); window._lsSaveFailed = false; }
+  catch (e) {
+    // storage full — warn loudly instead of silent data loss
+    if (!window._lsSaveFailed) {
+      window._lsSaveFailed = true;
+      try { toast(t('storageFull'), 'err'); } catch (e2) { alert('Storage full! حافظه پر است — عکس‌های قدیمی را حذف و بکاپ بگیرید.'); }
+    }
+  }
+}
+function _lsUsage() {
+  try {
+    const raw = localStorage.getItem('zlift_db') || '';
+    return { bytes: raw.length * 2, photos: (_lsDB && _lsDB.photos ? _lsDB.photos.length : 0) };
+  } catch (e) { return { bytes: 0, photos: 0 }; }
+}
 function _lsErr(code, status) { const e = new Error(code); e.code = code; e.status = status || 400; return e; }
 
 /* ---- OVERRIDES the server api() from app.js ---- */
