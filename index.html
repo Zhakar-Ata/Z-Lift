@@ -929,7 +929,20 @@ const I18N = {
     consume: 'مصرف در سرویس', consumeQty: 'تعداد مصرف', consumeDone: 'از موجودی کم شد', consumeHistory: 'سوابق مصرف',
     profile: 'پروفایل آسانسور', profTabs: 'مشخصات|سرویس‌ها|عیب‌یابی|محاسبات|تصاویر|مسائل',
     prRoping: 'سیستم بکسل‌بندی', prEncoder: 'انکودر', prBrake: 'ترمز',
-    tipTitle: 'تجربه تکنسین', linkedFrom: 'برگرفته از عیب‌یابی'
+    tipTitle: 'تجربه تکنسین', linkedFrom: 'برگرفته از عیب‌یابی',
+    invoices: 'فاکتورها', newInvoice: 'فاکتور جدید', editInvoice: 'ویرایش فاکتور', invoice: 'فاکتور',
+    invCustomer: 'مشتری / کارفرما', invDate: 'تاریخ فاکتور', invItems: 'اقلام فاکتور',
+    invAddItem: 'افزودن ردیف', invAddPart: 'افزودن قطعه از انبار', invDesc: 'شرح',
+    invQty: 'تعداد', invUnitPrice: 'قیمت واحد (ریال)', invRowTotal: 'جمع ردیف',
+    invLabor: 'دستمزد / اجرت', invDiscount: 'تخفیف (ریال)', invSubtotal: 'جمع اقلام',
+    invGrand: 'جمع کل', invPaid: 'دریافت‌شده', invBalance: 'مانده',
+    invStatus: 'وضعیت', invUnpaid: 'پرداخت‌نشده', invPartial: 'پرداخت ناقص', invPaidFull: 'تسویه شده',
+    invAddPay: 'ثبت دریافت', invPayAmount: 'مبلغ دریافتی (ریال)', invPayNote: 'بابت / روش (نقد، کارت...)',
+    invPayments: 'دریافت‌ها', invPrint: 'چاپ فاکتور', invNo: 'شماره فاکتور',
+    noInvoices: 'فاکتوری ثبت نشده', noInvoicesSub: 'اولین فاکتور سرویس یا نصب را صادر کنید',
+    confirmDeleteInvMsg: 'این فاکتور حذف می‌شود. مطمئن هستید؟', searchInvoices: 'جستجوی فاکتور، مشتری...',
+    invFromService: 'اتصال به گزارش سرویس (اختیاری)', invTotalsMonth: 'درآمد این ماه', invOpenBalance: 'مانده وصول‌نشده',
+    rial: 'ریال', invNote2: 'توضیحات فاکتور', invConsumeHint: 'با افزودن قطعه از انبار، موجودی هم به‌صورت خودکار کم می‌شود'
   },
   en: {
     dir: 'ltr',
@@ -1055,6 +1068,19 @@ const I18N = {
     profile: 'Elevator profile', profTabs: 'Specs|Services|Diagnostics|Calculations|Photos|Issues',
     prRoping: 'Roping', prEncoder: 'Encoder', prBrake: 'Brake',
     tipTitle: 'Technician tip', linkedFrom: 'From diagnostics',
+    invoices: 'Invoices', newInvoice: 'New Invoice', editInvoice: 'Edit Invoice', invoice: 'Invoice',
+    invCustomer: 'Customer', invDate: 'Invoice date', invItems: 'Invoice items',
+    invAddItem: 'Add row', invAddPart: 'Add part from inventory', invDesc: 'Description',
+    invQty: 'Qty', invUnitPrice: 'Unit price (IRR)', invRowTotal: 'Row total',
+    invLabor: 'Labor', invDiscount: 'Discount (IRR)', invSubtotal: 'Items subtotal',
+    invGrand: 'Grand total', invPaid: 'Received', invBalance: 'Balance due',
+    invStatus: 'Status', invUnpaid: 'Unpaid', invPartial: 'Partially paid', invPaidFull: 'Settled',
+    invAddPay: 'Add payment', invPayAmount: 'Amount received (IRR)', invPayNote: 'For / method (cash, card...)',
+    invPayments: 'Payments', invPrint: 'Print invoice', invNo: 'Invoice No.',
+    noInvoices: 'No invoices yet', noInvoicesSub: 'Issue your first service or installation invoice',
+    confirmDeleteInvMsg: 'This invoice will be deleted. Sure?', searchInvoices: 'Search invoice, customer...',
+    invFromService: 'Link to service report (optional)', invTotalsMonth: 'Income this month', invOpenBalance: 'Uncollected balance',
+    rial: 'IRR', invNote2: 'Invoice notes', invConsumeHint: 'Adding a part from inventory also reduces stock automatically',
     svcCustomer: 'Customer name', svcElevator: 'Elevator info (address, type, capacity...)',
     svcNoProject: 'No installation project — standalone customer', svcLinkProject: 'Link to installation project (optional)',
     viewServiceHistory: 'View service history for this elevator', requiredCustomer: 'Customer name (or a project) is required',
@@ -3045,7 +3071,7 @@ const state = {
   checklists: null,
   parts: null,
   settings: null,
-  diagSessions: null, calcSaves: null, issues: null, tools: null, photos: null,
+  diagSessions: null, calcSaves: null, issues: null, tools: null, photos: null, invoices: null,
   route: location.hash.slice(1) || '/dashboard'
 };
 
@@ -3123,6 +3149,7 @@ const IC = {
   trash: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
   back: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>',
   box: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
+  bill: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
   alert: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
   chip: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>',
   wrench: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
@@ -3168,9 +3195,9 @@ function confirmDialog(title, msg, onYes) {
 /* ---------- data loading ---------- */
 async function loadAll(force) {
   if (state.projects && !force) return;
-  const [p, s, n, c, pa, st, ds, cs, is_, tl, ph] = await Promise.all([
+  const [p, s, n, c, pa, st, ds, cs, is_, tl, ph, inv] = await Promise.all([
     api('/projects'), api('/services'), api('/notes'), api('/checklists'), api('/parts'), api('/settings'),
-    api('/diagSessions'), api('/calcSaves'), api('/issues'), api('/tools'), api('/photos')
+    api('/diagSessions'), api('/calcSaves'), api('/issues'), api('/tools'), api('/photos'), api('/invoices')
   ]);
   state.projects = p.projects;
   state.services = s.services;
@@ -3183,6 +3210,7 @@ async function loadAll(force) {
   state.issues = is_.items;
   state.tools = tl.items;
   state.photos = ph.items;
+  state.invoices = inv.items;
 }
 
 /* service-due calculation */
@@ -3264,6 +3292,7 @@ const NAV = [
   { route: '/projects', key: 'projects', icon: 'proj' },
   { route: '/services', key: 'services', icon: 'svc' },
   { route: '/issues', key: 'issues', icon: 'alert' },
+  { route: '/invoices', key: 'invoices', icon: 'bill' },
   { route: '/parts', key: 'parts', icon: 'box' },
   { section: 'navTools' },
   { route: '/checklists', key: 'checklists', icon: 'check' },
@@ -3305,7 +3334,7 @@ async function render() {
     '/dashboard': 'dashboard', '/projects': 'projects', '/services': 'services',
     '/parts': 'parts', '/checklists': 'checklists', '/calculations': 'calculations',
     '/diagnostics': 'diagnostics', '/knowledge': 'knowledge', '/notes': 'notes',
-    '/vvvf': 'vvvf', '/issues': 'issues', '/tools': 'tools'
+    '/vvvf': 'vvvf', '/issues': 'issues', '/tools': 'tools', '/invoices': 'invoices'
   };
   const baseRoute = '/' + r.split('/')[1];
   $('#pageTitle').textContent = t(titles[baseRoute] || 'dashboard');
@@ -3323,6 +3352,7 @@ async function render() {
     else if (r === '/diagnostics') renderDiagnostics();
     else if (r === '/vvvf') renderVVVF();
     else if (r === '/issues') renderIssues();
+    else if (r === '/invoices') renderInvoices();
     else if (r === '/tools') renderToolsPage();
     else if (r === '/knowledge') renderKnowledge();
     else if (r === '/notes') renderNotes();
@@ -5101,6 +5131,348 @@ function deletePhoto(id) {
   });
 }
 
+
+/* ================= INVOICES ================= */
+let invFilter = { q: '', status: 'all' };
+let invDraft = null; // items being edited in the open form
+
+function money(n) { return faNum((Math.round(+n || 0)).toLocaleString('en-US')); }
+function invTotals(inv) {
+  const items = (inv.items || []).reduce((a, it) => a + (+it.qty || 0) * (+it.price || 0), 0);
+  const grand = Math.max(0, items + (+inv.labor || 0) - (+inv.discount || 0));
+  const paid = (inv.payments || []).reduce((a, p) => a + (+p.amount || 0), 0);
+  return { items, grand, paid, balance: Math.max(0, grand - paid) };
+}
+function invStatusMeta(inv) {
+  const tt = invTotals(inv);
+  if (tt.grand > 0 && tt.paid >= tt.grand) return { key: 'invPaidFull', cls: 'b-green', icon: '✅' };
+  if (tt.paid > 0) return { key: 'invPartial', cls: 'b-amber', icon: '🟠' };
+  return { key: 'invUnpaid', cls: 'b-red', icon: '🔴' };
+}
+
+function renderInvoices() {
+  const c = $('#content');
+  const month = Date.now() - 30 * 86400000;
+  let incomeMonth = 0, openBalance = 0;
+  state.invoices.forEach(inv => {
+    (inv.payments || []).forEach(p => { if (p.date >= month) incomeMonth += +p.amount || 0; });
+    openBalance += invTotals(inv).balance;
+  });
+  c.innerHTML = `
+    <div class="grid-2" style="margin-bottom:16px">
+      ${'<div class="card stat-card"><div class="stat-icon" style="background:var(--ok-soft);font-size:21px">💰</div><div class="stat-body"><div class="stat-value" style="font-size:17px">' + money(incomeMonth) + ' <span style="font-size:11px;color:var(--text-3)">' + t('rial') + '</span></div><div class="stat-label">' + t('invTotalsMonth') + '</div></div></div>'}
+      ${'<div class="card stat-card"><div class="stat-icon" style="background:var(--danger-soft);font-size:21px">🧾</div><div class="stat-body"><div class="stat-value" style="font-size:17px">' + money(openBalance) + ' <span style="font-size:11px;color:var(--text-3)">' + t('rial') + '</span></div><div class="stat-label">' + t('invOpenBalance') + '</div></div></div>'}
+    </div>
+    <div class="toolbar">
+      <div class="search">${IC.search}<input id="invSearch" placeholder="${t('searchInvoices')}" value="${esc(invFilter.q)}" /></div>
+      <div class="chip-row">
+        <button class="chip ${invFilter.status === 'all' ? 'active' : ''}" data-s="all">${t('all')}</button>
+        <button class="chip ${invFilter.status === 'unpaid' ? 'active' : ''}" data-s="unpaid">🔴 ${t('invUnpaid')}</button>
+        <button class="chip ${invFilter.status === 'partial' ? 'active' : ''}" data-s="partial">🟠 ${t('invPartial')}</button>
+        <button class="chip ${invFilter.status === 'paid' ? 'active' : ''}" data-s="paid">✅ ${t('invPaidFull')}</button>
+      </div>
+      <button class="btn btn-primary" onclick="openInvoiceForm()">${IC.plus} ${t('newInvoice')}</button>
+    </div>
+    <div id="invList"></div>`;
+  $('#invSearch').oninput = debounce(e => { invFilter.q = e.target.value; drawInvList(); }, 200);
+  $$('.chip[data-s]').forEach(ch => ch.onclick = () => { invFilter.status = ch.dataset.s; renderInvoices(); });
+  drawInvList();
+}
+function drawInvList() {
+  const q = invFilter.q.trim().toLowerCase();
+  let list = state.invoices;
+  if (invFilter.status !== 'all') {
+    list = list.filter(inv => {
+      const m = invStatusMeta(inv);
+      return (invFilter.status === 'paid' && m.key === 'invPaidFull') ||
+             (invFilter.status === 'partial' && m.key === 'invPartial') ||
+             (invFilter.status === 'unpaid' && m.key === 'invUnpaid');
+    });
+  }
+  if (q) list = list.filter(inv => (inv.customer + ' ' + (inv.note || '') + ' ' + (inv.projectId ? projName(inv.projectId) : '') + ' ' + (inv.items || []).map(i => i.desc).join(' ')).toLowerCase().includes(q));
+  const el = $('#invList');
+  if (!state.invoices.length) {
+    el.innerHTML = `<div class="empty"><div class="e-icon">🧾</div><strong>${t('noInvoices')}</strong><p>${t('noInvoicesSub')}</p><button class="btn btn-primary" onclick="openInvoiceForm()">${IC.plus} ${t('newInvoice')}</button></div>`;
+    return;
+  }
+  if (!list.length) {
+    el.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p></div>`;
+    return;
+  }
+  el.innerHTML = list.map(inv => {
+    const tt = invTotals(inv);
+    const m = invStatusMeta(inv);
+    return `<div class="row-item" onclick="openInvoiceForm('${inv.id}')">
+      <div class="row-icon" style="background:var(--bg-soft);border:1px solid var(--border);font-size:18px">🧾</div>
+      <div class="row-body">
+        <strong>${esc(inv.customer || '—')}${inv.projectId ? ' · ' + esc(projName(inv.projectId)) : ''}</strong>
+        <span class="sub">${t('invGrand')}: ${money(tt.grand)} ${t('rial')}${tt.balance ? ' · ' + t('invBalance') + ': ' + money(tt.balance) : ''}</span>
+      </div>
+      <div class="row-side">
+        <span class="badge ${m.cls}">${m.icon} ${t(m.key)}</span>
+        <span class="date">${fmtDate(inv.date || inv.createdAt)} · #${esc((inv.id || '').slice(0, 6).toUpperCase())}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function invItemsHTML() {
+  return invDraft.items.map((it, i) => `
+    <div style="display:flex;gap:7px;align-items:flex-start;margin-bottom:8px;flex-wrap:wrap">
+      <input placeholder="${t('invDesc')}" value="${esc(it.desc)}" data-if="desc" data-ix="${i}"
+        style="flex:2;min-width:130px;background:var(--bg-soft);border:1.5px solid var(--border);border-radius:10px;padding:9px 11px;outline:none" />
+      <input type="number" min="1" placeholder="${t('invQty')}" value="${it.qty}" data-if="qty" data-ix="${i}"
+        style="width:64px;background:var(--bg-soft);border:1.5px solid var(--border);border-radius:10px;padding:9px 8px;outline:none" />
+      <input type="number" min="0" placeholder="${t('invUnitPrice')}" value="${it.price}" data-if="price" data-ix="${i}"
+        style="flex:1;min-width:100px;background:var(--bg-soft);border:1.5px solid var(--border);border-radius:10px;padding:9px 8px;outline:none" />
+      <button class="icon-btn" style="width:36px;height:36px" onclick="invDelItem(${i})">✕</button>
+      <div style="width:100%;font-size:11.5px;color:var(--text-3);direction:ltr;text-align:end">${money((+it.qty || 0) * (+it.price || 0))} ${t('rial')}</div>
+    </div>`).join('');
+}
+function invRefreshItems() {
+  const box = $('#invItemsBox');
+  if (box) { box.innerHTML = invItemsHTML(); invWireItems(); invRefreshTotals(); }
+}
+function invWireItems() {
+  $$('#invItemsBox [data-if]').forEach(inp => {
+    inp.oninput = () => {
+      const it = invDraft.items[+inp.dataset.ix];
+      if (!it) return;
+      if (inp.dataset.if === 'desc') it.desc = inp.value;
+      else it[inp.dataset.if] = +inp.value || 0;
+      invRefreshTotals();
+    };
+  });
+}
+function invDelItem(i) {
+  const it = invDraft.items[i];
+  if (it && it.partId) invDraft.releasedParts.push({ partId: it.partId, qty: +it.qty || 0 });
+  invDraft.items.splice(i, 1);
+  invRefreshItems();
+}
+function invAddItem(item) {
+  invDraft.items.push(item || { desc: '', qty: 1, price: 0 });
+  invRefreshItems();
+}
+function invRefreshTotals() {
+  const items = invDraft.items.reduce((a, it) => a + (+it.qty || 0) * (+it.price || 0), 0);
+  const labor = +($('#inv_labor') && $('#inv_labor').value) || 0;
+  const disc = +($('#inv_discount') && $('#inv_discount').value) || 0;
+  const grand = Math.max(0, items + labor - disc);
+  const paid = (invDraft.payments || []).reduce((a, p) => a + (+p.amount || 0), 0);
+  const el = $('#invTotalsBox');
+  if (el) el.innerHTML = `
+    <div class="calc-result">
+      <div class="r-row"><span class="r-label">${t('invSubtotal')}</span><span class="r-val" style="font-size:14px">${money(items)} ${t('rial')}</span></div>
+      <div class="r-row"><span class="r-label">${t('invLabor')}</span><span class="r-val" style="font-size:14px">${money(labor)} ${t('rial')}</span></div>
+      ${disc ? `<div class="r-row"><span class="r-label">${t('invDiscount')}</span><span class="r-val" style="font-size:14px">−${money(disc)} ${t('rial')}</span></div>` : ''}
+      <div class="r-row"><span class="r-label"><b>${t('invGrand')}</b></span><span class="r-val">${money(grand)} ${t('rial')}</span></div>
+      ${paid ? `<div class="r-row"><span class="r-label">${t('invPaid')}</span><span class="r-val" style="font-size:14px;color:var(--ok)">${money(paid)} ${t('rial')}</span></div>
+      <div class="r-row"><span class="r-label"><b>${t('invBalance')}</b></span><span class="r-val" style="color:${grand - paid > 0 ? 'var(--danger)' : 'var(--ok)'}">${money(Math.max(0, grand - paid))} ${t('rial')}</span></div>` : ''}
+    </div>`;
+}
+function invPickPart() {
+  const opts = state.parts.map(p => `
+    <div class="row-item" style="margin-bottom:7px" onclick="invUsePart('${p.id}')">
+      <div class="row-body"><strong style="font-size:13.5px">${esc(p.name)}</strong>
+      <span class="sub">${t('partQty')}: ${faNum(p.qty)} ${esc(p.unit)} · ${money(p.price)} ${t('rial')}</span></div>
+    </div>`).join('');
+  openModal(`
+    <div class="modal-head"><h3>📦 ${t('invAddPart')}</h3><button class="icon-btn" onclick="invBackToForm()">✕</button></div>
+    <div class="modal-body">${opts || `<p style="color:var(--text-3)">${t('noParts')}</p>`}</div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="invBackToForm()">${t('cancel')}</button></div>`);
+}
+function invUsePart(partId) {
+  const p = state.parts.find(x => x.id === partId);
+  if (!p) return;
+  invDraft.items.push({ desc: p.name, qty: 1, price: p.price || 0, partId: p.id });
+  invDraft.consumedParts.push({ partId: p.id });
+  invBackToForm();
+}
+function invBackToForm() { openInvoiceForm(invDraft.editingId, null, true); }
+
+function openInvoiceForm(id, presetProject, keepDraft) {
+  const inv = id ? state.invoices.find(x => x.id === id) : null;
+  if (!keepDraft) {
+    invDraft = {
+      editingId: id || null,
+      items: inv ? JSON.parse(JSON.stringify(inv.items || [])) : [],
+      payments: inv ? JSON.parse(JSON.stringify(inv.payments || [])) : [],
+      consumedParts: [], releasedParts: []
+    };
+  }
+  const v = inv || { customer: '', projectId: presetProject || '', serviceId: '', date: Date.now(), labor: 0, discount: 0, note: '' };
+  const dateVal = new Date(invDraft.dateOverride || v.date || Date.now()).toISOString().slice(0, 10);
+  const svcOpts = state.services.slice(0, 40).map(s => `<option value="${s.id}" ${v.serviceId === s.id ? 'selected' : ''}>${esc(svcTarget(s))} — ${fmtDate(s.date)}</option>`).join('');
+  openModal(`
+    <div class="modal-head"><h3>${inv ? '✏️ ' + t('editInvoice') : '🧾 ' + t('newInvoice')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field span2"><label>${t('invCustomer')} *</label><input id="inv_customer" value="${esc(invDraft.customerOverride !== undefined ? invDraft.customerOverride : v.customer)}" /></div>
+        <div class="field"><label>${t('invDate')}</label><input id="inv_date" type="date" value="${dateVal}" /></div>
+        <div class="field"><label>${t('diagSelProject')}</label><select id="inv_project">
+          <option value="">—</option>
+          ${state.projects.map(p => `<option value="${p.id}" ${(invDraft.projectOverride !== undefined ? invDraft.projectOverride : v.projectId) === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}
+        </select></div>
+        <div class="field span2"><label>${t('invFromService')}</label><select id="inv_service">
+          <option value="">—</option>${svcOpts}
+        </select></div>
+      </div>
+      <div class="section-title" style="margin:8px 0 10px"><h3 style="font-size:14.5px">📋 ${t('invItems')}</h3></div>
+      <p style="font-size:11.8px;color:var(--text-3);margin-bottom:9px">💡 ${t('invConsumeHint')}</p>
+      <div id="invItemsBox">${invItemsHTML()}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <button class="btn btn-ghost btn-sm" onclick="invAddItem()">${IC.plus} ${t('invAddItem')}</button>
+        <button class="btn btn-ghost btn-sm" onclick="invPickPart()">📦 ${t('invAddPart')}</button>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>${t('invLabor')}</label><input id="inv_labor" type="number" min="0" value="${v.labor || 0}" /></div>
+        <div class="field"><label>${t('invDiscount')}</label><input id="inv_discount" type="number" min="0" value="${v.discount || 0}" /></div>
+        <div class="field span2"><label>${t('invNote2')}</label><input id="inv_note" value="${esc(v.note || '')}" /></div>
+      </div>
+      <div id="invTotalsBox"></div>
+      ${invDraft.payments.length ? `
+        <div class="section-title" style="margin:14px 0 8px"><h3 style="font-size:13.5px">💵 ${t('invPayments')}</h3></div>
+        ${invDraft.payments.map((p, i) => `
+          <div class="kv-cell" style="margin-bottom:6px;display:flex;align-items:center;gap:8px">
+            <div style="flex:1"><div class="v" style="font-weight:600;font-size:13px">${money(p.amount)} ${t('rial')}</div>
+            <div class="k">${fmtDate(p.date)}${p.note ? ' · ' + esc(p.note) : ''}</div></div>
+            <button class="icon-btn" style="width:32px;height:32px" onclick="invDelPay(${i})">✕</button>
+          </div>`).join('')}` : ''}
+    </div>
+    <div class="modal-foot">
+      ${inv ? `<button class="btn btn-soft-danger" onclick="deleteInvoice('${inv.id}')">${IC.trash}</button>` : ''}
+      ${inv ? `<button class="btn btn-ghost" onclick="printInvoice('${inv.id}')">${IC.print} ${t('invPrint')}</button>` : ''}
+      <button class="btn btn-ghost" id="invPayBtn">💵 ${t('invAddPay')}</button>
+      <button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button>
+      <button class="btn btn-primary" id="invSave">${inv ? t('save') : t('create')}</button>
+    </div>`, { size: 'lg' });
+
+  invWireItems();
+  invRefreshTotals();
+  $('#inv_labor').oninput = invRefreshTotals;
+  $('#inv_discount').oninput = invRefreshTotals;
+  // keep field values across part-picker roundtrip
+  ['inv_customer', 'inv_project'].forEach(fid => {
+    const el = $('#' + fid);
+    el.onchange = el.oninput = () => {
+      if (fid === 'inv_customer') invDraft.customerOverride = el.value;
+      else invDraft.projectOverride = el.value;
+    };
+  });
+  $('#inv_date').onchange = () => { invDraft.dateOverride = new Date($('#inv_date').value).getTime(); };
+
+  $('#invPayBtn').onclick = () => {
+    openModal(`
+      <div class="modal-head"><h3>💵 ${t('invAddPay')}</h3><button class="icon-btn" onclick="invBackToForm()">✕</button></div>
+      <div class="modal-body">
+        <div class="field"><label>${t('invPayAmount')} *</label><input id="pay_amount" type="number" min="1" /></div>
+        <div class="field"><label>${t('invPayNote')}</label><input id="pay_note" /></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" onclick="invBackToForm()">${t('cancel')}</button>
+        <button class="btn btn-primary" id="payOk">💵 ${t('invAddPay')}</button>
+      </div>`, { size: 'sm' });
+    $('#payOk').onclick = () => {
+      const amount = +$('#pay_amount').value || 0;
+      if (amount <= 0) { toast(t('errGeneric'), 'err'); return; }
+      invDraft.payments.push({ amount, note: $('#pay_note').value, date: Date.now() });
+      invBackToForm();
+    };
+  };
+
+  $('#invSave').onclick = async () => {
+    const customer = $('#inv_customer').value.trim();
+    if (!customer) { toast(t('requiredCustomer'), 'err'); return; }
+    const body = {
+      customer,
+      projectId: $('#inv_project').value,
+      serviceId: $('#inv_service').value,
+      date: new Date($('#inv_date').value || Date.now()).getTime(),
+      items: invDraft.items.filter(it => it.desc || it.price),
+      labor: +$('#inv_labor').value || 0,
+      discount: +$('#inv_discount').value || 0,
+      note: $('#inv_note').value,
+      payments: invDraft.payments
+    };
+    const btn = $('#invSave'); btn.disabled = true;
+    try {
+      let saved;
+      if (inv) {
+        const d = await api('/invoices/' + inv.id, { method: 'PUT', body });
+        Object.assign(inv, d.item); saved = inv;
+      } else {
+        const d = await api('/invoices', { method: 'POST', body });
+        state.invoices.unshift(d.item); saved = d.item;
+      }
+      // consume newly-added inventory parts (only once, on save)
+      for (const cp of invDraft.consumedParts) {
+        const it = body.items.find(x => x.partId === cp.partId);
+        if (!it) continue;
+        try {
+          const d = await api('/parts-consume', { method: 'POST', body: { partId: cp.partId, qty: +it.qty || 1, projectId: body.projectId, note: t('invoice') + ' #' + saved.id.slice(0, 6).toUpperCase() } });
+          const local = state.parts.find(x => x.id === cp.partId);
+          if (local) Object.assign(local, d.part);
+        } catch (e) {}
+      }
+      invDraft = null;
+      closeModal(); toast(t('saved')); render();
+    } catch (e) { toast(t('errGeneric'), 'err'); btn.disabled = false; }
+  };
+}
+function invDelPay(i) {
+  invDraft.payments.splice(i, 1);
+  invBackToForm();
+}
+function deleteInvoice(id) {
+  confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteInvMsg'), async () => {
+    const idx = state.invoices.findIndex(x => x.id === id);
+    const [rm] = state.invoices.splice(idx, 1);
+    invDraft = null;
+    closeModal(); render();
+    try { await api('/invoices/' + id, { method: 'DELETE' }); toast(t('deleted')); }
+    catch (e) { state.invoices.splice(idx, 0, rm); toast(t('errGeneric'), 'err'); render(); }
+  });
+}
+function printInvoice(id) {
+  const inv = state.invoices.find(x => x.id === id);
+  if (!inv) return;
+  const st = state.settings || {};
+  const tt = invTotals(inv);
+  let sheet = document.getElementById('printSheet');
+  if (!sheet) {
+    sheet = document.createElement('div');
+    sheet.id = 'printSheet';
+    sheet.className = 'print-sheet';
+    document.body.appendChild(sheet);
+  }
+  sheet.dir = I18N[LANG].dir;
+  sheet.innerHTML = `
+    <h1>🛗 ${esc(st.company || 'Z Lift')}</h1>
+    <div class="ph-sub">${t('invoice')} — ${esc(st.phone || '')} ${st.address ? '· ' + esc(st.address) : ''}</div>
+    <table>
+      <tr><th>${t('invNo')}</th><td>${esc(inv.id.slice(0, 8).toUpperCase())}</td></tr>
+      <tr><th>${t('invDate')}</th><td>${fmtDate(inv.date || inv.createdAt)}</td></tr>
+      <tr><th>${t('invCustomer')}</th><td>${esc(inv.customer)}</td></tr>
+      ${inv.projectId ? `<tr><th>${t('profile')}</th><td>${esc(projName(inv.projectId))}</td></tr>` : ''}
+    </table>
+    <table>
+      <tr><th style="width:auto">${t('invDesc')}</th><th style="width:60px">${t('invQty')}</th><th style="width:120px">${t('invUnitPrice')}</th><th style="width:130px">${t('invRowTotal')}</th></tr>
+      ${(inv.items || []).map(it => `<tr><td>${esc(it.desc)}</td><td>${faNum(it.qty)}</td><td>${money(it.price)}</td><td>${money((+it.qty || 0) * (+it.price || 0))}</td></tr>`).join('')}
+      ${inv.labor ? `<tr><td colspan="3">${t('invLabor')}</td><td>${money(inv.labor)}</td></tr>` : ''}
+      ${inv.discount ? `<tr><td colspan="3">${t('invDiscount')}</td><td>−${money(inv.discount)}</td></tr>` : ''}
+      <tr><td colspan="3"><b>${t('invGrand')}</b></td><td><b>${money(tt.grand)} ${t('rial')}</b></td></tr>
+      ${tt.paid ? `<tr><td colspan="3">${t('invPaid')}</td><td>${money(tt.paid)}</td></tr>
+      <tr><td colspan="3"><b>${t('invBalance')}</b></td><td><b>${money(tt.balance)} ${t('rial')}</b></td></tr>` : ''}
+    </table>
+    ${inv.note ? `<p style="font-size:12px">${esc(inv.note)}</p>` : ''}
+    <div class="sig-row">
+      <div class="sig">${t('signTech')}</div>
+      <div class="sig">${t('signCustomer')}</div>
+    </div>`;
+  window.print();
+}
+
 /* ================= BACKUP / RESTORE ================= */
 function openBackupModal() {
   openModal(`
@@ -5287,7 +5659,7 @@ function _lsSeed() {
       mkPart('باطری ۱۲V 7Ah سیستم نجات', 'الکتریکال', 'عدد', 4, 4, 4200000, 'قفسه B4', 'تاریخ شارژ کنترل شود'),
       mkPart('روانکار ریل (اسپری)', 'مصرفی', 'عدد', 12, 6, 950000, 'قفسه D1')
     ],
-    diagSessions: [], calcSaves: [], issues: [], tools: [], photos: [],
+    diagSessions: [], calcSaves: [], issues: [], tools: [], photos: [], invoices: [],
     settings: { company: 'خدمات فنی آسانسور زد لیفت', phone: '021-88000000', address: 'تهران' }
   };
 }
@@ -5299,7 +5671,7 @@ function _lsLoad() {
   if (!_lsDB || !_lsDB.users) { _lsDB = _lsSeed(); _lsSave(); }
   if (!_lsDB.parts) _lsDB.parts = _lsSeed().parts;
   if (!_lsDB.settings) _lsDB.settings = { company: 'Z Lift', phone: '', address: '' };
-  ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos'].forEach(k => { if (!Array.isArray(_lsDB[k])) _lsDB[k] = []; });
+  ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices'].forEach(k => { if (!Array.isArray(_lsDB[k])) _lsDB[k] = []; });
   _lsMigrateServices();
   return _lsDB;
 }
@@ -5512,7 +5884,7 @@ async function api(path, opts = {}) {
 
 
   /* generic collections */
-  const GENERIC = ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos'];
+  const GENERIC = ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices'];
   if (parts[0] && GENERIC.includes(parts[0])) {
     const coll = db[parts[0]];
     if (!parts[1] && method === 'GET') return { items: [...coll].sort((a, c) => (c.createdAt || 0) - (a.createdAt || 0)) };
@@ -5553,7 +5925,7 @@ async function api(path, opts = {}) {
     return { backup: { app: 'zlift', version: 3, exportedAt: Date.now(),
       projects: db.projects, services: db.services, notes: db.notes,
       checklists: db.checklists, parts: db.parts, settings: db.settings,
-      diagSessions: db.diagSessions, calcSaves: db.calcSaves, issues: db.issues, tools: db.tools, photos: db.photos } };
+      diagSessions: db.diagSessions, calcSaves: db.calcSaves, issues: db.issues, tools: db.tools, photos: db.photos, invoices: db.invoices } };
   }
   if (path === '/backup' && method === 'PUT') {
     const bk = b.backup || b;
@@ -5564,7 +5936,7 @@ async function api(path, opts = {}) {
     db.checklists = Array.isArray(bk.checklists) ? bk.checklists : [];
     db.parts = Array.isArray(bk.parts) ? bk.parts : [];
     if (bk.settings && typeof bk.settings === 'object') db.settings = bk.settings;
-    ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos'].forEach(k => { db[k] = Array.isArray(bk[k]) ? bk[k] : []; });
+    ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices'].forEach(k => { db[k] = Array.isArray(bk[k]) ? bk[k] : []; });
     _lsSave();
     return { ok: true };
   }
