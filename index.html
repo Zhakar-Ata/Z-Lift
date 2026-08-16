@@ -3287,16 +3287,54 @@ function applyLang() {
   $$('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
 }
 
+/* ---------- UI back-stack (phone back button support) ----------
+   Every overlay (modal / date picker / sidebar / diag step) registers a
+   "layer". Pressing hardware back pops the top layer instead of leaving
+   the app. Closing via UI removes the matching history entry. */
+let uiStack = [];
+let _ignorePop = 0;
+function pushUiLayer(type, closeFn) {
+  uiStack.push({ type, close: closeFn });
+  try { history.pushState({ zl: uiStack.length }, ''); } catch (e) {}
+}
+function popTaggedLayer(type) {
+  // remove the topmost layer of this type that was closed via UI
+  for (let i = uiStack.length - 1; i >= 0; i--) {
+    if (uiStack[i].type === type) {
+      const isTop = i === uiStack.length - 1;
+      uiStack.splice(i, 1);
+      if (isTop) { _ignorePop++; try { history.back(); } catch (e) {} }
+      return true;
+    }
+  }
+  return false;
+}
+window.addEventListener('popstate', () => {
+  if (_ignorePop > 0) { _ignorePop--; return; }
+  if (uiStack.length) {
+    const layer = uiStack.pop();
+    try { layer.close(); } catch (e) {}
+  }
+  // else: hash-route back — handled by the hashchange listener
+});
+
 /* ---------- modal ---------- */
+function _closeModalDom() { $('#modalRoot').innerHTML = ''; document.removeEventListener('keydown', escClose); }
 function openModal(html, opts = {}) {
-  closeModal();
+  const hadModal = !!document.getElementById('modalOverlay');
+  _closeModalDom();
   const root = $('#modalRoot');
   root.innerHTML = `<div class="modal-overlay" id="modalOverlay"><div class="modal ${opts.size || ''}">${html}</div></div>`;
   $('#modalOverlay').addEventListener('mousedown', e => { if (e.target.id === 'modalOverlay') closeModal(); });
   document.addEventListener('keydown', escClose);
+  if (!hadModal) pushUiLayer('modal', _closeModalDom);
 }
 function escClose(e) { if (e.key === 'Escape') closeModal(); }
-function closeModal() { $('#modalRoot').innerHTML = ''; document.removeEventListener('keydown', escClose); }
+function closeModal() {
+  const had = !!document.getElementById('modalOverlay');
+  _closeModalDom();
+  if (had) popTaggedLayer('modal');
+}
 function confirmDialog(title, msg, onYes) {
   openModal(`
     <div class="modal-head"><h3>⚠️ ${esc(title)}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
@@ -3357,6 +3395,7 @@ function showAuth() {
   $('#appView').classList.add('hidden');
 }
 function doLocalLogout() {
+  uiStack = [];
   state.token = null; state.user = null;
   state.projects = state.services = state.notes = state.checklists = null;
   localStorage.removeItem('zlift_token');
@@ -3451,7 +3490,12 @@ function renderNav() {
   }).join('');
   nav.querySelectorAll('.nav-item').forEach(b => b.onclick = () => { navigate(b.dataset.route); closeSidebar(); });
 }
-function closeSidebar() { $('#sidebar').classList.remove('open'); $('#backdrop').classList.remove('show'); }
+function _closeSidebarDom() { $('#sidebar').classList.remove('open'); $('#backdrop').classList.remove('show'); }
+function closeSidebar() {
+  const wasOpen = $('#sidebar').classList.contains('open');
+  _closeSidebarDom();
+  if (wasOpen) popTaggedLayer('sidebar');
+}
 
 /* ================= ROUTER ================= */
 function navigate(route) {
@@ -3461,7 +3505,18 @@ function navigate(route) {
 }
 window.addEventListener('hashchange', () => {
   const r = location.hash.slice(1) || '/dashboard';
-  if (r !== state.route) { state.route = r; if (state.user) render(); }
+  if (r !== state.route) {
+    state.route = r;
+    // route changed underneath any open overlays: close them & reset stack
+    if (uiStack.length) {
+      uiStack = [];
+      _closeModalDom();
+      if (typeof _closeJdateDom === 'function') _closeJdateDom();
+      _closeSidebarDom();
+      diagSession = null;
+    }
+    if (state.user) render();
+  }
 });
 
 async function render() {
@@ -4669,10 +4724,18 @@ function drawDiagList() {
       <div class="row-side">${d.type !== 'both' ? typeBadge(d.type) : `<span class="badge b-gray">⚙️/🛢️</span>`}</div>
     </div>`).join('');
 }
+function _diagStepBackDom() {
+  /* called by hardware back: one step back, or exit flow at first step */
+  if (!diagSession) return;
+  if (!diagSession.path.length) { diagSession = null; }
+  else { diagSession.current = diagSession.path.pop(); }
+  renderDiagnostics();
+}
 function startDiagFlow(id) {
   const f = DIAG_FLOWS.find(x => x.id === id);
   if (!f) return;
   diagSession = { flowId: id, path: [], current: f.start };
+  pushUiLayer('diag', _diagStepBackDom);
   renderDiagnostics();
   window.scrollTo(0, 0);
 }
@@ -4681,16 +4744,22 @@ function diagAnswer(nodeId) {
   if (!f || !f.nodes[nodeId]) return;
   diagSession.path.push(diagSession.current);
   diagSession.current = nodeId;
+  pushUiLayer('diag', _diagStepBackDom);
   renderDiagnostics();
   window.scrollTo(0, 0);
 }
 function diagBack() {
   if (!diagSession) return;
+  popTaggedLayer('diag');
   if (!diagSession.path.length) { diagSession = null; renderDiagnostics(); return; }
   diagSession.current = diagSession.path.pop();
   renderDiagnostics();
 }
-function diagExit() { diagSession = null; renderDiagnostics(); }
+function diagExit() {
+  while (popTaggedLayer('diag')) {}
+  diagSession = null;
+  renderDiagnostics();
+}
 
 function renderDiagFlow(c) {
   const f = DIAG_FLOWS.find(x => x.id === diagSession.flowId);
@@ -5967,12 +6036,18 @@ function openJdatePicker(targetId, allowEmpty) {
   root.innerHTML = `<div id="jdBox" style="background:var(--bg-card);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow-lg);width:100%;max-width:330px;padding:16px"></div>`;
   root.addEventListener('mousedown', e => { if (e.target.id === 'jdOverlay') closeJdatePicker(); });
   document.body.appendChild(root);
+  pushUiLayer('jdate', _closeJdateDom);
   drawJdate();
 }
-function closeJdatePicker() {
+function _closeJdateDom() {
   const o = document.getElementById('jdOverlay');
   if (o) o.remove();
   _jdCur = null;
+}
+function closeJdatePicker() {
+  const had = !!document.getElementById('jdOverlay');
+  _closeJdateDom();
+  if (had) popTaggedLayer('jdate');
 }
 function jdShift(d) {
   _jdCur.jm += d;
@@ -6104,7 +6179,11 @@ async function init() {
     if (state.user) { renderNav(); render(); $('#userName').textContent = state.user.name; }
     setAuthMode(authMode);
   };
-  $('#menuBtn').onclick = () => { $('#sidebar').classList.add('open'); $('#backdrop').classList.add('show'); };
+  $('#menuBtn').onclick = () => {
+    $('#sidebar').classList.add('open');
+    $('#backdrop').classList.add('show');
+    pushUiLayer('sidebar', _closeSidebarDom);
+  };
   $('#sidebarClose').onclick = closeSidebar;
   $('#backdrop').onclick = closeSidebar;
   $('#backupBtn').onclick = openBackupModal;
