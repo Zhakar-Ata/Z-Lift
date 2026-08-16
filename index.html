@@ -984,7 +984,13 @@ const I18N = {
     shareCopied: 'متن کپی شد — در تلگرام Paste کنید',
     qrCode: 'کد QR آسانسور', qrHint: 'این کد را چاپ کنید و داخل کابین یا موتورخانه بچسبانید؛ با اسکن آن مستقیم به پروفایل همین آسانسور می‌رسید',
     qrPrint: 'چاپ برچسب QR', qrScanHint: 'اسکن = باز شدن پروفایل این آسانسور در Z Lift',
-    tgChannel: 'کانال تلگرام Z Lift', tgChannelSub: 'اخبار، آموزش و نکات فنی'
+    tgChannel: 'کانال تلگرام Z Lift', tgChannelSub: 'اخبار، آموزش و نکات فنی',
+    errUnexpected: 'خطای غیرمنتظره‌ای رخ داد — دوباره تلاش کنید',
+    payOverConfirm: '⚠️ مبلغ از مانده بیشتر است! برای تأیید اضافه‌پرداخت دوباره بزنید',
+    chFailToIssue: 'ثبت موارد مردود به‌عنوان مسئله',
+    mirrorFound: 'یک نسخه امن داخلی از داده‌های قبلی شما پیدا شد (حافظه اصلی خالی بود). بازیابی شود؟',
+    mirrorRestore: 'بازیابی داده‌ها', adjustLabel: 'اصلاح دستی موجودی',
+    restoreOf: 'محتوای فایل'
   },
   en: {
     dir: 'ltr',
@@ -1156,6 +1162,12 @@ const I18N = {
     qrCode: 'Elevator QR code', qrHint: 'Print this and stick it in the car or machine room; scanning opens this elevator profile directly',
     qrPrint: 'Print QR label', qrScanHint: 'Scan = open this elevator profile in Z Lift',
     tgChannel: 'Z Lift Telegram Channel', tgChannelSub: 'News, training & technical tips',
+    errUnexpected: 'An unexpected error occurred — please try again',
+    payOverConfirm: '⚠️ Amount exceeds balance! Tap again to confirm overpayment',
+    chFailToIssue: 'Log failed items as an issue',
+    mirrorFound: 'An internal safety copy of your previous data was found (main storage was empty). Restore it?',
+    mirrorRestore: 'Restore data', adjustLabel: 'Manual stock adjustment',
+    restoreOf: 'File contents',
     svcCustomer: 'Customer name', svcElevator: 'Elevator info (address, type, capacity...)',
     svcNoProject: 'No installation project — standalone customer', svcLinkProject: 'Link to installation project (optional)',
     viewServiceHistory: 'View service history for this elevator', requiredCustomer: 'Customer name (or a project) is required',
@@ -3254,6 +3266,30 @@ function toast(msg, type = 'ok') {
   setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 320); }, 2600);
 }
 function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+/* wrap an async save handler: disables the button during the call and
+   swallows double-clicks (duplicate-submission protection) */
+function guard(btnSel, fn) {
+  return async (...a) => {
+    const b = $(btnSel);
+    if (b && b.disabled) return;
+    if (b) b.disabled = true;
+    try { await fn(...a); }
+    catch (e) { reportError(e, 'guard:' + btnSel); }
+    finally { const b2 = $(btnSel); if (b2) b2.disabled = false; }
+  };
+}
+/* central error handler */
+function reportError(e, ctx) {
+  try {
+    console.error('[ZLift]', ctx || '', e);
+    toast(t('errUnexpected'), 'err');
+  } catch (e2) {}
+}
+window.addEventListener('error', ev => { try { console.error('[ZLift uncaught]', ev.message); } catch (e) {} });
+window.addEventListener('unhandledrejection', ev => {
+  try { console.error('[ZLift promise]', ev.reason); } catch (e) {}
+  if (ev.preventDefault) ev.preventDefault();
+});
 
 const STATUS_META = {
   contract: { key: 'statusContract', cls: 'b-gray' },
@@ -4116,7 +4152,7 @@ function renderProjectDetail(id) {
         <button class="btn btn-ghost btn-sm" onclick="openPhotoForm('${p.id}')">${IC.cam} ${t('addPhoto')}</button></div>`;
       out += pPhotos.length
         ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px">${pPhotos.map(ph => `
-            <img src="${ph.data}" onclick="viewPhoto('${ph.id}')" title="${esc(ph.cat || '')}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:11px;border:1px solid var(--border);cursor:pointer" />`).join('')}</div>`
+            <img src="${safePhotoSrc(ph.data)}" onclick="viewPhoto('${ph.id}')" title="${esc(ph.cat || '')}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:11px;border:1px solid var(--border);cursor:pointer" />`).join('')}</div>`
         : `<p style="font-size:12.5px;color:var(--text-3)">${t('noPhotos')}</p>`;
       return out;
     })()}
@@ -4526,7 +4562,11 @@ function renderChecklistDetail(idWithQuery) {
   let selectedProject = params.get('project') || '';
   const tp = CHECKLIST_TEMPLATES.find(x => x.id === tid);
   const c = $('#content');
-  if (!tp) { c.innerHTML = `<div class="empty"><strong>${t('notFound')}</strong></div>`; return; }
+  if (!tp) {
+    c.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p>
+      <button class="btn btn-primary" onclick="navigate('/checklists')">${t('checklists')}</button></div>`;
+    return;
+  }
   const eligible = state.projects.filter(p => p.elevatorType === tp.type);
   if (selectedProject && !eligible.find(p => p.id === selectedProject)) selectedProject = '';
 
@@ -4587,6 +4627,7 @@ function renderChecklistDetail(idWithQuery) {
         <div class="card" style="border-inline-start:4px solid var(--danger);margin-bottom:14px">
           <div class="card-title" style="color:var(--danger);margin-bottom:8px">❗ ${t('chFailed')} (${faNum(failedItems.length)})</div>
           <ul style="padding-inline-start:20px;font-size:13.3px;color:var(--text-2)">${failedItems.map(it => `<li>${esc(it[LANG] || it.fa)}</li>`).join('')}</ul>
+          ${selectedProject ? `<button class="btn btn-soft-danger btn-sm" style="margin-top:8px" onclick="chFailedToIssue('${tid}')">🔴 ${t('chFailToIssue')}</button>` : ''}
         </div>` : ''}</div>
       <div class="card">
         ${tp.groups.map(g => `
@@ -4603,6 +4644,7 @@ function renderChecklistDetail(idWithQuery) {
         <p class="calc-note">📖 ${t('standardRef')}</p>
       </div>`;
 
+    window._chCtx = { tid, selectedProject, tp, getInst, viewChecked };
     $('#chProject').onchange = e => {
       selectedProject = e.target.value;
       history.replaceState(null, '', '#/checklists/' + tid + (selectedProject ? '?project=' + selectedProject : ''));
@@ -4655,6 +4697,7 @@ function renderChecklistDetail(idWithQuery) {
         <div class="card" style="border-inline-start:4px solid var(--danger);margin-bottom:14px">
           <div class="card-title" style="color:var(--danger);margin-bottom:8px">❗ ${t('chFailed')} (${faNum(failed.length)})</div>
           <ul style="padding-inline-start:20px;font-size:13.3px;color:var(--text-2)">${failed.map(it => `<li>${esc(it[LANG] || it.fa)}</li>`).join('')}</ul>
+          ${selectedProject ? `<button class="btn btn-soft-danger btn-sm" style="margin-top:8px" onclick="chFailedToIssue('${tid}')">🔴 ${t('chFailToIssue')}</button>` : ''}
         </div>` : '';
       if (selectedProject) save();
     }
@@ -4665,6 +4708,28 @@ function renderChecklistDetail(idWithQuery) {
     });
   }
   draw();
+}
+
+async function chFailedToIssue(tid) {
+  const ctx = window._chCtx;
+  if (!ctx || ctx.tid !== tid || !ctx.selectedProject) return;
+  const inst = ctx.getInst();
+  const checked = inst ? inst.checked : ctx.viewChecked;
+  const stOf = v => v === true || v === 'pass' ? 'pass' : v === 'fail' ? 'fail' : v === 'na' ? 'na' : 'blank';
+  const failed = [];
+  ctx.tp.groups.forEach(g => g.items.forEach(it => { if (stOf(checked[it.id]) === 'fail') failed.push(it.fa); }));
+  if (!failed.length) return;
+  try {
+    const d = await api('/issues', { method: 'POST', body: {
+      title: (ctx.tp.title.fa || '') + ' — ' + faNum(failed.length) + ' ' + t('chFailed'),
+      kind: 'open',
+      projectId: ctx.selectedProject,
+      note: failed.map((f, i) => faNum(i + 1) + '. ' + f).join('\n'),
+      closed: false
+    } });
+    state.issues.unshift(d.item);
+    toast(t('created'));
+  } catch (e) { reportError(e, 'chFailedToIssue'); }
 }
 
 /* ================= CALCULATIONS ================= */
@@ -5195,7 +5260,7 @@ function openIssueForm(id, presetProject) {
       closeModal(); toast(t('saved')); render();
     } catch (e) { toast(t('errGeneric'), 'err'); }
   };
-  $('#isSave').onclick = async () => {
+  $('#isSave').onclick = guard('#isSave', async () => {
     const title = $('#is_title').value.trim();
     if (!title) { toast(t('requiredTitle'), 'err'); return; }
     const body = { title, kind: $('#is_kind').value, projectId: $('#is_project').value, note: $('#is_note').value, closed: i ? i.closed : false };
@@ -5204,7 +5269,7 @@ function openIssueForm(id, presetProject) {
       else { const d = await api('/issues', { method: 'POST', body }); state.issues.unshift(d.item); }
       closeModal(); toast(t('saved')); render();
     } catch (e) { toast(t('errGeneric'), 'err'); }
-  };
+  });
 }
 function deleteIssue(id) {
   confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteIssueMsg'), async () => {
@@ -5263,7 +5328,7 @@ function openToolForm(id) {
     closeModal(); renderToolsPage();
     try { await api('/tools/' + x.id, { method: 'DELETE' }); toast(t('deleted')); } catch (e) { toast(t('errGeneric'), 'err'); }
   });
-  $('#tlSave').onclick = async () => {
+  $('#tlSave').onclick = guard('#tlSave', async () => {
     const name = $('#tl_name').value.trim();
     if (!name) { toast(t('requiredTitle'), 'err'); return; }
     try {
@@ -5271,7 +5336,7 @@ function openToolForm(id) {
       else { const d = await api('/tools', { method: 'POST', body: { name, note: $('#tl_note').value } }); state.tools.unshift(d.item); }
       closeModal(); toast(t('saved')); renderToolsPage();
     } catch (e) { toast(t('errGeneric'), 'err'); }
-  };
+  });
 }
 
 /* ================= MEASUREMENT ENGINE ================= */
@@ -5356,7 +5421,7 @@ function openDiagSaveForm(flowId, resultNodeId) {
       <button class="btn btn-primary" id="dgSave">💾 ${t('save')}</button>
     </div>`, { size: 'lg' });
   wireMeasurePanel('dgm');
-  $('#dgSave').onclick = async () => {
+  $('#dgSave').onclick = guard('#dgSave', async () => {
     const body = {
       projectId: $('#dg_project').value,
       flowId, symptom: f.symptom.fa,
@@ -5375,7 +5440,7 @@ function openDiagSaveForm(flowId, resultNodeId) {
       // offer transfer to service report
       diagToServicePrompt(d.item);
     } catch (e) { toast(t('errGeneric'), 'err'); }
-  };
+  });
 }
 function diagToServicePrompt(sess) {
   openModal(`
@@ -5423,7 +5488,7 @@ function openCalcSaveForm(calId) {
       <button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button>
       <button class="btn btn-primary" id="csSave">💾 ${t('save')}</button>
     </div>`, { size: 'sm' });
-  $('#csSave').onclick = async () => {
+  $('#csSave').onclick = guard('#csSave', async () => {
     try {
       const d = await api('/calcSaves', { method: 'POST', body: {
         calcId: cal.id, name: cal.title.fa,
@@ -5435,7 +5500,7 @@ function openCalcSaveForm(calId) {
       state.calcSaves.unshift(d.item);
       closeModal(); toast(t('calcSaved'));
     } catch (e) { toast(t('errGeneric'), 'err'); }
-  };
+  });
 }
 
 /* ================= PARTS CONSUMPTION ================= */
@@ -5454,24 +5519,28 @@ function openConsumeForm(partId) {
       <div class="field"><label>${t('prNotes')}</label><input id="cn_note" /></div>
       ${Array.isArray(part.history) && part.history.length ? `
         <div class="section-title" style="margin:14px 0 8px"><h3 style="font-size:13.5px">📜 ${t('consumeHistory')}</h3></div>
-        ${part.history.slice(0, 5).map(h => `<div class="kv-cell" style="margin-bottom:6px"><div class="v" style="font-weight:500;font-size:12.5px">−${faNum(h.qty)} · ${fmtDate(h.date)}${h.projectId ? ' · ' + esc(projName(h.projectId)) : ''}${h.note ? ' · ' + esc(h.note) : ''}</div></div>`).join('')}` : ''}
+        ${part.history.slice(0, 5).map(h => { const q = +h.qty || 0; const disp = q > 0 && h.note !== 'adjustment' ? -q : q; return `<div class="kv-cell" style="margin-bottom:6px"><div class="v" style="font-weight:500;font-size:12.5px">${disp > 0 ? '+' : ''}${faNum(disp)} · ${fmtDate(h.date)}${h.projectId ? ' · ' + esc(projName(h.projectId)) : ''}${h.note === 'adjustment' ? ' · ' + t('adjustLabel') : (h.note ? ' · ' + esc(h.note) : '')}</div></div>`; }).join('')}` : ''}
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button>
       <button class="btn btn-primary" id="cnSave">📉 ${t('consume')}</button>
     </div>`);
-  $('#cnSave').onclick = async () => {
+  $('#cnSave').onclick = guard('#cnSave', async () => {
     const qty = Math.max(1, +$('#cn_qty').value || 1);
     try {
       const d = await api('/parts-consume', { method: 'POST', body: { partId: part.id, qty, projectId: $('#cn_project').value, note: $('#cn_note').value } });
       Object.assign(part, d.part);
       closeModal(); toast(t('consumeDone') + ' — ' + faNum(part.qty) + ' ' + part.unit); drawParts();
     } catch (e) { toast(t('errGeneric'), 'err'); }
-  };
+  });
 }
 
 /* ================= PHOTOS ================= */
 function photoCats() { return t('photoCats').split('|'); }
+/* only allow safe raster data-URIs — blocks javascript:/svg vectors from malicious backups */
+function safePhotoSrc(d) {
+  return (typeof d === 'string' && /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(d)) ? d : '';
+}
 function openPhotoForm(presetProject) {
   const cats = photoCats();
   openModal(`
@@ -5514,14 +5583,14 @@ function openPhotoForm(presetProject) {
     };
     fr.readAsDataURL(file);
   };
-  $('#phSave').onclick = async () => {
+  $('#phSave').onclick = guard('#phSave', async () => {
     if (!dataUrl) return;
     try {
       const d = await api('/photos', { method: 'POST', body: { data: dataUrl, cat: $('#ph_cat').value, projectId: $('#ph_project').value, note: $('#ph_note').value } });
       state.photos.unshift(d.item);
       closeModal(); toast(t('saved')); render();
     } catch (e) { toast(e.code === 'too_large' ? t('photoTooLarge') : t('errGeneric'), 'err'); }
-  };
+  });
 }
 function viewPhoto(id) {
   const ph = state.photos.find(x => x.id === id);
@@ -5529,7 +5598,7 @@ function viewPhoto(id) {
   openModal(`
     <div class="modal-head"><h3>📷 ${esc(ph.cat || '')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body" style="text-align:center">
-      <img src="${ph.data}" style="max-width:100%;border-radius:12px" />
+      <img src="${safePhotoSrc(ph.data)}" style="max-width:100%;border-radius:12px" />
       <p style="font-size:12.5px;color:var(--text-2);margin-top:8px">${fmtDateTime(ph.createdAt)}${ph.projectId ? ' · ' + esc(projName(ph.projectId)) : ''}${ph.note ? '<br>' + esc(ph.note) : ''}</p>
     </div>
     <div class="modal-foot">
@@ -5554,9 +5623,10 @@ let invDraft = null; // items being edited in the open form
 
 function money(n) { return faNum((Math.round(+n || 0)).toLocaleString('en-US')); }
 function invTotals(inv) {
-  const items = (inv.items || []).reduce((a, it) => a + (+it.qty || 0) * (+it.price || 0), 0);
-  const grand = Math.max(0, items + (+inv.labor || 0) - (+inv.discount || 0));
-  const paid = (inv.payments || []).reduce((a, p) => a + (+p.amount || 0), 0);
+  /* integer-safe: rials have no fractions; round every term to avoid FP drift */
+  const items = (inv.items || []).reduce((a, it) => a + Math.round(+it.qty || 0) * Math.round(+it.price || 0), 0);
+  const grand = Math.max(0, items + Math.round(+inv.labor || 0) - Math.round(+inv.discount || 0));
+  const paid = (inv.payments || []).reduce((a, p) => a + (Math.round(+p.amount) || 0), 0);
   return { items, grand, paid, balance: Math.max(0, grand - paid) };
 }
 function invStatusMeta(inv) {
@@ -5796,9 +5866,24 @@ function openInvoiceForm(id, presetProject, keepDraft) {
         <button class="btn btn-ghost" onclick="invBackToForm()">${t('cancel')}</button>
         <button class="btn btn-primary" id="payOk">💵 ${t('invAddPay')}</button>
       </div>`, { size: 'sm' });
+    let payConfirmedOver = false;
     $('#payOk').onclick = () => {
-      const amount = +$('#pay_amount').value || 0;
+      const btn = $('#payOk');
+      if (btn.disabled) return;
+      const amount = Math.round(+$('#pay_amount').value || 0);
       if (amount <= 0) { toast(t('errGeneric'), 'err'); return; }
+      // overpayment guard: compute balance from current draft
+      const items = invDraft.items.reduce((a, it) => a + (Math.round(+it.qty || 0) * Math.round(+it.price || 0)), 0);
+      const labor = Math.round(invDraft.laborOverride !== undefined ? +invDraft.laborOverride : 0);
+      const disc = Math.round(invDraft.discountOverride !== undefined ? +invDraft.discountOverride : 0);
+      const grand = Math.max(0, items + labor - disc);
+      const paid = invDraft.payments.reduce((a, p) => a + (Math.round(+p.amount) || 0), 0);
+      if (grand > 0 && paid + amount > grand && !payConfirmedOver) {
+        payConfirmedOver = true;
+        toast(t('payOverConfirm'), 'err');
+        return; // second tap confirms
+      }
+      btn.disabled = true;
       invDraft.payments.push({ amount, note: $('#pay_note').value, date: Date.now() });
       invBackToForm();
     };
@@ -5812,9 +5897,12 @@ function openInvoiceForm(id, presetProject, keepDraft) {
       projectId: $('#inv_project').value,
       serviceId: $('#inv_service').value,
       date: jdateVal('inv_date') || Date.now(),
-      items: invDraft.items.filter(it => it.desc || it.price),
-      labor: +$('#inv_labor').value || 0,
-      discount: +$('#inv_discount').value || 0,
+      items: invDraft.items.filter(it => it.desc || it.price).map(it => ({
+        desc: String(it.desc || ''), qty: Math.max(0, Math.round(+it.qty || 0)),
+        price: Math.max(0, Math.round(+it.price || 0)), partId: it.partId || undefined
+      })),
+      labor: Math.max(0, Math.round(+$('#inv_labor').value || 0)),
+      discount: Math.max(0, Math.round(+$('#inv_discount').value || 0)),
       note: $('#inv_note').value,
       payments: invDraft.payments
     };
@@ -6055,7 +6143,7 @@ function openContractForm(id) {
       <button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button>
       <button class="btn btn-primary" id="ctSave">${ct ? t('save') : t('create')}</button>
     </div>`, { size: 'lg' });
-  $('#ctSave').onclick = async () => {
+  $('#ctSave').onclick = guard('#ctSave', async () => {
     const building = $('#ct_building').value.trim();
     if (!building) { toast(t('requiredTitle'), 'err'); return; }
     const body = {
@@ -6070,7 +6158,7 @@ function openContractForm(id) {
       else { const d = await api('/contracts', { method: 'POST', body }); state.contracts.unshift(d.item); }
       closeModal(); toast(t('saved')); render();
     } catch (e) { toast(t('errGeneric'), 'err'); }
-  };
+  });
 }
 function ctMonthsHTML(ct) {
   const now = Date.now();
@@ -8783,6 +8871,22 @@ function drawJdate() {
 }
 
 /* ================= BACKUP / RESTORE ================= */
+function validateBackup(bk) {
+  if (!bk || typeof bk !== 'object') return { ok: false, why: 'format' };
+  if (bk.app !== 'zlift') return { ok: false, why: 'app' };
+  if (!Array.isArray(bk.projects)) return { ok: false, why: 'projects' };
+  // structural checks on core collections (old backups may miss newer ones — fine)
+  for (const k of ['projects', 'services', 'invoices', 'contracts', 'parts', 'notes', 'checklists']) {
+    if (bk[k] !== undefined && !Array.isArray(bk[k])) return { ok: false, why: k };
+  }
+  // id sanity: every project/service must have a string id
+  if (bk.projects.some(p => !p || typeof p.id !== 'string' || !p.id)) return { ok: false, why: 'project ids' };
+  if (Array.isArray(bk.services) && bk.services.some(s => !s || typeof s.id !== 'string')) return { ok: false, why: 'service ids' };
+  // prototype-pollution guard
+  const poison = JSON.stringify(bk).includes('"__proto__"') || JSON.stringify(bk).includes('"constructor":{"prototype"');
+  if (poison) return { ok: false, why: 'unsafe keys' };
+  return { ok: true };
+}
 function openBackupModal() {
   openModal(`
     <div class="modal-head"><h3>💾 ${t('backup')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
@@ -8814,7 +8918,7 @@ function openBackupModal() {
     </div>
     <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">${t('close')}</button></div>`, { size: 'sm' });
 
-  $('#setSave').onclick = async () => {
+  $('#setSave').onclick = guard('#setSave', async () => {
     try {
       const d = await api('/settings', { method: 'PUT', body: {
         company: $('#set_company').value, phone: $('#set_phone').value, address: $('#set_address').value
@@ -8822,7 +8926,7 @@ function openBackupModal() {
       state.settings = d.settings;
       toast(t('saved'));
     } catch (e) { toast(t('errGeneric'), 'err'); }
-  };
+  });
   $('#bkExport').onclick = async () => {
     try {
       localStorage.setItem('zlift_last_backup', String(Date.now()));
@@ -8845,17 +8949,38 @@ function openBackupModal() {
     reader.onload = () => {
       let bk;
       try { bk = JSON.parse(reader.result); } catch (e) { toast(t('restoreBad'), 'err'); return; }
-      if (!bk || bk.app !== 'zlift' || !Array.isArray(bk.projects)) { toast(t('restoreBad'), 'err'); return; }
-      confirmDialog(t('restoreConfirmTitle'), t('restoreConfirmMsg'), async () => {
+      const v = validateBackup(bk);
+      if (!v.ok) { toast(t('restoreBad') + (v.why ? ' (' + v.why + ')' : ''), 'err'); return; }
+      // restore summary + explicit confirmation
+      const colls = ['projects', 'services', 'invoices', 'contracts', 'parts', 'notes', 'photos', 'issues'];
+      const summary = colls.map(k => Array.isArray(bk[k]) ? faNum(bk[k].length) + ' ' + (I18N[LANG][
+        { projects: 'projects', services: 'services', invoices: 'invoices', contracts: 'contracts', parts: 'parts', notes: 'notes', photos: 'photos', issues: 'issues' }[k]
+      ] || k) : '').filter(Boolean).join(' · ');
+      confirmDialog(t('restoreConfirmTitle'), t('restoreConfirmMsg') + '\n' + t('restoreOf') + ': ' + summary, async () => {
         try {
+          // 1) automatic safety backup of CURRENT data before overwriting
+          try {
+            const cur = await api('/backup');
+            localStorage.setItem('zlift_pre_restore_backup', JSON.stringify(cur.backup));
+          } catch (e) { /* current data unreadable — proceed, nothing to protect */ }
+          // 2) restore
           await api('/backup', { method: 'PUT', body: { backup: bk } });
+          // 3) verify: reload and check a collection round-tripped
           await loadAll(true);
+          if (!Array.isArray(state.projects)) throw new Error('verify failed');
           closeModal();
           toast(t('restoreDone'));
           render();
-        } catch (e) { toast(t('errGeneric'), 'err'); }
+        } catch (e) {
+          // 4) rollback from safety backup
+          try {
+            const safety = JSON.parse(localStorage.getItem('zlift_pre_restore_backup') || 'null');
+            if (safety) { await api('/backup', { method: 'PUT', body: { backup: safety } }); await loadAll(true); }
+          } catch (e2) {}
+          reportError(e, 'restore');
+          render();
+        }
       });
-      // swap confirm button label
       const yesBtn = $('#confirmYes');
       if (yesBtn) { yesBtn.textContent = t('yesRestore'); yesBtn.classList.remove('btn-danger'); yesBtn.classList.add('btn-primary'); }
     };
@@ -9011,10 +9136,21 @@ let _lsDB = null;
 function _lsLoad() {
   if (_lsDB) return _lsDB;
   try { _lsDB = JSON.parse(localStorage.getItem('zlift_db')); } catch (e) { _lsDB = null; }
+  if (!_lsDB || !_lsDB.users) {
+    // primary lost — try the mirror before falling back to seed
+    try {
+      const mirror = JSON.parse(localStorage.getItem('zlift_db_mirror'));
+      if (mirror && mirror.users && Array.isArray(mirror.projects)) {
+        _lsDB = mirror;
+        _lsSave();
+      }
+    } catch (e) {}
+  }
   if (!_lsDB || !_lsDB.users) { _lsDB = _lsSeed(); _lsSave(); }
   if (!_lsDB.parts) _lsDB.parts = _lsSeed().parts;
   if (!_lsDB.settings) _lsDB.settings = { company: 'Z Lift', phone: '', address: '' };
   ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts'].forEach(k => { if (!Array.isArray(_lsDB[k])) _lsDB[k] = []; });
+  if (!_lsDB.schemaVersion) _lsDB.schemaVersion = 1;
   _lsMigrateServices();
   return _lsDB;
 }
@@ -9050,8 +9186,17 @@ function _lsMigrateServices() {
   if (changed) _lsSave();
 }
 
+let _lsMirrorTick = 0;
 function _lsSave() {
-  try { localStorage.setItem('zlift_db', JSON.stringify(_lsDB)); window._lsSaveFailed = false; }
+  try {
+    const raw = JSON.stringify(_lsDB);
+    localStorage.setItem('zlift_db', raw);
+    window._lsSaveFailed = false;
+    // mirror copy every ~10th save (cheap data-loss protection against partial corruption)
+    if (++_lsMirrorTick % 10 === 1) {
+      try { localStorage.setItem('zlift_db_mirror', raw); } catch (e2) {}
+    }
+  }
   catch (e) {
     // storage full — warn loudly instead of silent data loss
     if (!window._lsSaveFailed) {
@@ -9232,7 +9377,13 @@ async function api(path, opts = {}) {
     if (!part) throw _lsErr('not_found', 404);
     if (method === 'PUT') {
       ['name', 'category', 'unit', 'location', 'note'].forEach(f => { if (b[f] !== undefined) part[f] = String(b[f]); });
-      ['qty', 'minQty', 'price'].forEach(f => { if (b[f] !== undefined) part[f] = +b[f] || 0; });
+      const prevQty = part.qty;
+      ['qty', 'minQty', 'price'].forEach(f => { if (b[f] !== undefined) part[f] = Math.max(0, +b[f] || 0); });
+      if (b.qty !== undefined && part.qty !== prevQty) {
+        if (!Array.isArray(part.history)) part.history = [];
+        part.history.unshift({ id: _lsUid(), qty: part.qty - prevQty, date: Date.now(), projectId: '', serviceId: '', note: 'adjustment', prevQty, newQty: part.qty });
+        if (part.history.length > 100) part.history.length = 100;
+      }
       part.updatedAt = Date.now(); _lsSave();
       return { part };
     }
@@ -9272,7 +9423,8 @@ async function api(path, opts = {}) {
     part.qty = Math.max(0, part.qty - qty);
     part.updatedAt = Date.now();
     if (!Array.isArray(part.history)) part.history = [];
-    part.history.unshift({ id: _lsUid(), qty, date: Date.now(), projectId: String(b.projectId || ''), serviceId: String(b.serviceId || ''), note: String(b.note || '') });
+    const prevQ = part.qty + qty;
+    part.history.unshift({ id: _lsUid(), qty: -qty, date: Date.now(), projectId: String(b.projectId || ''), serviceId: String(b.serviceId || ''), note: String(b.note || ''), prevQty: prevQ, newQty: part.qty });
     if (part.history.length > 100) part.history.length = 100;
     _lsSave();
     return { part };
