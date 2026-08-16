@@ -952,7 +952,20 @@ const I18N = {
     srKb: 'دانش فنی', srDiag: 'عیب‌یابی', srInv: 'فاکتورها', srCalc: 'محاسبات', noResults: 'نتیجه‌ای یافت نشد',
     dupService: 'کپی به سرویس جدید', sortBy: 'مرتب‌سازی', sortNewest: 'جدیدترین', sortName: 'نام', sortProgress: 'پیشرفت',
     statusFilter: 'وضعیت', summaryToday: 'خلاصه امروز', quickNewService: 'ثبت سریع سرویس',
-    exportCsv: 'خروجی CSV', kbRelClick: 'برای مطالعه کلیک کنید'
+    exportCsv: 'خروجی CSV', kbRelClick: 'برای مطالعه کلیک کنید',
+    // v11
+    contracts: 'قراردادها', newContract: 'قرارداد جدید', editContract: 'ویرایش قرارداد',
+    ctBuilding: 'نام ساختمان / مشتری *', ctAmount: 'مبلغ ماهانه (ریال)', ctStart: 'تاریخ شروع',
+    ctMonths: 'مدت (ماه)', ctPayTable: 'جدول پرداخت ماه‌ها', ctPaid: 'پرداخت شد', ctUnpaid: 'پرداخت نشده',
+    ctOverdueMonths: 'ماه عقب‌افتاده', ctActive: 'فعال', ctExpired: 'پایان‌یافته',
+    ctExpectMonth: 'درآمد قراردادی ماه', ctCollected: 'وصول‌شده', noContracts: 'قراردادی ثبت نشده',
+    noContractsSub: 'قرارداد سرویس ماهانه ساختمان‌ها را اینجا مدیریت کنید',
+    confirmDeleteCtMsg: 'این قرارداد حذف می‌شود. مطمئن هستید؟', ctLinkProject: 'اتصال به آسانسور (اختیاری)',
+    ctNote: 'توضیحات', ctTapMonth: 'روی هر ماه بزنید تا وضعیت پرداخت تغییر کند',
+    backupNagTitle: 'یادآوری پشتیبان‌گیری', backupNagMsg: 'روز از آخرین پشتیبان‌گیری گذشته است. داده‌ها فقط روی همین دستگاه هستند!',
+    backupNagBtn: 'همین حالا بکاپ بگیر', backupNagLater: 'بعداً',
+    faultStats: 'الگوی خرابی این آسانسور', faultStatsSub: 'بر اساس گزارش‌های سرویس ثبت‌شده',
+    kbReadMore: 'مطالعه در دانش فنی', today: 'امروز'
   },
   en: {
     dir: 'ltr',
@@ -1097,6 +1110,18 @@ const I18N = {
     dupService: 'Duplicate as new', sortBy: 'Sort', sortNewest: 'Newest', sortName: 'Name', sortProgress: 'Progress',
     statusFilter: 'Status', summaryToday: 'Today summary', quickNewService: 'Quick service log',
     exportCsv: 'Export CSV', kbRelClick: 'Click to read',
+    contracts: 'Contracts', newContract: 'New Contract', editContract: 'Edit Contract',
+    ctBuilding: 'Building / customer *', ctAmount: 'Monthly amount (IRR)', ctStart: 'Start date',
+    ctMonths: 'Duration (months)', ctPayTable: 'Monthly payment table', ctPaid: 'Paid', ctUnpaid: 'Unpaid',
+    ctOverdueMonths: 'overdue months', ctActive: 'Active', ctExpired: 'Expired',
+    ctExpectMonth: 'Contract income this month', ctCollected: 'Collected', noContracts: 'No contracts yet',
+    noContractsSub: 'Manage monthly maintenance contracts here',
+    confirmDeleteCtMsg: 'This contract will be deleted. Sure?', ctLinkProject: 'Link to elevator (optional)',
+    ctNote: 'Notes', ctTapMonth: 'Tap a month to toggle its payment status',
+    backupNagTitle: 'Backup reminder', backupNagMsg: 'days since last backup. Data lives only on this device!',
+    backupNagBtn: 'Back up now', backupNagLater: 'Later',
+    faultStats: 'Fault pattern of this elevator', faultStatsSub: 'Based on logged service reports',
+    kbReadMore: 'Read in knowledge base', today: 'Today',
     svcCustomer: 'Customer name', svcElevator: 'Elevator info (address, type, capacity...)',
     svcNoProject: 'No installation project — standalone customer', svcLinkProject: 'Link to installation project (optional)',
     viewServiceHistory: 'View service history for this elevator', requiredCustomer: 'Customer name (or a project) is required',
@@ -1122,6 +1147,80 @@ function fmtDateTime(ts) {
   try {
     return new Intl.DateTimeFormat(LANG === 'fa' ? 'fa-IR' : 'en-GB', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(d);
   } catch (e) { return d.toLocaleString(); }
+}
+
+/* ================= JALALI (SHAMSI) CALENDAR ================= */
+/* Standard civil Jalali<->Gregorian conversion (jalaali algorithm, well-established) */
+function _div(a, b) { return ~~(a / b); }
+function _mod(a, b) { return a - ~~(a / b) * b; }
+function jalCal(jy) {
+  const breaks = [-61, 9, 38, 199, 426, 686, 756, 818, 1111, 1181, 1210, 1635, 2060, 2097, 2192, 2262, 2324, 2394, 2456, 3178];
+  let bl = breaks.length, gy = jy + 621, leapJ = -14, jp = breaks[0], jump = 0;
+  for (let i = 1; i < bl; i += 1) {
+    const jm = breaks[i];
+    jump = jm - jp;
+    if (jy < jm) break;
+    leapJ = leapJ + _div(jump, 33) * 8 + _div(_mod(jump, 33), 4);
+    jp = jm;
+  }
+  let n = jy - jp;
+  leapJ = leapJ + _div(n, 33) * 8 + _div(_mod(n, 33) + 3, 4);
+  if (_mod(jump, 33) === 4 && jump - n === 4) leapJ += 1;
+  const leapG = _div(gy, 4) - _div((_div(gy, 100) + 1) * 3, 4) - 150;
+  const march = 20 + leapJ - leapG;
+  if (jump - n < 6) n = n - jump + _div(jump + 4, 33) * 33;
+  let leap = _mod(_mod(n + 1, 33) - 1, 4);
+  if (leap === -1) leap = 4;
+  return { leap, gy, march };
+}
+function g2d(gy, gm, gd) {
+  let d = _div((gy + _div(gm - 8, 6) + 100100) * 1461, 4) + _div(153 * _mod(gm + 9, 12) + 2, 5) + gd - 34840408;
+  d = d - _div(_div(gy + 100100 + _div(gm - 8, 6), 100) * 3, 4) + 752;
+  return d;
+}
+function d2g(jdn) {
+  let j = 4 * jdn + 139361631;
+  j = j + _div(_div(4 * jdn + 183187720, 146097) * 3, 4) * 4 - 3908;
+  const i = _div(_mod(j, 1461), 4) * 5 + 308;
+  const gd = _div(_mod(i, 153), 5) + 1;
+  const gm = _mod(_div(i, 153), 12) + 1;
+  const gy = _div(j, 1461) - 100100 + _div(8 - gm, 6);
+  return { gy, gm, gd };
+}
+function j2d(jy, jm, jd) {
+  const r = jalCal(jy);
+  return g2d(r.gy, 3, r.march) + (jm - 1) * 31 - _div(jm, 7) * (jm - 7) + jd - 1;
+}
+function d2j(jdn) {
+  const gy = d2g(jdn).gy;
+  let jy = gy - 621;
+  const r = jalCal(jy);
+  const jdn1f = g2d(gy, 3, r.march);
+  let jd, jm, k = jdn - jdn1f;
+  if (k >= 0) {
+    if (k <= 185) { jm = 1 + _div(k, 31); jd = _mod(k, 31) + 1; return { jy, jm, jd }; }
+    else k -= 186;
+  } else {
+    jy -= 1; k += 179;
+    if (r.leap === 1) k += 1;
+  }
+  jm = 7 + _div(k, 30);
+  jd = _mod(k, 30) + 1;
+  return { jy, jm, jd };
+}
+function jalaliToTs(jy, jm, jd) {
+  const g = d2g(j2d(jy, jm, jd));
+  return new Date(g.gy, g.gm - 1, g.gd, 12, 0, 0).getTime();
+}
+function tsToJalali(ts) {
+  const d = new Date(ts);
+  return d2j(g2d(d.getFullYear(), d.getMonth() + 1, d.getDate()));
+}
+const JAL_MONTHS = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+function jalDaysInMonth(jy, jm) { return jm <= 6 ? 31 : (jm <= 11 ? 30 : (jalCal(jy).leap === 0 ? 30 : 29)); }
+function fmtJalali(ts) {
+  const j = tsToJalali(ts);
+  return faNum(j.jd) + ' ' + JAL_MONTHS[j.jm - 1] + ' ' + faNum(j.jy);
 }
 
 /* Z Lift — technical content: checklists, diagnostics, knowledge base, calculators
@@ -3087,7 +3186,7 @@ const state = {
   checklists: null,
   parts: null,
   settings: null,
-  diagSessions: null, calcSaves: null, issues: null, tools: null, photos: null, invoices: null,
+  diagSessions: null, calcSaves: null, issues: null, tools: null, photos: null, invoices: null, contracts: null,
   route: location.hash.slice(1) || '/dashboard'
 };
 
@@ -3165,6 +3264,7 @@ const IC = {
   trash: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
   back: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>',
   box: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
+  doc: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
   bill: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
   alert: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
   chip: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>',
@@ -3211,9 +3311,9 @@ function confirmDialog(title, msg, onYes) {
 /* ---------- data loading ---------- */
 async function loadAll(force) {
   if (state.projects && !force) return;
-  const [p, s, n, c, pa, st, ds, cs, is_, tl, ph, inv] = await Promise.all([
+  const [p, s, n, c, pa, st, ds, cs, is_, tl, ph, inv, ct] = await Promise.all([
     api('/projects'), api('/services'), api('/notes'), api('/checklists'), api('/parts'), api('/settings'),
-    api('/diagSessions'), api('/calcSaves'), api('/issues'), api('/tools'), api('/photos'), api('/invoices')
+    api('/diagSessions'), api('/calcSaves'), api('/issues'), api('/tools'), api('/photos'), api('/invoices'), api('/contracts')
   ]);
   state.projects = p.projects;
   state.services = s.services;
@@ -3227,6 +3327,7 @@ async function loadAll(force) {
   state.tools = tl.items;
   state.photos = ph.items;
   state.invoices = inv.items;
+  state.contracts = ct.items;
 }
 
 /* service-due calculation */
@@ -3294,9 +3395,29 @@ function setAuthMode(m) {
 }
 
 /* ================= APP SHELL ================= */
+function checkBackupNag() {
+  try {
+    const last = +localStorage.getItem('zlift_last_backup') || 0;
+    const snooze = +localStorage.getItem('zlift_backup_snooze') || 0;
+    if (Date.now() < snooze) return;
+    const days = last ? Math.floor((Date.now() - last) / 86400000) : 999;
+    if (days < 7) return;
+    setTimeout(() => {
+      const txt = last ? faNum(days) + ' ' + t('backupNagMsg') : t('backupHint');
+      openModal(`
+        <div class="modal-head"><h3>💾 ${t('backupNagTitle')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+        <div class="modal-body"><div class="note-block">⚠️ ${txt}</div></div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" onclick="localStorage.setItem('zlift_backup_snooze', String(Date.now() + 3 * 86400000));closeModal()">${t('backupNagLater')}</button>
+          <button class="btn btn-primary" onclick="closeModal();openBackupModal()">💾 ${t('backupNagBtn')}</button>
+        </div>`, { size: 'sm' });
+    }, 1200);
+  } catch (e) {}
+}
 function enterApp() {
   $('#authView').classList.add('hidden');
   $('#appView').classList.remove('hidden');
+  checkBackupNag();
   $('#userName').textContent = state.user.name;
   $('#userAvatar').textContent = (state.user.name || '?').trim()[0] || '?';
   renderNav();
@@ -3309,6 +3430,7 @@ const NAV = [
   { route: '/services', key: 'services', icon: 'svc' },
   { route: '/issues', key: 'issues', icon: 'alert' },
   { route: '/invoices', key: 'invoices', icon: 'bill' },
+  { route: '/contracts', key: 'contracts', icon: 'doc' },
   { route: '/parts', key: 'parts', icon: 'box' },
   { section: 'navTools' },
   { route: '/checklists', key: 'checklists', icon: 'check' },
@@ -3350,7 +3472,7 @@ async function render() {
     '/dashboard': 'dashboard', '/projects': 'projects', '/services': 'services',
     '/parts': 'parts', '/checklists': 'checklists', '/calculations': 'calculations',
     '/diagnostics': 'diagnostics', '/knowledge': 'knowledge', '/notes': 'notes',
-    '/vvvf': 'vvvf', '/issues': 'issues', '/tools': 'tools', '/invoices': 'invoices'
+    '/vvvf': 'vvvf', '/issues': 'issues', '/tools': 'tools', '/invoices': 'invoices', '/contracts': 'contracts'
   };
   const baseRoute = '/' + r.split('/')[1];
   $('#pageTitle').textContent = t(titles[baseRoute] || 'dashboard');
@@ -3369,6 +3491,7 @@ async function render() {
     else if (r === '/vvvf') renderVVVF();
     else if (r === '/issues') renderIssues();
     else if (r === '/invoices') renderInvoices();
+    else if (r === '/contracts') renderContracts();
     else if (r === '/tools') renderToolsPage();
     else if (r === '/knowledge') renderKnowledge();
     else if (r === '/notes') renderNotes();
@@ -3439,8 +3562,12 @@ function renderDashboard() {
     .filter(s => s.finalStatus === 'followup' || s.finalStatus === 'outoforder')
     .slice(0, 4);
   const openIssueItems = state.issues.filter(i => !i.closed).slice(0, 4);
+  const ctOverdue = state.contracts
+    .map(ct => ({ ct, st: ctStats(ct) }))
+    .filter(x => x.st.overdue > 0)
+    .slice(0, 3);
 
-  const dueHtml = (dues.length || openIssues.length || openIssueItems.length) ? (
+  const dueHtml = (dues.length || openIssues.length || openIssueItems.length || ctOverdue.length) ? (
     dues.map(({ p, d }) => `
     <div class="due-item ${d.overdue ? 'overdue' : 'soon'}">
       <span style="font-size:19px">${d.overdue ? '🔴' : '🟡'}</span>
@@ -3470,7 +3597,16 @@ function renderDashboard() {
       </div>
       <span class="badge ${m.cls}">${t(m.key)}</span>
     </div>`;
-    }).join('')
+    }).join('') +
+    ctOverdue.map(({ ct, st }) => `
+    <div class="due-item overdue" onclick="navigate('/contracts')" style="cursor:pointer">
+      <span style="font-size:19px">📄</span>
+      <div class="grow">
+        <strong>${esc(ct.building)}</strong>
+        <span class="d-sub">${faNum(st.overdue)} ${t('ctOverdueMonths')} · ${money(ct.amount * st.overdue)} ${t('rial')}</span>
+      </div>
+      <span class="badge b-red">${t('invUnpaid')}</span>
+    </div>`).join('')
   ) : `<p style="font-size:13.5px;color:var(--ok);font-weight:600">${t('noDue')}</p>`;
 
   /* low stock */
@@ -3810,6 +3946,27 @@ function renderProjectDetail(id) {
             <div style="font-size:12px;color:var(--text-2);margin-top:2px">${(cc.results || []).map(r => esc(r.label + ': ' + r.val)).join(' · ')}</div>
           </div>`).join('');
       }
+      /* fault pattern stats */
+      const pSvc = state.services.filter(s => s.projectId === p.id);
+      if (pSvc.length >= 2) {
+        const words = {};
+        pSvc.forEach(s => {
+          const txt = (s.problem || '') + ' ' + (s.diagnosis || '');
+          [['درب', 'درب 🚪'], ['فتوسل', 'فتوسل'], ['ترمز', 'ترمز 🛑'], ['انکودر', 'انکودر'], ['درایو', 'درایو 🖥️'], ['موتور', 'موتور ⚙️'], ['بکسل', 'بکسل 🔗'], ['قفل', 'قفل درب 🔒'], ['روغن', 'روغن 🛢️'], ['سیل', 'سیل جک'], ['شیر', 'شیرها'], ['پمپ', 'پمپ'], ['ریزش', 'ریزش'], ['همسطح', 'همسطح‌سازی 🎯'], ['برق', 'برق ⚡'], ['کنتاکتور', 'کنتاکتور'], ['لیمیت', 'لیمیت'], ['صدا', 'صدا 🔊'], ['لرزش', 'لرزش']].forEach(([w, lbl]) => {
+            if (txt.includes(w)) words[lbl] = (words[lbl] || 0) + 1;
+          });
+        });
+        const top = Object.entries(words).sort((a, b) => b[1] - a[1]).slice(0, 6);
+        if (top.length) {
+          const mx = top[0][1];
+          out += `<div class="card" style="margin-top:16px"><div class="card-title">📊 ${t('faultStats')}</div>
+            <p style="font-size:11.8px;color:var(--text-3);margin-bottom:10px">${t('faultStatsSub')} (${faNum(pSvc.length)})</p>
+            <div class="status-bars">${top.map(([lbl, n]) => `
+              <div class="sb-row"><span class="sb-lbl">${esc(lbl)}</span>
+              <div class="sb-track"><div class="sb-fill" style="width:${Math.round(n / mx * 100)}%;background:var(--warn)"></div></div>
+              <span class="sb-val">${faNum(n)}</span></div>`).join('')}</div></div>`;
+        }
+      }
       /* photos */
       out += `<div class="section-title"><h3>📷 ${t('photos')}</h3>
         <button class="btn btn-ghost btn-sm" onclick="openPhotoForm('${p.id}')">${IC.cam} ${t('addPhoto')}</button></div>`;
@@ -3954,15 +4111,14 @@ function openServiceForm(id, presetProject) {
   const v = s || { projectId: presetProject || '', customer: '', elevatorInfo: '', date: Date.now(), technician: state.user.name, serviceType: 'maintenance', complaint: '', problem: '', diagnosis: '', measurements: '', workDone: '', partsReplaced: '', recommendations: '', followUpDate: 0, finalStatus: 'ok' };
   const projOpts = `<option value="">— ${t('svcNoProject')} —</option>` +
     state.projects.map(p => `<option value="${p.id}" ${v.projectId === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
-  const dateVal = new Date(v.date).toISOString().slice(0, 10);
-  const fuVal = v.followUpDate ? new Date(v.followUpDate).toISOString().slice(0, 10) : '';
+  /* jalali date inputs */
   openModal(`
     <div class="modal-head"><h3>${s ? '✏️ ' + t('editService') : '🔧 ' + t('newServiceRec')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body"><form class="form-grid">
       <div class="field span2"><label>${t('svcCustomer')} ${v.projectId ? '' : '*'}</label><input id="s_customer" value="${esc(v.customer || '')}" placeholder="مثلاً آقای احمدی — ساختمان نگین" /></div>
       <div class="field span2"><label>${t('svcElevator')}</label><input id="s_elevator" value="${esc(v.elevatorInfo || '')}" placeholder="مثلاً کششی ۶ نفره، سعادت‌آباد" /></div>
       <div class="field span2"><label>${t('svcLinkProject')}</label><select id="s_project">${projOpts}</select></div>
-      <div class="field"><label>${t('svcDate')}</label><input id="s_date" type="date" value="${dateVal}" /></div>
+      <div class="field"><label>${t('svcDate')}</label>${jdateInput('s_date', v.date)}</div>
       <div class="field"><label>${t('svcTechnician')}</label><input id="s_tech" value="${esc(v.technician)}" /></div>
       <div class="field"><label>${t('svcType')}</label><select id="s_type">
         ${Object.keys(SVC_META).map(k => `<option value="${k}" ${v.serviceType === k ? 'selected' : ''}>${t(SVC_META[k].key)}</option>`).join('')}
@@ -3977,7 +4133,7 @@ function openServiceForm(id, presetProject) {
       <div class="field span2"><label>${t('svcWork')}</label><textarea id="s_work" style="min-height:64px">${esc(v.workDone)}</textarea></div>
       <div class="field span2"><label>${t('svcParts')}</label><input id="s_parts" value="${esc(v.partsReplaced)}" /></div>
       <div class="field span2"><label>${t('svcRecommend')}</label><textarea id="s_recommend" style="min-height:52px">${esc(v.recommendations || '')}</textarea></div>
-      <div class="field"><label>${t('svcFollowUp')}</label><input id="s_followup" type="date" value="${fuVal}" /></div>
+      <div class="field"><label>${t('svcFollowUp')}</label>${jdateInput('s_followup', v.followUpDate || 0, true)}</div>
     </form></div>
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button>
@@ -3987,14 +4143,13 @@ function openServiceForm(id, presetProject) {
     const projectId = $('#s_project').value;
     const customer = $('#s_customer').value.trim();
     if (!projectId && !customer) { toast(t('requiredCustomer'), 'err'); return; }
-    const fu = $('#s_followup').value;
     const body = {
       projectId, customer, elevatorInfo: $('#s_elevator').value,
-      date: new Date($('#s_date').value || Date.now()).getTime(),
+      date: jdateVal('s_date') || Date.now(),
       technician: $('#s_tech').value, serviceType: $('#s_type').value, finalStatus: $('#s_final').value,
       complaint: $('#s_complaint').value, problem: $('#s_problem').value, diagnosis: $('#s_diag').value,
       measurements: $('#s_meas').value, workDone: $('#s_work').value, partsReplaced: $('#s_parts').value,
-      recommendations: $('#s_recommend').value, followUpDate: fu ? new Date(fu).getTime() : 0
+      recommendations: $('#s_recommend').value, followUpDate: jdateVal('s_followup')
     };
     const btn = $('#svcSave'); btn.disabled = true;
     try {
@@ -4574,6 +4729,18 @@ function renderDiagFlow(c) {
         ${node.parts && node.parts.length ? `<h5 style="font-size:13px;color:var(--accent-2);margin:14px 0 6px">📦 ${t('diagParts')}</h5>
         <div style="display:flex;flex-wrap:wrap;gap:6px">${node.parts.map(x => `<span class="badge b-amber">${esc(x.fa)}</span>`).join('')}</div>` : ''}
         ${node.next ? `<div class="note-block" style="margin-top:14px">⏭️ <b>${t('diagNext')}:</b> ${esc(node.next.fa)}</div>` : ''}
+        ${(() => {
+          /* smart link: match faulty parts to knowledge base articles */
+          const partTxt = (node.parts || []).map(x => x.fa).join(' ') + ' ' + node.title.fa;
+          const kbMap = [['ترمز', 'c-brake'], ['انکودر', 'c-encoder'], ['درایو', 'c-vvvf'], ['موتور', 'c-motor'], ['قفل', 'c-doorlock'], ['سردرب', 'c-dooroperator'], ['درب', 'c-dooroperator'], ['فتوسل', 'c-dooroperator'], ['کنتاکتور', 'c-contactor'], ['رله', 'c-relay'], ['بکسل', 'c-traction'], ['فلکه', 'c-traction'], ['پمپ', 'c-pump'], ['شیر', 'c-valveblock'], ['سیل', 'c-cylinder'], ['جک', 'c-cylinder'], ['روغن', 'c-tank'], ['گاورنر', 'c-govsafety'], ['پاراشوت', 'c-govsafety'], ['لیمیت', 'c-limits'], ['سنسور', 'c-sensors'], ['تابلو', 'c-controller'], ['مدار ایمنی', 'c-safetycircuit']];
+          const hits = [];
+          kbMap.forEach(([w, kid]) => { if (partTxt.includes(w) && !hits.includes(kid)) hits.push(kid); });
+          if (!hits.length) return '';
+          return `<div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:12px">${hits.slice(0, 3).map(kid => {
+            const kb = KNOWLEDGE.find(k => k.id === kid);
+            return kb ? `<button class="chip" onclick="openKbArticle('${kid}')">${kb.icon} ${t('kbReadMore')}: ${esc(kb.title.fa)}</button>` : '';
+          }).join('')}</div>`;
+        })()}
         <div style="display:flex;gap:9px;margin-top:16px;flex-wrap:wrap">
           <button class="btn btn-primary" onclick="openDiagSaveForm('${f.id}','${diagSession.current}')">💾 ${t('diagSave')}</button>
           <button class="btn btn-ghost" onclick="openServiceForm()">${IC.plus} ${t('logService')}</button>
@@ -5391,14 +5558,18 @@ function openInvoiceForm(id, presetProject, keepDraft) {
     };
   }
   const v = inv || { customer: '', projectId: presetProject || '', serviceId: '', date: Date.now(), labor: 0, discount: 0, note: '' };
-  const dateVal = new Date(invDraft.dateOverride || v.date || Date.now()).toISOString().slice(0, 10);
-  const svcOpts = state.services.slice(0, 40).map(s => `<option value="${s.id}" ${v.serviceId === s.id ? 'selected' : ''}>${esc(svcTarget(s))} — ${fmtDate(s.date)}</option>`).join('');
+  const dateTs = invDraft.dateOverride || v.date || Date.now();
+  const laborVal = invDraft.laborOverride !== undefined ? invDraft.laborOverride : (v.labor || 0);
+  const discountVal = invDraft.discountOverride !== undefined ? invDraft.discountOverride : (v.discount || 0);
+  const noteVal = invDraft.noteOverride !== undefined ? invDraft.noteOverride : (v.note || '');
+  const serviceOverride = invDraft.serviceOverride !== undefined ? invDraft.serviceOverride : v.serviceId;
+  const svcOpts = state.services.slice(0, 40).map(s => `<option value="${s.id}" ${serviceOverride === s.id ? 'selected' : ''}>${esc(svcTarget(s))} — ${fmtDate(s.date)}</option>`).join('');
   openModal(`
     <div class="modal-head"><h3>${inv ? '✏️ ' + t('editInvoice') : '🧾 ' + t('newInvoice')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body">
       <div class="form-grid">
         <div class="field span2"><label>${t('invCustomer')} *</label><input id="inv_customer" value="${esc(invDraft.customerOverride !== undefined ? invDraft.customerOverride : v.customer)}" /></div>
-        <div class="field"><label>${t('invDate')}</label><input id="inv_date" type="date" value="${dateVal}" /></div>
+        <div class="field"><label>${t('invDate')}</label>${jdateInput('inv_date', dateTs)}</div>
         <div class="field"><label>${t('diagSelProject')}</label><select id="inv_project">
           <option value="">—</option>
           ${state.projects.map(p => `<option value="${p.id}" ${(invDraft.projectOverride !== undefined ? invDraft.projectOverride : v.projectId) === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}
@@ -5415,9 +5586,9 @@ function openInvoiceForm(id, presetProject, keepDraft) {
         <button class="btn btn-ghost btn-sm" onclick="invPickPart()">📦 ${t('invAddPart')}</button>
       </div>
       <div class="form-grid">
-        <div class="field"><label>${t('invLabor')}</label><input id="inv_labor" type="number" min="0" value="${v.labor || 0}" /></div>
-        <div class="field"><label>${t('invDiscount')}</label><input id="inv_discount" type="number" min="0" value="${v.discount || 0}" /></div>
-        <div class="field span2"><label>${t('invNote2')}</label><input id="inv_note" value="${esc(v.note || '')}" /></div>
+        <div class="field"><label>${t('invLabor')}</label><input id="inv_labor" type="number" min="0" value="${laborVal}" /></div>
+        <div class="field"><label>${t('invDiscount')}</label><input id="inv_discount" type="number" min="0" value="${discountVal}" /></div>
+        <div class="field span2"><label>${t('invNote2')}</label><input id="inv_note" value="${esc(noteVal)}" /></div>
       </div>
       <div id="invTotalsBox"></div>
       ${invDraft.payments.length ? `
@@ -5439,8 +5610,10 @@ function openInvoiceForm(id, presetProject, keepDraft) {
 
   invWireItems();
   invRefreshTotals();
-  $('#inv_labor').oninput = invRefreshTotals;
-  $('#inv_discount').oninput = invRefreshTotals;
+  $('#inv_labor').oninput = () => { invDraft.laborOverride = +$('#inv_labor').value || 0; invRefreshTotals(); };
+  $('#inv_discount').oninput = () => { invDraft.discountOverride = +$('#inv_discount').value || 0; invRefreshTotals(); };
+  $('#inv_note').oninput = () => { invDraft.noteOverride = $('#inv_note').value; };
+  $('#inv_service').onchange = () => { invDraft.serviceOverride = $('#inv_service').value; };
   // keep field values across part-picker roundtrip
   ['inv_customer', 'inv_project'].forEach(fid => {
     const el = $('#' + fid);
@@ -5449,7 +5622,7 @@ function openInvoiceForm(id, presetProject, keepDraft) {
       else invDraft.projectOverride = el.value;
     };
   });
-  $('#inv_date').onchange = () => { invDraft.dateOverride = new Date($('#inv_date').value).getTime(); };
+  $('#inv_date').addEventListener('change', () => { invDraft.dateOverride = jdateVal('inv_date') || Date.now(); });
 
   $('#invPayBtn').onclick = () => {
     openModal(`
@@ -5477,7 +5650,7 @@ function openInvoiceForm(id, presetProject, keepDraft) {
       customer,
       projectId: $('#inv_project').value,
       serviceId: $('#inv_service').value,
-      date: new Date($('#inv_date').value || Date.now()).getTime(),
+      date: jdateVal('inv_date') || Date.now(),
       items: invDraft.items.filter(it => it.desc || it.price),
       labor: +$('#inv_labor').value || 0,
       discount: +$('#inv_discount').value || 0,
@@ -5625,6 +5798,240 @@ function drawGlobalSearch(qRaw) {
   out.innerHTML = S.length ? S.join('') : `<div class="empty" style="padding:26px"><div class="e-icon">🔍</div><strong>${t('noResults')}</strong></div>`;
 }
 
+
+
+/* ================= CONTRACTS (monthly maintenance) ================= */
+/* contract: { id, building, amount, startTs, months, projectId, note, paid: { 'jy-jm': true } } */
+function ctMonthList(ct) {
+  // list of {jy,jm,key,ts} for the contract duration
+  const out = [];
+  let { jy, jm } = tsToJalali(ct.startTs || ct.createdAt || Date.now());
+  for (let i = 0; i < (ct.months || 12); i++) {
+    out.push({ jy, jm, key: jy + '-' + jm, ts: jalaliToTs(jy, jm, 1) });
+    jm++; if (jm > 12) { jm = 1; jy++; }
+  }
+  return out;
+}
+function ctStats(ct) {
+  const now = Date.now();
+  const list = ctMonthList(ct);
+  const started = list.filter(m => m.ts <= now);
+  const paidCount = list.filter(m => ct.paid && ct.paid[m.key]).length;
+  const overdue = started.filter(m => !(ct.paid && ct.paid[m.key])).length;
+  const active = list.length && list[list.length - 1].ts >= now && (list[0].ts <= now);
+  const expired = list.length && list[list.length - 1].ts < now;
+  return { list, paidCount, overdue, active, expired, total: list.length };
+}
+function renderContracts() {
+  const c = $('#content');
+  const nowJ = tsToJalali(Date.now());
+  const curKey = nowJ.jy + '-' + nowJ.jm;
+  let expect = 0, collected = 0;
+  state.contracts.forEach(ct => {
+    const st = ctStats(ct);
+    const cur = st.list.find(m => m.key === curKey);
+    if (cur) {
+      expect += +ct.amount || 0;
+      if (ct.paid && ct.paid[curKey]) collected += +ct.amount || 0;
+    }
+  });
+  c.innerHTML = `
+    <div class="grid-2" style="margin-bottom:16px">
+      <div class="card stat-card"><div class="stat-icon" style="background:var(--accent-soft);font-size:21px">📄</div>
+        <div class="stat-body"><div class="stat-value" style="font-size:17px">${money(expect)} <span style="font-size:11px;color:var(--text-3)">${t('rial')}</span></div>
+        <div class="stat-label">${t('ctExpectMonth')} (${JAL_MONTHS[nowJ.jm - 1]})</div></div></div>
+      <div class="card stat-card"><div class="stat-icon" style="background:var(--ok-soft);font-size:21px">💰</div>
+        <div class="stat-body"><div class="stat-value" style="font-size:17px">${money(collected)} <span style="font-size:11px;color:var(--text-3)">${t('rial')}</span></div>
+        <div class="stat-label">${t('ctCollected')}</div></div></div>
+    </div>
+    <div class="toolbar">
+      <div style="flex:1"></div>
+      <button class="btn btn-primary" onclick="openContractForm()">${IC.plus} ${t('newContract')}</button>
+    </div>
+    ${state.contracts.length ? state.contracts.map(ct => {
+      const st = ctStats(ct);
+      return `<div class="row-item" onclick="openContractForm('${ct.id}')">
+        <div class="row-icon" style="background:${st.overdue ? 'var(--danger-soft)' : 'var(--ok-soft)'};font-size:18px">${st.overdue ? '🔴' : '📄'}</div>
+        <div class="row-body">
+          <strong>${esc(ct.building)}</strong>
+          <span class="sub">${money(ct.amount)} ${t('rial')} / ${JAL_MONTHS[tsToJalali(ct.startTs).jm - 1]} ${faNum(tsToJalali(ct.startTs).jy)} · ${faNum(st.total)} ${LANG === 'fa' ? 'ماه' : 'months'}</span>
+        </div>
+        <div class="row-side">
+          ${st.overdue ? `<span class="badge b-red">${faNum(st.overdue)} ${t('ctOverdueMonths')}</span>` : `<span class="badge b-green">${st.expired ? t('ctExpired') : t('ctActive')}</span>`}
+          <span class="date">${faNum(st.paidCount)}/${faNum(st.total)} ${t('ctPaid')}</span>
+        </div>
+      </div>`;
+    }).join('') : `<div class="empty"><div class="e-icon">📄</div><strong>${t('noContracts')}</strong><p>${t('noContractsSub')}</p><button class="btn btn-primary" onclick="openContractForm()">${IC.plus} ${t('newContract')}</button></div>`}`;
+}
+function openContractForm(id) {
+  const ct = id ? state.contracts.find(x => x.id === id) : null;
+  const v = ct || { building: '', amount: 0, startTs: Date.now(), months: 12, projectId: '', note: '', paid: {} };
+  openModal(`
+    <div class="modal-head"><h3>${ct ? '✏️ ' + t('editContract') : '📄 ' + t('newContract')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field span2"><label>${t('ctBuilding')}</label><input id="ct_building" value="${esc(v.building)}" /></div>
+        <div class="field"><label>${t('ctAmount')}</label><input id="ct_amount" type="number" min="0" value="${v.amount || 0}" /></div>
+        <div class="field"><label>${t('ctMonths')}</label><input id="ct_months" type="number" min="1" max="36" value="${v.months || 12}" /></div>
+        <div class="field"><label>${t('ctStart')}</label>${jdateInput('ct_start', v.startTs)}</div>
+        <div class="field"><label>${t('ctLinkProject')}</label><select id="ct_project">
+          <option value="">—</option>
+          ${state.projects.map(p => `<option value="${p.id}" ${v.projectId === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}
+        </select></div>
+        <div class="field span2"><label>${t('ctNote')}</label><input id="ct_note" value="${esc(v.note || '')}" /></div>
+      </div>
+      ${ct ? `
+      <div class="section-title" style="margin:10px 0 8px"><h3 style="font-size:14px">📅 ${t('ctPayTable')}</h3></div>
+      <p style="font-size:11.8px;color:var(--text-3);margin-bottom:9px">💡 ${t('ctTapMonth')}</p>
+      <div id="ctMonths" style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px">${ctMonthsHTML(ct)}</div>` : ''}
+    </div>
+    <div class="modal-foot">
+      ${ct ? `<button class="btn btn-soft-danger" onclick="deleteContract('${ct.id}')">${IC.trash}</button>` : ''}
+      <button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button>
+      <button class="btn btn-primary" id="ctSave">${ct ? t('save') : t('create')}</button>
+    </div>`, { size: 'lg' });
+  $('#ctSave').onclick = async () => {
+    const building = $('#ct_building').value.trim();
+    if (!building) { toast(t('requiredTitle'), 'err'); return; }
+    const body = {
+      building, amount: +$('#ct_amount').value || 0,
+      months: Math.max(1, Math.min(36, +$('#ct_months').value || 12)),
+      startTs: jdateVal('ct_start') || Date.now(),
+      projectId: $('#ct_project').value, note: $('#ct_note').value,
+      paid: ct ? ct.paid || {} : {}
+    };
+    try {
+      if (ct) { const d = await api('/contracts/' + ct.id, { method: 'PUT', body }); Object.assign(ct, d.item); }
+      else { const d = await api('/contracts', { method: 'POST', body }); state.contracts.unshift(d.item); }
+      closeModal(); toast(t('saved')); render();
+    } catch (e) { toast(t('errGeneric'), 'err'); }
+  };
+}
+function ctMonthsHTML(ct) {
+  const now = Date.now();
+  return ctMonthList(ct).map(m => {
+    const paid = ct.paid && ct.paid[m.key];
+    const due = m.ts <= now && !paid;
+    return `<button onclick="ctTogglePaid('${ct.id}','${m.key}')" style="border:1.5px solid ${paid ? 'var(--ok)' : due ? 'var(--danger)' : 'var(--border)'};
+      background:${paid ? 'var(--ok-soft)' : due ? 'var(--danger-soft)' : 'var(--bg-soft)'};
+      border-radius:11px;padding:9px 4px;font-family:inherit;font-size:12px;cursor:pointer;color:var(--text);line-height:1.5">
+      ${paid ? '✅' : due ? '🔴' : '⬜'}<br><b>${JAL_MONTHS[m.jm - 1]}</b><br><span style="font-size:10px;color:var(--text-3)">${faNum(m.jy)}</span>
+    </button>`;
+  }).join('');
+}
+async function ctTogglePaid(ctId, key) {
+  const ct = state.contracts.find(x => x.id === ctId);
+  if (!ct) return;
+  if (!ct.paid) ct.paid = {};
+  if (ct.paid[key]) delete ct.paid[key];
+  else ct.paid[key] = true;
+  const box = $('#ctMonths');
+  if (box) box.innerHTML = ctMonthsHTML(ct);
+  try { await api('/contracts/' + ct.id, { method: 'PUT', body: { paid: ct.paid } }); }
+  catch (e) { toast(t('errGeneric'), 'err'); }
+}
+function deleteContract(id) {
+  confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteCtMsg'), async () => {
+    const idx = state.contracts.findIndex(x => x.id === id);
+    const [rm] = state.contracts.splice(idx, 1);
+    closeModal(); render();
+    try { await api('/contracts/' + id, { method: 'DELETE' }); toast(t('deleted')); }
+    catch (e) { state.contracts.splice(idx, 0, rm); toast(t('errGeneric'), 'err'); render(); }
+  });
+}
+
+/* ================= JALALI DATE INPUT ================= */
+/* Renders a readonly text input showing a Jalali date + hidden ts value.
+   Usage: jdateInput('myId', ts) then jdateVal('myId') to read the timestamp (0 if empty). */
+function jdateInput(id, ts, allowEmpty) {
+  const label = ts ? fmtJalali(ts) : '';
+  return `<div style="position:relative">
+    <input id="${id}" readonly value="${label}" data-ts="${ts || ''}" placeholder="—"
+      style="cursor:pointer" onclick="openJdatePicker('${id}', ${allowEmpty ? 'true' : 'false'})" />
+  </div>`;
+}
+function jdateVal(id) {
+  const el = $('#' + id);
+  return el && el.dataset.ts ? +el.dataset.ts : 0;
+}
+let _jdCur = null; // { jy, jm }
+function openJdatePicker(targetId, allowEmpty) {
+  const el = $('#' + targetId);
+  const base = el && el.dataset.ts ? +el.dataset.ts : Date.now();
+  const j = tsToJalali(base);
+  _jdCur = { jy: j.jy, jm: j.jm, targetId, allowEmpty, selTs: el && el.dataset.ts ? +el.dataset.ts : 0 };
+  // overlay on top of any open modal (do NOT close the underlying modal)
+  const root = document.createElement('div');
+  root.id = 'jdOverlay';
+  root.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(2,6,23,.55);display:flex;align-items:center;justify-content:center;padding:18px';
+  root.innerHTML = `<div id="jdBox" style="background:var(--bg-card);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow-lg);width:100%;max-width:330px;padding:16px"></div>`;
+  root.addEventListener('mousedown', e => { if (e.target.id === 'jdOverlay') closeJdatePicker(); });
+  document.body.appendChild(root);
+  drawJdate();
+}
+function closeJdatePicker() {
+  const o = document.getElementById('jdOverlay');
+  if (o) o.remove();
+  _jdCur = null;
+}
+function jdShift(d) {
+  _jdCur.jm += d;
+  if (_jdCur.jm > 12) { _jdCur.jm = 1; _jdCur.jy++; }
+  if (_jdCur.jm < 1) { _jdCur.jm = 12; _jdCur.jy--; }
+  drawJdate();
+}
+function jdPick(jd) {
+  const ts = jalaliToTs(_jdCur.jy, _jdCur.jm, jd);
+  const el = $('#' + _jdCur.targetId);
+  if (el) { el.dataset.ts = ts; el.value = fmtJalali(ts); el.dispatchEvent(new Event('change')); }
+  closeJdatePicker();
+}
+function jdClear() {
+  const el = $('#' + _jdCur.targetId);
+  if (el) { el.dataset.ts = ''; el.value = ''; el.dispatchEvent(new Event('change')); }
+  closeJdatePicker();
+}
+function jdToday() {
+  const j = tsToJalali(Date.now());
+  _jdCur.jy = j.jy; _jdCur.jm = j.jm;
+  jdPick(j.jd);
+}
+function drawJdate() {
+  const box = document.getElementById('jdBox');
+  if (!box || !_jdCur) return;
+  const { jy, jm } = _jdCur;
+  const days = jalDaysInMonth(jy, jm);
+  const firstTs = jalaliToTs(jy, jm, 1);
+  // Persian week starts Saturday. JS getDay(): Sat=6
+  const startCol = (new Date(firstTs).getDay() + 1) % 7; // Sat->0, Sun->1 ... Fri->6
+  const todayJ = tsToJalali(Date.now());
+  const selJ = _jdCur.selTs ? tsToJalali(_jdCur.selTs) : null;
+  let cells = '';
+  for (let i = 0; i < startCol; i++) cells += '<span></span>';
+  for (let d = 1; d <= days; d++) {
+    const isToday = todayJ.jy === jy && todayJ.jm === jm && todayJ.jd === d;
+    const isSel = selJ && selJ.jy === jy && selJ.jm === jm && selJ.jd === d;
+    cells += `<button onclick="jdPick(${d})" style="border:0;border-radius:9px;padding:7px 0;font-family:inherit;font-size:13px;cursor:pointer;
+      background:${isSel ? 'var(--accent)' : isToday ? 'var(--accent-soft)' : 'transparent'};
+      color:${isSel ? '#fff' : isToday ? 'var(--accent-2)' : 'var(--text)'};font-weight:${isToday || isSel ? '800' : '500'}">${faNum(d)}</button>`;
+  }
+  box.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <button class="icon-btn" style="width:34px;height:34px" onclick="jdShift(1)">‹</button>
+      <strong style="font-size:14.5px">${JAL_MONTHS[jm - 1]} ${faNum(jy)}</strong>
+      <button class="icon-btn" style="width:34px;height:34px" onclick="jdShift(-1)">›</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;font-size:10.5px;color:var(--text-3);margin-bottom:5px">
+      <span>ش</span><span>ی</span><span>د</span><span>س</span><span>چ</span><span>پ</span><span>ج</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center">${cells}</div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="jdToday()">📅 ${t('today')}</button>
+      ${_jdCur.allowEmpty ? `<button class="btn btn-ghost btn-sm" style="flex:1" onclick="jdClear()">✕</button>` : ''}
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeJdatePicker()">${t('close')}</button>
+    </div>`;
+}
+
 /* ================= BACKUP / RESTORE ================= */
 function openBackupModal() {
   openModal(`
@@ -5641,6 +6048,7 @@ function openBackupModal() {
 
   $('#bkExport').onclick = async () => {
     try {
+      localStorage.setItem('zlift_last_backup', String(Date.now()));
       const d = await api('/backup');
       const blob = new Blob([JSON.stringify(d.backup, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
@@ -5812,7 +6220,7 @@ function _lsSeed() {
       mkPart('باطری ۱۲V 7Ah سیستم نجات', 'الکتریکال', 'عدد', 4, 4, 4200000, 'قفسه B4', 'تاریخ شارژ کنترل شود'),
       mkPart('روانکار ریل (اسپری)', 'مصرفی', 'عدد', 12, 6, 950000, 'قفسه D1')
     ],
-    diagSessions: [], calcSaves: [], issues: [], tools: [], photos: [], invoices: [],
+    diagSessions: [], calcSaves: [], issues: [], tools: [], photos: [], invoices: [], contracts: [],
     settings: { company: 'خدمات فنی آسانسور زد لیفت', phone: '021-88000000', address: 'تهران' }
   };
 }
@@ -5824,7 +6232,7 @@ function _lsLoad() {
   if (!_lsDB || !_lsDB.users) { _lsDB = _lsSeed(); _lsSave(); }
   if (!_lsDB.parts) _lsDB.parts = _lsSeed().parts;
   if (!_lsDB.settings) _lsDB.settings = { company: 'Z Lift', phone: '', address: '' };
-  ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices'].forEach(k => { if (!Array.isArray(_lsDB[k])) _lsDB[k] = []; });
+  ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts'].forEach(k => { if (!Array.isArray(_lsDB[k])) _lsDB[k] = []; });
   _lsMigrateServices();
   return _lsDB;
 }
@@ -6037,7 +6445,7 @@ async function api(path, opts = {}) {
 
 
   /* generic collections */
-  const GENERIC = ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices'];
+  const GENERIC = ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts'];
   if (parts[0] && GENERIC.includes(parts[0])) {
     const coll = db[parts[0]];
     if (!parts[1] && method === 'GET') return { items: [...coll].sort((a, c) => (c.createdAt || 0) - (a.createdAt || 0)) };
@@ -6078,7 +6486,7 @@ async function api(path, opts = {}) {
     return { backup: { app: 'zlift', version: 3, exportedAt: Date.now(),
       projects: db.projects, services: db.services, notes: db.notes,
       checklists: db.checklists, parts: db.parts, settings: db.settings,
-      diagSessions: db.diagSessions, calcSaves: db.calcSaves, issues: db.issues, tools: db.tools, photos: db.photos, invoices: db.invoices } };
+      diagSessions: db.diagSessions, calcSaves: db.calcSaves, issues: db.issues, tools: db.tools, photos: db.photos, invoices: db.invoices, contracts: db.contracts } };
   }
   if (path === '/backup' && method === 'PUT') {
     const bk = b.backup || b;
@@ -6089,7 +6497,7 @@ async function api(path, opts = {}) {
     db.checklists = Array.isArray(bk.checklists) ? bk.checklists : [];
     db.parts = Array.isArray(bk.parts) ? bk.parts : [];
     if (bk.settings && typeof bk.settings === 'object') db.settings = bk.settings;
-    ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices'].forEach(k => { db[k] = Array.isArray(bk[k]) ? bk[k] : []; });
+    ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts'].forEach(k => { db[k] = Array.isArray(bk[k]) ? bk[k] : []; });
     _lsSave();
     return { ok: true };
   }
