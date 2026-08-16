@@ -1,5 +1,5 @@
 /* Z Lift — Service Worker (offline-first PWA) */
-const CACHE = 'zlift-pwa-v9';
+const CACHE = 'zlift-pwa-v10';
 const CORE = [
   './',
   './index.html',
@@ -8,6 +8,10 @@ const CORE = [
   './icons/icon-512.png',
   './icons/maskable-512.png'
 ];
+
+self.addEventListener('message', e => {
+  if (e.data === 'SKIP_WAITING') self.skipWaiting();
+});
 
 self.addEventListener('install', e => {
   e.waitUntil(

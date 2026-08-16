@@ -758,6 +758,9 @@ html, body { overflow-x: hidden; max-width: 100%; }
         </button>
         <h2 class="page-title" id="pageTitle">داشبورد</h2>
         <div class="topbar-actions">
+          <button class="icon-btn" id="gSearchBtn" title="جستجوی سراسری">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </button>
           <button class="icon-btn hidden" id="installBtn" onclick="promptInstall()" title="نصب اپلیکیشن" style="color:var(--accent-2);border-color:var(--accent-2)">
             <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           </button>
@@ -942,7 +945,14 @@ const I18N = {
     noInvoices: 'فاکتوری ثبت نشده', noInvoicesSub: 'اولین فاکتور سرویس یا نصب را صادر کنید',
     confirmDeleteInvMsg: 'این فاکتور حذف می‌شود. مطمئن هستید؟', searchInvoices: 'جستجوی فاکتور، مشتری...',
     invFromService: 'اتصال به گزارش سرویس (اختیاری)', invTotalsMonth: 'درآمد این ماه', invOpenBalance: 'مانده وصول‌نشده',
-    rial: 'ریال', invNote2: 'توضیحات فاکتور', invConsumeHint: 'با افزودن قطعه از انبار، موجودی هم به‌صورت خودکار کم می‌شود'
+    rial: 'ریال', invNote2: 'توضیحات فاکتور', invConsumeHint: 'با افزودن قطعه از انبار، موجودی هم به‌صورت خودکار کم می‌شود',
+    // v10 polish
+    globalSearch: 'جستجوی سراسری...', searchEverywhere: 'جستجو در همه بخش‌ها',
+    srProjects: 'پروژه‌ها', srServices: 'سرویس‌ها', srParts: 'قطعات', srNotes: 'یادداشت‌ها',
+    srKb: 'دانش فنی', srDiag: 'عیب‌یابی', srInv: 'فاکتورها', srCalc: 'محاسبات', noResults: 'نتیجه‌ای یافت نشد',
+    dupService: 'کپی به سرویس جدید', sortBy: 'مرتب‌سازی', sortNewest: 'جدیدترین', sortName: 'نام', sortProgress: 'پیشرفت',
+    statusFilter: 'وضعیت', summaryToday: 'خلاصه امروز', quickNewService: 'ثبت سریع سرویس',
+    exportCsv: 'خروجی CSV', kbRelClick: 'برای مطالعه کلیک کنید'
   },
   en: {
     dir: 'ltr',
@@ -1081,6 +1091,12 @@ const I18N = {
     confirmDeleteInvMsg: 'This invoice will be deleted. Sure?', searchInvoices: 'Search invoice, customer...',
     invFromService: 'Link to service report (optional)', invTotalsMonth: 'Income this month', invOpenBalance: 'Uncollected balance',
     rial: 'IRR', invNote2: 'Invoice notes', invConsumeHint: 'Adding a part from inventory also reduces stock automatically',
+    globalSearch: 'Global search...', searchEverywhere: 'Search everywhere',
+    srProjects: 'Projects', srServices: 'Services', srParts: 'Parts', srNotes: 'Notes',
+    srKb: 'Knowledge', srDiag: 'Diagnostics', srInv: 'Invoices', srCalc: 'Calculations', noResults: 'No results',
+    dupService: 'Duplicate as new', sortBy: 'Sort', sortNewest: 'Newest', sortName: 'Name', sortProgress: 'Progress',
+    statusFilter: 'Status', summaryToday: 'Today summary', quickNewService: 'Quick service log',
+    exportCsv: 'Export CSV', kbRelClick: 'Click to read',
     svcCustomer: 'Customer name', svcElevator: 'Elevator info (address, type, capacity...)',
     svcNoProject: 'No installation project — standalone customer', svcLinkProject: 'Link to installation project (optional)',
     viewServiceHistory: 'View service history for this elevator', requiredCustomer: 'Customer name (or a project) is required',
@@ -3533,7 +3549,7 @@ function statCard(emoji, bg, val, key) {
 }
 
 /* ================= PROJECTS ================= */
-let projFilter = { q: '', type: 'all' };
+let projFilter = { q: '', type: 'all', status: 'all', sort: 'newest' };
 function renderProjects() {
   const c = $('#content');
   c.innerHTML = `
@@ -3544,18 +3560,33 @@ function renderProjects() {
         <button class="chip ${projFilter.type === 'traction' ? 'active' : ''}" data-t="traction">⚙️ ${t('traction')}</button>
         <button class="chip ${projFilter.type === 'hydraulic' ? 'active' : ''}" data-t="hydraulic">🛢️ ${t('hydraulic')}</button>
       </div>
+      <select id="projStatusSel" style="background:var(--bg-card);border:1.5px solid var(--border);border-radius:12px;padding:9px 12px;color:inherit;outline:none">
+        <option value="all">${t('statusFilter')}: ${t('all')}</option>
+        ${Object.keys(STATUS_META).map(s2 => `<option value="${s2}" ${projFilter.status === s2 ? 'selected' : ''}>${t(STATUS_META[s2].key)}</option>`).join('')}
+      </select>
+      <select id="projSortSel" style="background:var(--bg-card);border:1.5px solid var(--border);border-radius:12px;padding:9px 12px;color:inherit;outline:none">
+        <option value="newest" ${projFilter.sort === 'newest' ? 'selected' : ''}>${t('sortBy')}: ${t('sortNewest')}</option>
+        <option value="name" ${projFilter.sort === 'name' ? 'selected' : ''}>${t('sortBy')}: ${t('sortName')}</option>
+        <option value="progress" ${projFilter.sort === 'progress' ? 'selected' : ''}>${t('sortBy')}: ${t('sortProgress')}</option>
+      </select>
       <button class="btn btn-primary" onclick="openProjectForm()">${IC.plus} ${t('newProject')}</button>
     </div>
     <div id="projList"></div>`;
   $('#projSearch').oninput = debounce(e => { projFilter.q = e.target.value; drawProjList(); }, 200);
   $$('.chip').forEach(ch => ch.onclick = () => { projFilter.type = ch.dataset.t; renderProjects(); });
+  $('#projStatusSel').onchange = e => { projFilter.status = e.target.value; drawProjList(); };
+  $('#projSortSel').onchange = e => { projFilter.sort = e.target.value; drawProjList(); };
   drawProjList();
 }
 function drawProjList() {
   const q = projFilter.q.trim().toLowerCase();
   let list = state.projects;
   if (projFilter.type !== 'all') list = list.filter(p => p.elevatorType === projFilter.type);
+  if (projFilter.status !== 'all') list = list.filter(p => p.status === projFilter.status);
   if (q) list = list.filter(p => (p.name + ' ' + p.customer + ' ' + p.location + ' ' + p.controller + ' ' + p.motor).toLowerCase().includes(q));
+  list = [...list];
+  if (projFilter.sort === 'name') list.sort((a, b) => a.name.localeCompare(b.name, 'fa'));
+  else if (projFilter.sort === 'progress') list.sort((a, b) => b.progress - a.progress);
   const el = $('#projList');
   if (!state.projects.length) {
     el.innerHTML = `<div class="empty"><div class="e-icon">🏗️</div><strong>${t('noProjects')}</strong><p>${t('noProjectsSub')}</p><button class="btn btn-primary" onclick="openProjectForm()">${IC.plus} ${t('newProject')}</button></div>`;
@@ -3826,6 +3857,7 @@ function renderServices() {
         <button class="chip ${svcFilter.type === 'all' ? 'active' : ''}" data-t="all">${t('all')}</button>
         ${Object.keys(SVC_META).map(k => `<button class="chip ${svcFilter.type === k ? 'active' : ''}" data-t="${k}">${SVC_META[k].icon} ${t(SVC_META[k].key)}</button>`).join('')}
       </div>
+      <button class="btn btn-ghost" onclick="exportServicesCsv()">📊 ${t('exportCsv')}</button>
       <button class="btn btn-primary" onclick="openServiceForm()">${IC.plus} ${t('newServiceRec')}</button>
     </div>
     <div id="svcList"></div>`;
@@ -3849,6 +3881,25 @@ function drawSvcList() {
     return;
   }
   el.innerHTML = list.map(serviceRow).join('');
+}
+function exportServicesCsv() {
+  const head = [t('svcDate'), t('svcCustomer'), t('svcProject'), t('svcTechnician'), t('svcType'), t('svcProblem'), t('svcDiagnosis'), t('svcWork'), t('svcParts'), t('svcFinal')];
+  const rows = state.services.map(s => [
+    new Date(s.date).toISOString().slice(0, 10),
+    s.customer || '', s.projectId ? projName(s.projectId) : '', s.technician,
+    t(SVC_META[s.serviceType].key), s.problem, s.diagnosis, s.workDone, s.partsReplaced,
+    t(FINAL_META[s.finalStatus].key)
+  ]);
+  const csvEsc = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const csv = '\ufeff' + [head, ...rows].map(r => r.map(csvEsc).join(',')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'zlift-services-' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+  toast(t('saved'));
 }
 function serviceRow(s) {
   const m = SVC_META[s.serviceType];
@@ -3892,6 +3943,7 @@ function openServiceView(id) {
     </div></div>
     <div class="modal-foot">
       <button class="btn btn-soft-danger" onclick="deleteService('${s.id}')">${IC.trash} ${t('delete')}</button>
+      <button class="btn btn-ghost" onclick="duplicateService('${s.id}')">📋 ${t('dupService')}</button>
       <button class="btn btn-ghost" onclick="printServiceReport('${s.id}')">${IC.print} ${t('printReport')}</button>
       <button class="btn btn-ghost" onclick="openServiceForm('${s.id}')">${IC.edit} ${t('edit')}</button>
       <button class="btn btn-primary" onclick="closeModal()">${t('close')}</button>
@@ -4002,6 +4054,21 @@ function printServiceReport(id) {
   window.print();
 }
 
+function duplicateService(id) {
+  const s = state.services.find(x => x.id === id);
+  if (!s) return;
+  closeModal();
+  openServiceForm(null, s.projectId || '');
+  setTimeout(() => {
+    const set = (sel, val) => { const el = $(sel); if (el && val) el.value = val; };
+    set('#s_customer', s.customer);
+    set('#s_elevator', s.elevatorInfo);
+    set('#s_tech', s.technician);
+    const ty = $('#s_type'); if (ty) ty.value = s.serviceType;
+    set('#s_complaint', s.complaint);
+    set('#s_problem', s.problem);
+  }, 80);
+}
 function deleteService(id) {
   confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteSvcMsg'), async () => {
     const idx = state.services.findIndex(s => s.id === id);
@@ -4024,6 +4091,7 @@ function renderParts() {
         <button class="chip ${!partFilter.low ? 'active' : ''}" data-low="0">${t('all')}</button>
         <button class="chip ${partFilter.low ? 'active' : ''}" data-low="1">⚠️ ${t('lowStockOnly')} ${lowCount ? '(' + faNum(lowCount) + ')' : ''}</button>
       </div>
+      <button class="btn btn-ghost" onclick="exportPartsCsv()">📊 ${t('exportCsv')}</button>
       <button class="btn btn-primary" onclick="openPartForm()">${IC.plus} ${t('newPart')}</button>
     </div>
     <div class="card" style="padding:6px 6px 2px"><div class="table-wrap" id="partList"></div></div>`;
@@ -4063,6 +4131,20 @@ function drawParts() {
         <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openConsumeForm('${x.id}')">📉 ${t('consume')}</button></td>
       </tr>`;
     }).join('')}</tbody></table>`;
+}
+function exportPartsCsv() {
+  const head = [t('partName'), t('partCategory'), t('partUnit'), t('partQty'), t('partMin'), t('partPrice'), t('partLocation'), t('partNote')];
+  const rows = state.parts.map(x => [x.name, x.category, x.unit, x.qty, x.minQty, x.price, x.location, x.note]);
+  const csvEsc = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const csv = '\ufeff' + [head, ...rows].map(r => r.map(csvEsc).join(',')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'zlift-parts-' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+  toast(t('saved'));
 }
 function openPartForm(id) {
   const x = id ? state.parts.find(p => p.id === id) : null;
@@ -4569,6 +4651,13 @@ function kbSection(icon, titleKey, content) {
     : `<p>${esc(content)}</p>`;
   return `<h4 style="display:flex;align-items:center;gap:7px">${icon} ${t(titleKey)}</h4>${body}`;
 }
+function kbOpenRelated(name) {
+  const q = name.toLowerCase();
+  const hit = KNOWLEDGE.find(k => (k.title.fa + ' ' + (k.title.en || '')).toLowerCase().includes(q)) ||
+              KNOWLEDGE.find(k => kbSearchText(k).includes(q));
+  if (hit) { openKbArticle(hit.id); }
+  else { closeModal(); kbQuery = name; navigate('/knowledge'); }
+}
 function openKbArticle(id) {
   const k = KNOWLEDGE.find(x => x.id === id);
   if (!k) return;
@@ -4582,7 +4671,7 @@ function openKbArticle(id) {
       ${kbSection('👁️', 'kbInspect', k.inspect)}
       ${kbSection('🧪', 'kbTest', k.test)}
       ${kbSection('💥', 'kbCauses', k.causes)}
-      ${k.related && k.related.length ? `<h4>🔗 ${t('kbRelated')}</h4><div style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0">${k.related.map(r => `<span class="badge b-blue">${esc(r)}</span>`).join('')}</div>` : ''}
+      ${k.related && k.related.length ? `<h4>🔗 ${t('kbRelated')}</h4><div style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0">${k.related.map(r => `<span class="badge b-blue" style="cursor:pointer" title="${t('kbRelClick')}" onclick="kbOpenRelated('${esc(r).replace(/'/g, '')}')">${esc(r)} ←</span>`).join('')}</div>` : ''}
       ${k.safety ? `<div class="safety-banner" style="margin-top:14px"><span style="font-size:17px">⚠️</span><span>${esc(k.safety)}</span></div>` : ''}
       ${k.diag ? `<div class="note-block" style="margin-top:10px">🧭 <b>${t('kbDiag')}:</b> ${esc(k.diag)} — <a href="#/diagnostics" onclick="closeModal()">${t('diagnostics')} ←</a></div>` : ''}
     </div>`;
@@ -5473,6 +5562,69 @@ function printInvoice(id) {
   window.print();
 }
 
+
+/* ================= GLOBAL SEARCH ================= */
+function openGlobalSearch() {
+  openModal(`
+    <div class="modal-head"><h3>🔎 ${t('searchEverywhere')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="field" style="margin-bottom:10px">
+        <input id="gsInput" placeholder="${t('globalSearch')}" autocomplete="off" style="font-size:16px" />
+      </div>
+      <div id="gsOut"><p style="font-size:12.5px;color:var(--text-3)">${t('searchEverywhere')} — ${t('srProjects')}، ${t('srServices')}، ${t('srParts')}، ${t('srNotes')}، ${t('srKb')}، ${t('srDiag')}، ${t('srInv')}، ${t('srCalc')}</p></div>
+    </div>`, { size: 'lg' });
+  const inp = $('#gsInput');
+  inp.focus();
+  inp.oninput = debounce(() => drawGlobalSearch(inp.value), 250);
+}
+function gsRow(icon, title, sub, onclick) {
+  return `<div class="row-item" style="margin-bottom:7px" onclick="${onclick}">
+    <div class="row-icon" style="background:var(--bg-soft);border:1px solid var(--border);font-size:17px;width:38px;height:38px">${icon}</div>
+    <div class="row-body"><strong style="font-size:13.5px">${title}</strong><span class="sub">${sub}</span></div>
+  </div>`;
+}
+function drawGlobalSearch(qRaw) {
+  const q = qRaw.trim().toLowerCase();
+  const out = $('#gsOut');
+  if (q.length < 2) { out.innerHTML = `<p style="font-size:12.5px;color:var(--text-3)">…</p>`; return; }
+  const S = [];
+  const grp = (label, rows) => { if (rows.length) S.push(`<div class="nav-section" style="margin:10px 2px 6px">${label} (${faNum(rows.length)})</div>` + rows.join('')); };
+
+  grp(t('srProjects'), state.projects
+    .filter(p => (p.name + ' ' + p.customer + ' ' + p.location + ' ' + p.controller + ' ' + p.motor).toLowerCase().includes(q))
+    .slice(0, 5).map(p => gsRow(p.elevatorType === 'hydraulic' ? '🛢️' : '⚙️', esc(p.name), esc(p.customer || p.location || ''), `closeModal();navigate('/projects/${p.id}')`)));
+
+  grp(t('srServices'), state.services
+    .filter(s => (svcTarget(s) + ' ' + (s.problem || '') + ' ' + (s.diagnosis || '') + ' ' + (s.workDone || '') + ' ' + (s.partsReplaced || '')).toLowerCase().includes(q))
+    .slice(0, 5).map(s => gsRow('🔧', esc(svcTarget(s)), esc(s.problem || s.complaint || fmtDate(s.date)), `closeModal();openServiceView('${s.id}')`)));
+
+  grp(t('srParts'), state.parts
+    .filter(x => (x.name + ' ' + x.category + ' ' + x.location + ' ' + (x.note || '')).toLowerCase().includes(q))
+    .slice(0, 5).map(x => gsRow('📦', esc(x.name), faNum(x.qty) + ' ' + esc(x.unit) + (x.qty <= x.minQty ? ' ⚠️' : ''), `closeModal();navigate('/parts');setTimeout(()=>openPartForm('${x.id}'),120)`)));
+
+  grp(t('srInv'), state.invoices
+    .filter(i => (i.customer + ' ' + (i.note || '') + ' ' + (i.items || []).map(x => x.desc).join(' ')).toLowerCase().includes(q))
+    .slice(0, 5).map(i => gsRow('🧾', esc(i.customer || '—'), money(invTotals(i).grand) + ' ' + t('rial'), `closeModal();navigate('/invoices');setTimeout(()=>openInvoiceForm('${i.id}'),120)`)));
+
+  grp(t('srNotes'), state.notes
+    .filter(n => (n.title + ' ' + n.content + ' ' + n.tags.join(' ')).toLowerCase().includes(q))
+    .slice(0, 5).map(n => gsRow('📝', esc(n.title), esc((n.content || '').slice(0, 60)), `closeModal();navigate('/notes');setTimeout(()=>openNoteForm('${n.id}'),120)`)));
+
+  grp(t('srKb'), KNOWLEDGE
+    .filter(k => kbSearchText(k).includes(q))
+    .slice(0, 5).map(k => gsRow(k.icon, esc(k.title[LANG] || k.title.fa), esc(k.summary[LANG] || k.summary.fa), `closeModal();openKbArticle('${k.id}')`)));
+
+  grp(t('srDiag'), DIAG_FLOWS
+    .filter(f => flowSearchText(f).includes(q))
+    .slice(0, 5).map(f => gsRow(f.icon || '🔩', esc(f.symptom.fa), esc((f.first && f.first.fa) || ''), `closeModal();navigate('/diagnostics');setTimeout(()=>startDiagFlow('${f.id}'),120)`)));
+
+  grp(t('srCalc'), CALCULATORS
+    .filter(c2 => (c2.title.fa + ' ' + (c2.title.en || '') + ' ' + c2.desc.fa + ' ' + c2.formula).toLowerCase().includes(q))
+    .slice(0, 5).map(c2 => gsRow('🧮', esc(c2.title.fa), esc(c2.desc.fa), `closeModal();calcFilter={cat:'all',q:'${esc(qRaw).replace(/'/g, '')}'} ;navigate('/calculations')`)));
+
+  out.innerHTML = S.length ? S.join('') : `<div class="empty" style="padding:26px"><div class="e-icon">🔍</div><strong>${t('noResults')}</strong></div>`;
+}
+
 /* ================= BACKUP / RESTORE ================= */
 function openBackupModal() {
   openModal(`
@@ -5548,6 +5700,7 @@ async function init() {
   $('#sidebarClose').onclick = closeSidebar;
   $('#backdrop').onclick = closeSidebar;
   $('#backupBtn').onclick = openBackupModal;
+  $('#gSearchBtn').onclick = openGlobalSearch;
   $('#logoutBtn').onclick = async () => {
     try { await api('/auth/logout', { method: 'POST' }); } catch (e) {}
     doLocalLogout();
@@ -5958,8 +6111,35 @@ init();
     /* PWA: service worker + install prompt */
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(() => {});
+        navigator.serviceWorker.register('sw.js').then(reg => {
+          function offer() { showUpdateBanner(); }
+          if (reg.waiting && navigator.serviceWorker.controller) offer();
+          reg.addEventListener('updatefound', () => {
+            const nw = reg.installing;
+            if (!nw) return;
+            nw.addEventListener('statechange', () => {
+              if ((nw.state === 'installed' || nw.state === 'activated') && navigator.serviceWorker.controller) offer();
+            });
+          });
+        }).catch(() => {});
       });
+    }
+    function showUpdateBanner() {
+      if (document.getElementById('updBanner')) return;
+      const b = document.createElement('div');
+      b.id = 'updBanner';
+      b.style.cssText = 'position:fixed;bottom:14px;inset-inline:14px;z-index:500;background:#2563eb;color:#fff;padding:12px 16px;border-radius:14px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 30px rgba(0,0,0,.35);font-size:13.5px;font-weight:600';
+      b.innerHTML = '<span style="flex:1">🔄 نسخه جدید Z Lift آماده است</span>';
+      const btn = document.createElement('button');
+      btn.textContent = 'بروزرسانی';
+      btn.style.cssText = 'background:#fff;color:#2563eb;border:0;border-radius:9px;padding:8px 14px;font-weight:700;font-family:inherit;cursor:pointer';
+      btn.onclick = () => {
+        navigator.serviceWorker.getRegistration().then(reg => {
+          if (reg && reg.waiting) reg.waiting.postMessage('SKIP_WAITING');
+        }).finally(() => setTimeout(() => location.reload(), 400));
+      };
+      b.appendChild(btn);
+      document.body.appendChild(b);
     }
     let _deferredInstall = null;
     window.addEventListener('beforeinstallprompt', e => {
