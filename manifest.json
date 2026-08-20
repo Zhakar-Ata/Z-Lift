@@ -31,6 +31,11 @@
       "name": "عیب‌یابی",
       "url": "./#/diagnostics",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "استاندارد EN 81-20",
+      "url": "./#/standards",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
