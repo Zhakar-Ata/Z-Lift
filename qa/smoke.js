@@ -278,6 +278,197 @@ async function T(name, cond, info) {
     await T('calendar page works in English', () => ev(`document.querySelector('#pageTitle').textContent === 'Service calendar'`));
     await ev(`LANG = 'fa'; applyLang(); navigate('/dashboard');`); await waitLoaded();
 
+    /* ================= v19 hardening regressions ================= */
+
+    /* -- every inline on*="fn(...)" handler resolves to a real function -- */
+    const unresolved = await ev(`(() => {
+      const skip = new Set(['String','Number','Math','JSON','Date','event','this','if','for','while','return','function','typeof','parseInt','parseFloat','confirm','alert','setTimeout','clearTimeout']);
+      const names = new Set();
+      const html = document.documentElement.outerHTML;
+      for (const m of html.matchAll(/\\son[a-z]+="([^"]*)"/g)) {
+        for (const c of m[1].matchAll(/([A-Za-z_$][\\w$]*)\\s*\\(/g)) names.add(c[1]);
+      }
+      return [...names].filter(n => !skip.has(n) && typeof window[n] !== 'function' &&
+        !['find','getElementById','querySelector','replace','setItem','stopPropagation','toggle','now','push','slice','includes','map','join','filter'].includes(n));
+    })()`);
+    await T('every rendered inline handler resolves to a function', unresolved.length === 0, unresolved.join(', '));
+
+    /* -- optimistic delete never removes a random row when the id is gone -- */
+    await T('optimisticRemove ignores unknown ids', () => ev(`(() => {
+      const list = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
+      const miss = optimisticRemove(list, 'zzz');
+      if (miss !== null || list.length !== 3) return false;
+      const hit = optimisticRemove(list, 'b');
+      if (!hit || list.length !== 2) return false;
+      hit.restore();
+      return list.length === 3 && list[1].id === 'b';
+    })()`));
+
+    /* -- safe meta lookups on unknown/legacy values -- */
+    await T('meta lookups never throw on unknown values', () => ev(`(() => {
+      return svcMeta('nope') === SVC_META.maintenance && finalMeta(undefined) === FINAL_META.ok &&
+             statMeta('???') === STATUS_META.contract && issueMeta(null) === ISSUE_META.open &&
+             remMeta('x') === REMINDER_META.custom &&
+             serviceRow({ id: 'x', serviceType: 'weird', finalStatus: 'weird', date: Date.now(), technician: 'q', problem: 'p' }).length > 10;
+    })()`));
+
+    /* -- inline-handler string escaping (quotes must not break the handler) -- */
+    await T('jsAttr escapes quotes for inline handlers', () => ev(`(() => {
+      const out = jsAttr("it's a \\"test\\"");
+      return out.indexOf('\\\\&#39;') >= 0 && out.indexOf('&quot;') >= 0;
+    })()`));
+    await T('a query with quotes survives an inline handler round-trip', () => ev(`(() => {
+      const q = "it's a \\"test\\"";
+      const box = document.createElement('div');
+      box.innerHTML = '<button id="qaEscBtn" onclick="calcFilter={cat:\\'all\\',q:\\'' + jsAttr(q) + '\\'}">x</button>';
+      document.body.appendChild(box);
+      calcFilter = { cat: 'all', q: '' };
+      box.querySelector('#qaEscBtn').click();
+      const got = calcFilter.q;
+      box.remove();
+      calcFilter = { cat: 'all', q: '' };
+      return got === q;
+    })()`));
+
+    /* -- Jalali day boundaries: a morning service belongs to that day -- */
+    const dayTest = await ev(`(() => {
+      const j = tsToJalali(Date.now());
+      const r = jalDayRange(j.jy, j.jm, j.jd);
+      const morning = new Date(); morning.setHours(8, 30, 0, 0);
+      const night = new Date(); night.setHours(23, 45, 0, 0);
+      return { okMorning: morning.getTime() >= r.from && morning.getTime() < r.to,
+               okNight: night.getTime() >= r.from && night.getTime() < r.to,
+               span: r.to - r.from };
+    })()`);
+    await T('jalDayRange covers a whole local day (08:30 and 23:45)', dayTest.okMorning && dayTest.okNight, JSON.stringify(dayTest));
+
+    const monthTest = await ev(`(() => {
+      const j = tsToJalali(Date.now());
+      const r = jalMonthRange(j.jy, j.jm);
+      const first = jalDayStart(j.jy, j.jm, 1) + 30 * 60000;       // 00:30 on the 1st
+      const last = jalDayStart(j.jy, j.jm, jalDaysInMonth(j.jy, j.jm)) + 23 * 3600000;
+      const nextMonthFirst = r.to + 60000;
+      return first >= r.from && first < r.to && last >= r.from && last < r.to && !(nextMonthFirst < r.to);
+    })()`);
+    await T('jalMonthRange starts at midnight and excludes the next month', monthTest === true);
+
+    const morningSvc = await ev(`(() => {
+      const d = new Date(); d.setHours(8, 15, 0, 0);
+      return api('/services', { method: 'POST', body: { customer: 'سرویس صبح QA', technician: 'QA', serviceType: 'maintenance', date: d.getTime(), problem: 'x', diagnosis: 'y', workDone: 'z', partsReplaced: '-', finalStatus: 'ok' } });
+    })()`);
+    await ev(`(() => { state.services = null; return loadAll(true); })()`);
+    await ev(`(() => { const j = tsToJalali(Date.now()); calState = { jy: j.jy, jm: j.jm }; navigate('/calendar'); })()`);
+    await waitLoaded();
+    await ev(`(() => { const j = tsToJalali(Date.now()); calPickDay(j.jd); })()`);
+    await T('morning service (08:15) appears on today in the calendar', () => ev(`document.querySelector('#calDayDetail').innerHTML.includes('سرویس صبح QA')`));
+    await T('picked day is highlighted in the grid', () => ev(`document.querySelectorAll('#calGrid .cal-sel').length === 1`));
+    await ev(`api('/services/${morningSvc.service.id}', { method: 'DELETE' }); state.services = null; loadAll(true);`);
+
+    /* -- monthly report navigation & month range -- */
+    await ev(`mrMonth = null; navigate('/report');`); await waitLoaded();
+    const mrNow = await ev(`JSON.stringify(mrMonth)`);
+    await ev(`_mrPrev();`);
+    const mrPrev = await ev(`JSON.stringify(mrMonth)`);
+    await ev(`_mrNext();`);
+    const mrBack = await ev(`JSON.stringify(mrMonth)`);
+    await T('monthly report prev/next move exactly one month', mrPrev !== mrNow && mrBack === mrNow, mrNow + ' → ' + mrPrev + ' → ' + mrBack);
+    await T('month nav arrows follow text direction', () => ev(`(() => {
+      const fa = (LANG = 'fa', navArrows());
+      const en = (LANG = 'en', navArrows());
+      LANG = 'fa';
+      return fa.prev === '›' && fa.next === '‹' && en.prev === '‹' && en.next === '›';
+    })()`));
+
+    /* -- contracts stay active until the END of the last month -- */
+    const ctTest = await ev(`(() => {
+      const j = tsToJalali(Date.now());
+      const ct = { id: 'ctqa', building: 'QA', amount: 1000, months: 1, startTs: jalDayStart(j.jy, j.jm, 1), paid: {} };
+      const st = ctStats(ct);
+      return { active: st.active, expired: st.expired, endsAfterNow: st.endTs > Date.now() };
+    })()`);
+    await T('a contract in its final month is still active', ctTest.active === true && ctTest.expired === false && ctTest.endsAfterNow, JSON.stringify(ctTest));
+    await T('a finished contract is reported expired', () => ev(`(() => {
+      const j = tsToJalali(Date.now() - 400 * 86400000);
+      return ctStats({ id: 'old', building: 'x', amount: 1, months: 2, startTs: jalDayStart(j.jy, j.jm, 1), paid: {} }).expired === true;
+    })()`));
+    await T('contract without startTs falls back to createdAt', () => ev(`ctMonthList({ months: 3, createdAt: Date.now() }).length === 3`));
+
+    /* -- invoices: inventory is consumed on save and returned when the row is deleted -- */
+    const partQa = await ev(`api('/parts', { method: 'POST', body: { name: 'قطعه تست فاکتور', category: 'QA', unit: 'عدد', qty: 10, minQty: 1, price: 5000 } })`);
+    await ev(`state.parts = null; loadAll(true);`);
+    await ev(`navigate('/invoices')`); await waitLoaded();
+    await ev(`openInvoiceForm(); invUsePart(${JSON.stringify(partQa.part.id)}); document.querySelector('#inv_customer').value = 'مشتری QA'; document.querySelector('#inv_labor').value = '200000'; document.querySelector('#inv_labor').oninput();`);
+    await ev(`document.querySelector('#invSave').onclick()`);
+    await waitUntil(() => ev(`state.invoices.some(i => i.customer === 'مشتری QA')`), 8000, 'invoice saved');
+    const invQa = await ev(`state.invoices.find(i => i.customer === 'مشتری QA')`);
+    await T('invoice saved with the picked part', !!(invQa && invQa.items && invQa.items.length === 1 && invQa.items[0].partId === partQa.part.id));
+    await T('stock is consumed once on save (10 → 9)', () => ev(`state.parts.find(p => p.id === ${JSON.stringify(partQa.part.id)}).qty === 9`), await ev(`String(state.parts.find(p => p.id === ${JSON.stringify(partQa.part.id)}).qty)`));
+
+    await ev(`openInvoiceForm(${JSON.stringify(invQa.id)}); invDelItem(0);`);
+    await ev(`document.querySelector('#invSave').onclick()`);
+    await wait(300);
+    await T('removing the row gives the part back to stock (9 → 10)', () => ev(`state.parts.find(p => p.id === ${JSON.stringify(partQa.part.id)}).qty === 10`), await ev(`String(state.parts.find(p => p.id === ${JSON.stringify(partQa.part.id)}).qty)`));
+
+    /* -- payment on a saved invoice must not be blocked by a false overpay guard -- */
+    await ev(`openInvoiceForm(${JSON.stringify(invQa.id)}); document.querySelector('#invPayBtn').onclick();`);
+    await ev(`document.querySelector('#pay_amount').value = '200000'; document.querySelector('#payOk').onclick();`);
+    await T('payment up to the saved total is accepted on the first tap', () => ev(`invDraft && invDraft.payments.length === 1 && invDraft.payments[0].amount === 200000`), await ev(`JSON.stringify(invDraft && invDraft.payments)`));
+    await ev(`document.querySelector('#invPayBtn').onclick(); document.querySelector('#pay_amount').value = '999999'; document.querySelector('#payOk').onclick();`);
+    await T('a real overpayment still needs a confirmation tap', () => ev(`invDraft.payments.length === 1`));
+    await ev(`closeModal(); invDraft = null;`);
+
+    /* -- deleting a project keeps its service history (services are independent) -- */
+    const delProj = await ev(`api('/projects', { method: 'POST', body: { name: 'پروژه حذفی QA' } })`);
+    await ev(`state.projects = null; loadAll(true);`);
+    const delSvc = await ev(`api('/services', { method: 'POST', body: { projectId: ${JSON.stringify('')} || '', customer: 'مشتری حذفی', technician: 'QA', serviceType: 'repair', problem: 'x', diagnosis: 'y', workDone: 'z', partsReplaced: '-', finalStatus: 'ok' } })`);
+    await ev(`api('/services/${delSvc.service.id}', { method: 'PUT', body: { projectId: ${JSON.stringify(delProj.project.id)} } })`);
+    await ev(`state.services = null; state.projects = null; loadAll(true);`);
+    await ev(`api('/projects/${delProj.project.id}', { method: 'DELETE' }); state.projects = null; state.services = null; loadAll(true);`);
+    await T('services survive their project deletion (detached, not lost)', () => ev(`(() => { const s = state.services.find(x => x.id === ${JSON.stringify(delSvc.service.id)}); return !!s && !s.projectId; })()`));
+
+    /* -- reminders can be edited & deleted from the UI -- */
+    const rmUi = await ev(`api('/reminders', { method: 'POST', body: { title: 'یادآوری رابط کاربری', due: Date.now() + 4 * 86400000, kind: 'custom' } })`);
+    await ev(`(() => { state.reminders = null; return loadAll(true); })()`);
+    await ev(`navigate('/calendar')`); await waitLoaded();
+    await T('custom reminder row opens its editor', () => ev(`document.querySelector('#reminderList').innerHTML.includes("openReminderForm('${rmUi.reminder.id}')")`));
+    await ev(`openReminderForm('${rmUi.reminder.id}'); document.querySelector('#rm_title').value = 'یادآوری ویرایش‌شده از UI'; document.querySelector('#rmSave').onclick();`);
+    await waitUntil(() => ev(`(state.reminders || []).some(r => r.title === 'یادآوری ویرایش‌شده از UI')`), 8000, 'reminder edited via UI');
+    await T('reminder edited through the form', true);
+    await ev(`openReminderForm('${rmUi.reminder.id}'); deleteReminder('${rmUi.reminder.id}'); document.querySelector('#confirmYes').onclick();`);
+    await waitUntil(() => ev(`!(state.reminders || []).some(r => r.id === '${rmUi.reminder.id}')`), 8000, 'reminder deleted via UI');
+    await T('reminder deleted through the form', true);
+    const errsBefore = jsdomErrors.length;
+    await T('markReminderDone on a missing id does not crash', () => ev(`markReminderDone('does-not-exist').then(() => true)`));
+    jsdomErrors.length = errsBefore;   // the handled error above is logged on purpose
+
+    /* -- due manual reminders are surfaced on the dashboard -- */
+    const rmDash = await ev(`api('/reminders', { method: 'POST', body: { title: 'یادآوری داشبورد QA', due: Date.now() - 86400000, kind: 'custom' } })`);
+    await ev(`(() => { state.reminders = null; return loadAll(true); })()`);
+    await ev(`navigate('/dashboard')`); await waitLoaded();
+    await T('overdue manual reminder shows on the dashboard', () => ev(`document.querySelector('#content').innerHTML.includes('یادآوری داشبورد QA')`));
+    await ev(`api('/reminders/${rmDash.reminder.id}', { method: 'DELETE' })`);
+    await ev(`(() => { state.reminders = null; return loadAll(true); })()`);
+
+    /* -- router: the newest navigation always wins -- */
+    await ev(`navigate('/projects'); navigate('/parts');`);
+    await waitLoaded();
+    await T('fast double navigation renders the last route only', () => ev(`state.route === '/parts' && document.querySelector('#content').innerHTML.includes('partList')`));
+
+    /* -- storage layer -- */
+    await T('_lsSave reports success', () => ev(`_lsSave() === true`));
+    await T('old login sessions are pruned', () => ev(`(() => {
+      const db = _lsLoad();
+      db.sessions['stale-token'] = { userId: 'x', createdAt: Date.now() - 400 * 86400000 };
+      _lsPruneSessions();
+      return !db.sessions['stale-token'] && !!db.sessions[state.token];
+    })()`));
+
+    /* -- service worker contract -- */
+    await T('service worker cache version bumped', () => {
+      const sw = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
+      return /const CACHE = 'zlift-pwa-v(\d+)'/.test(sw) && sw.includes("req.mode === 'navigate'");
+    });
+
     /* ---------- legacy regressions ---------- */
     await ev(`navigate('/checklists/traction-install')`); await waitLoaded();
     await T('traction install checklist still renders (30 items)', () => ev(`document.querySelectorAll('#content .check-item[data-item]').length === 30`));

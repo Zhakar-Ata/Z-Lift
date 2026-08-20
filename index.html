@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="theme-color" content="#2563eb" />
+<meta name="theme-color" content="#2563eb" id="metaTheme" />
+<meta name="color-scheme" content="light dark" />
+<meta name="description" content="Z Lift — دستیار حرفه‌ای تکنسین آسانسور: مدیریت پروژه، گزارش سرویس، چک‌لیست EN 81-20، محاسبات، عیب‌یابی و فاکتور. کاملاً آفلاین." />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -686,6 +688,8 @@ html, body { overflow-x: hidden; max-width: 100%; }
 .cal-day { position: relative; border: 1px solid var(--border); background: var(--bg-card); border-radius: 10px; padding: 8px 0 20px; font-family: inherit; font-size: 13px; cursor: pointer; color: var(--text); }
 .cal-day:hover { border-color: var(--accent); }
 .cal-day.cal-today { border-color: var(--accent); background: var(--accent-soft); }
+.cal-day.cal-sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); background: var(--accent-soft); }
+.cal-day:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .cal-num { font-weight: 600; }
 .cal-dot { position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; font-size: 9.5px; font-weight: 700; min-width: 15px; height: 15px; line-height: 15px; border-radius: 8px; padding: 0 4px; }
 .sub-title { font-size: 12.5px; font-weight: 700; color: var(--text-2); margin: 4px 0 6px; }
@@ -768,6 +772,7 @@ html, body { overflow-x: hidden; max-width: 100%; }
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
         <h2 class="page-title" id="pageTitle">داشبورد</h2>
+        <span id="offlineBadge" class="badge b-amber hidden" style="flex-shrink:0"></span>
         <div class="topbar-actions">
           <button class="icon-btn" id="tgChannelBtn" title="کانال تلگرام Z Lift" style="color:#2AABEE">
             <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
@@ -1011,6 +1016,10 @@ const I18N = {
     calNoEvents: 'رویدادی در این روز ثبت نشده', calServicesOnDay: 'سرویس‌های این روز', calRemindersDue: 'یادآوری‌های این روز',
     calOverdue: 'سررسید گذشته', calDueSoon: 'در آستانه سررسید', calUpcoming: 'سررسید آینده',
     calReminderList: 'یادآوری سرویس‌ها', calNoReminders: 'یادآوری فعالی نیست', calTapDay: 'برای مشاهده سرویس‌های هر روز روی آن بزنید',
+    prevMonth: 'ماه قبل', nextMonth: 'ماه بعد', reminderProject: 'پروژه مرتبط', reminderEditHint: 'برای ویرایش یا حذف روی یادآوری دستی بزنید',
+    reminderDeleted: 'یادآوری حذف شد', confirmDeleteReminderMsg: 'این یادآوری حذف شود؟',
+    consumeOverStock: 'مقدار مصرف از موجودی بیشتر است — برای تأیید دوباره بزنید',
+    offlineMode: 'آفلاین',
     reminders: 'یادآوری‌ها', newReminder: 'یادآوری جدید', editReminder: 'ویرایش یادآوری',
     reminderTitle: 'عنوان یادآوری', reminderDate: 'تاریخ سررسید', reminderMarkDone: 'انجام شد',
     reminderPeriodic: 'سرویس دوره‌ای', reminderFollowup: 'پیگیری', reminderCustom: 'یادآوری دستی',
@@ -1207,6 +1216,10 @@ const I18N = {
     calNoEvents: 'No events on this day', calServicesOnDay: 'Services on this day', calRemindersDue: 'Reminders due this day',
     calOverdue: 'Overdue', calDueSoon: 'Due soon', calUpcoming: 'Upcoming',
     calReminderList: 'Service reminders', calNoReminders: 'No active reminders', calTapDay: 'Tap a day to see its services',
+    prevMonth: 'Previous month', nextMonth: 'Next month', reminderProject: 'Linked project', reminderEditHint: 'Tap a custom reminder to edit or delete it',
+    reminderDeleted: 'Reminder deleted', confirmDeleteReminderMsg: 'Delete this reminder?',
+    consumeOverStock: 'Quantity exceeds stock — tap again to confirm',
+    offlineMode: 'Offline',
     reminders: 'Reminders', newReminder: 'New reminder', editReminder: 'Edit reminder',
     reminderTitle: 'Reminder title', reminderDate: 'Due date', reminderMarkDone: 'Mark done',
     reminderPeriodic: 'Periodic service', reminderFollowup: 'Follow-up', reminderCustom: 'Custom reminder',
@@ -1296,6 +1309,28 @@ function d2j(jdn) {
 function jalaliToTs(jy, jm, jd) {
   const g = d2g(j2d(jy, jm, jd));
   return new Date(g.gy, g.gm - 1, g.gd, 12, 0, 0).getTime();
+}
+/* Range helpers — jalaliToTs() intentionally returns NOON (DST-safe anchor for
+   stored dates), so it must NOT be used as a range boundary: a service logged
+   at 09:00 would fall into the previous day. These return real local midnight. */
+function jalDayStart(jy, jm, jd) {
+  const g = d2g(j2d(jy, jm, jd));
+  return new Date(g.gy, g.gm - 1, g.gd, 0, 0, 0, 0).getTime();
+}
+function jalDayRange(jy, jm, jd) {
+  const days = jalDaysInMonth(jy, jm);
+  let ny = jy, nm = jm, nd = jd + 1;
+  if (nd > days) { nd = 1; nm++; if (nm > 12) { nm = 1; ny++; } }
+  return { from: jalDayStart(jy, jm, jd), to: jalDayStart(ny, nm, nd) };
+}
+function jalMonthRange(jy, jm) {
+  let ny = jy, nm = jm + 1;
+  if (nm > 12) { nm = 1; ny++; }
+  return { from: jalDayStart(jy, jm, 1), to: jalDayStart(ny, nm, 1) };
+}
+/* month navigation arrows: in RTL "back" points right, in LTR it points left */
+function navArrows() {
+  return I18N[LANG].dir === 'rtl' ? { prev: '›', next: '‹' } : { prev: '‹', next: '›' };
 }
 function tsToJalali(ts) {
   const d = new Date(ts);
@@ -3496,7 +3531,27 @@ const FINAL_META = {
   followup: { key: 'finalFollowup', cls: 'b-amber' },
   outoforder: { key: 'finalOut', cls: 'b-red' }
 };
-function statusBadge(s) { const m = STATUS_META[s] || STATUS_META.contract; return `<span class="badge ${m.cls}">${t(m.key)}</span>`; }
+/* safe meta lookups — never throw on unknown/legacy values (restored backups, old records) */
+function svcMeta(k) { return SVC_META[k] || SVC_META.maintenance; }
+function finalMeta(k) { return FINAL_META[k] || FINAL_META.ok; }
+function statMeta(k) { return STATUS_META[k] || STATUS_META.contract; }
+function issueMeta(k) { return ISSUE_META[k] || ISSUE_META.open; }
+function remMeta(k) { return REMINDER_META[k] || REMINDER_META.custom; }
+/* escape a value that is embedded as a JS string literal inside an inline HTML
+   handler attribute: JS-escape first, then HTML-escape (the parser decodes the
+   entities before the JS is evaluated) */
+function jsAttr(s) {
+  return esc(String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, '\\n'));
+}
+/* optimistic list removal with rollback — safe when the id is already gone
+   (a stale button / double tap must never delete a random last row) */
+function optimisticRemove(list, id) {
+  const idx = list.findIndex(x => x && x.id === id);
+  if (idx < 0) return null;
+  const [removed] = list.splice(idx, 1);
+  return { idx, removed, restore() { list.splice(idx, 0, removed); } };
+}
+function statusBadge(s) { const m = statMeta(s); return `<span class="badge ${m.cls}">${t(m.key)}</span>`; }
 function typeBadge(type) {
   if (type === 'hydraulic') return `<span class="badge b-teal">🛢️ ${t('hydraulic')}</span>`;
   if (type === 'both') return `<span class="badge b-purple">⚖️ ${t('bothTypes')}</span>`;
@@ -3539,6 +3594,17 @@ function applyTheme() {
   document.documentElement.setAttribute('data-theme', th);
   $('#iconMoon').classList.toggle('hidden', th === 'dark');
   $('#iconSun').classList.toggle('hidden', th !== 'dark');
+  const meta = document.getElementById('metaTheme');
+  if (meta) meta.setAttribute('content', th === 'dark' ? '#0b1220' : '#2563eb');
+}
+/* offline indicator — everything keeps working (data is local), but sharing,
+   Telegram and map links need a connection, so say so quietly */
+function updateOnlineBadge() {
+  const el = document.getElementById('offlineBadge');
+  if (!el) return;
+  const off = navigator.onLine === false;
+  el.classList.toggle('hidden', !off);
+  el.textContent = '📴 ' + t('offlineMode');
 }
 function applyLang() {
   document.documentElement.lang = LANG;
@@ -3673,7 +3739,10 @@ function showAuth() {
 function doLocalLogout() {
   flushUiLayers();
   state.token = null; state.user = null;
-  state.projects = state.services = state.notes = state.checklists = null;
+  ['projects', 'services', 'notes', 'checklists', 'parts', 'settings', 'diagSessions',
+   'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders']
+    .forEach(k => { state[k] = null; });
+  invDraft = null; diagSession = null;
   localStorage.removeItem('zlift_token');
   showAuth();
 }
@@ -3803,7 +3872,9 @@ window.addEventListener('hashchange', () => {
   }
 });
 
+let _renderSeq = 0;
 async function render() {
+  const seq = ++_renderSeq;          // only the newest render may paint
   renderNav();
   const c = $('#content');
   const r = state.route;
@@ -3818,6 +3889,7 @@ async function render() {
   c.innerHTML = '<div class="page-loading"><div class="spinner"></div></div>';
   try {
     await loadAll();
+    if (seq !== _renderSeq) return;  // a newer navigation won the race
     if (r === '/dashboard') renderDashboard();
     else if (r === '/projects') renderProjects();
     else if (r.startsWith('/projects/')) renderProjectDetail(r.split('/')[2]);
@@ -3839,7 +3911,9 @@ async function render() {
     else if (r === '/calendar') renderCalendar();
     else renderDashboard();
   } catch (e) {
-    if (e.message === 'unauthorized') return;
+    if (seq !== _renderSeq) return;
+    if (e && e.message === 'unauthorized') return;
+    reportError(e, 'render:' + r);
     c.innerHTML = `<div class="error-box"><p style="font-weight:700;margin-bottom:10px">⚠️ ${t('loadError')}</p><button class="btn btn-primary" onclick="render()">${t('retry')}</button></div>`;
   }
 }
@@ -3869,7 +3943,7 @@ function renderDashboard() {
         <span class="kv">👤 ${faNum(latest.persons)} ${t('personsUnit')}</span>
       </div>
       <div class="hero-progress">
-        <div class="row"><span>${t(STATUS_META[latest.status].key)}</span><span>${faNum(latest.progress)}٪</span></div>
+        <div class="row"><span>${t(statMeta(latest.status).key)}</span><span>${faNum(latest.progress)}٪</span></div>
         <div class="bar"><div class="fill" style="width:${latest.progress}%"></div></div>
       </div>
       <div class="hero-actions">
@@ -3912,8 +3986,10 @@ function renderDashboard() {
     .map(ct => ({ ct, st: ctStats(ct) }))
     .filter(x => x.st.overdue > 0)
     .slice(0, 3);
+  /* manual calendar reminders that are due — they used to be visible only in the calendar */
+  const remDue = buildReminders().filter(r => r.reminderId && (r.overdue || r.soon)).slice(0, 4);
 
-  const dueHtml = (dues.length || openIssues.length || openIssueItems.length || ctOverdue.length) ? (
+  const dueHtml = (dues.length || openIssues.length || openIssueItems.length || ctOverdue.length || remDue.length) ? (
     dues.map(({ p, d }) => `
     <div class="due-item ${d.overdue ? 'overdue' : 'soon'}">
       <span style="font-size:19px">${d.overdue ? '🔴' : '🟡'}</span>
@@ -3930,10 +4006,10 @@ function renderDashboard() {
         <strong>${esc(projName(s.projectId))}</strong>
         <span class="d-sub">${esc(s.problem || s.complaint || '—')}${s.followUpDate ? ' · ' + t('svcFollowUp') + ': ' + fmtDate(s.followUpDate) : ''}</span>
       </div>
-      <span class="badge ${FINAL_META[s.finalStatus].cls}">${t(FINAL_META[s.finalStatus].key)}</span>
+      <span class="badge ${finalMeta(s.finalStatus).cls}">${t(finalMeta(s.finalStatus).key)}</span>
     </div>`).join('') +
     openIssueItems.map(i => {
-      const m = ISSUE_META[i.kind] || ISSUE_META.open;
+      const m = issueMeta(i.kind);
       return `
     <div class="due-item ${i.kind === 'open' ? 'overdue' : 'soon'}" onclick="openIssueForm('${i.id}')" style="cursor:pointer">
       <span style="font-size:19px">${m.icon}</span>
@@ -3944,6 +4020,15 @@ function renderDashboard() {
       <span class="badge ${m.cls}">${t(m.key)}</span>
     </div>`;
     }).join('') +
+    remDue.map(r => `
+    <div class="due-item ${r.overdue ? 'overdue' : 'soon'}" onclick="navigate('/calendar')" style="cursor:pointer">
+      <span style="font-size:19px">${remMeta(r.kind).icon}</span>
+      <div class="grow">
+        <strong>${esc(r.title)}</strong>
+        <span class="d-sub">${r.projectId ? esc(projName(r.projectId)) + ' · ' : ''}${fmtJalali(r.due)} · ${r.overdue ? faNum(Math.abs(r.days)) + ' ' + t('daysOverdue') : faNum(r.days) + ' ' + t('daysLeft')}</span>
+      </div>
+      <span class="badge ${r.overdue ? 'b-red' : 'b-amber'}">${r.overdue ? t('calOverdue') : t('calDueSoon')}</span>
+    </div>`).join('') +
     ctOverdue.map(({ ct, st }) => `
     <div class="due-item overdue" onclick="navigate('/contracts')" style="cursor:pointer">
       <span style="font-size:19px">📄</span>
@@ -3982,7 +4067,7 @@ function renderDashboard() {
     const n = projects.filter(p => p.status === s).length;
     if (!n && !projects.length) return '';
     const pct = projects.length ? Math.round(n / projects.length * 100) : 0;
-    return `<div class="sb-row"><span class="sb-lbl">${t(STATUS_META[s].key)}</span>
+    return `<div class="sb-row"><span class="sb-lbl">${t(statMeta(s).key)}</span>
       <div class="sb-track"><div class="sb-fill" style="width:${pct}%;background:${stColors[s]}"></div></div>
       <span class="sb-val">${faNum(n)}</span></div>`;
   }).join('')}</div>`;
@@ -4061,11 +4146,12 @@ function renderProjects() {
   drawProjList();
 }
 function drawProjList() {
+  if (!$('#projList')) return;
   const q = projFilter.q.trim().toLowerCase();
   let list = state.projects;
   if (projFilter.type !== 'all') list = list.filter(p => p.elevatorType === projFilter.type);
   if (projFilter.status !== 'all') list = list.filter(p => p.status === projFilter.status);
-  if (q) list = list.filter(p => (p.name + ' ' + p.customer + ' ' + p.location + ' ' + p.controller + ' ' + p.motor).toLowerCase().includes(q));
+  if (q) list = list.filter(p => [p.name, p.customer, p.location, p.controller, p.motor].map(v => v || '').join(' ').toLowerCase().includes(q));
   list = [...list];
   if (projFilter.sort === 'name') list.sort((a, b) => a.name.localeCompare(b.name, 'fa'));
   else if (projFilter.sort === 'progress') list.sort((a, b) => b.progress - a.progress);
@@ -4166,16 +4252,18 @@ function openProjectForm(id) {
 function deleteProject(id) {
   confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteMsg'), async () => {
     // optimistic
-    const idx = state.projects.findIndex(p => p.id === id);
-    const [removed] = state.projects.splice(idx, 1);
+    const rb = optimisticRemove(state.projects, id);
+    if (!rb) { closeModal(); return; }
     closeModal();
     navigate('/projects');
     try {
       await api('/projects/' + id, { method: 'DELETE' });
-      state.services = state.services.filter(s => s.projectId !== id);
+      // services survive a project deletion (independent module) — just detach them
+      state.services.forEach(s => { if (s.projectId === id) s.projectId = ''; });
+      state.checklists = state.checklists.filter(c => c.projectId !== id);
       toast(t('deleted'));
     } catch (e) {
-      state.projects.splice(idx, 0, removed);
+      rb.restore();
       toast(t('errGeneric'), 'err'); render();
     }
   });
@@ -4397,6 +4485,7 @@ function renderServices() {
   drawSvcList();
 }
 function drawSvcList() {
+  if (!$('#svcList')) return;
   const q = svcFilter.q.trim().toLowerCase();
   let list = state.services;
   if (svcFilter.projectId) list = list.filter(s => s.projectId === svcFilter.projectId);
@@ -4418,8 +4507,8 @@ function exportServicesCsv() {
   const rows = state.services.map(s => [
     new Date(s.date).toISOString().slice(0, 10),
     s.customer || '', s.projectId ? projName(s.projectId) : '', s.technician,
-    t(SVC_META[s.serviceType].key), s.problem, s.diagnosis, s.workDone, s.partsReplaced,
-    t(FINAL_META[s.finalStatus].key)
+    t(svcMeta(s.serviceType).key), s.problem, s.diagnosis, s.workDone, s.partsReplaced,
+    t(finalMeta(s.finalStatus).key)
   ]);
   const csvEsc = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
   const csv = '\ufeff' + [head, ...rows].map(r => r.map(csvEsc).join(',')).join('\r\n');
@@ -4433,7 +4522,7 @@ function exportServicesCsv() {
   toast(t('saved'));
 }
 function serviceRow(s) {
-  const m = SVC_META[s.serviceType];
+  const m = svcMeta(s.serviceType);
   return `<div class="row-item" onclick="openServiceView('${s.id}')">
     <div class="row-icon" style="background:var(--bg-soft);border:1px solid var(--border);font-size:19px">${m.icon}</div>
     <div class="row-body">
@@ -4441,7 +4530,7 @@ function serviceRow(s) {
       <span class="sub">${esc(s.problem || s.complaint || '—')}</span>
     </div>
     <div class="row-side">
-      <span class="badge ${FINAL_META[s.finalStatus].cls}">${t(FINAL_META[s.finalStatus].key)}</span>
+      <span class="badge ${finalMeta(s.finalStatus).cls}">${t(finalMeta(s.finalStatus).key)}</span>
       <span class="date">${fmtDate(s.date)} · ${esc(s.technician)}</span>
     </div>
   </div>`;
@@ -4449,7 +4538,7 @@ function serviceRow(s) {
 function openServiceView(id) {
   const s = state.services.find(x => x.id === id);
   if (!s) return;
-  const m = SVC_META[s.serviceType];
+  const m = svcMeta(s.serviceType);
   const rows = [
     [t('svcCustomer'), s.customer || (s.projectId ? (state.projects.find(p => p.id === s.projectId) || {}).customer : '')],
     [t('svcElevator'), s.elevatorInfo],
@@ -4467,7 +4556,7 @@ function openServiceView(id) {
     [t('svcFollowUp'), s.followUpDate ? fmtDate(s.followUpDate) : '']
   ].filter(x => x[1]);
   openModal(`
-    <div class="modal-head"><h3>${m.icon} ${t(m.key)} <span class="badge ${FINAL_META[s.finalStatus].cls}" style="margin-inline-start:6px">${t(FINAL_META[s.finalStatus].key)}</span></h3>
+    <div class="modal-head"><h3>${m.icon} ${t(m.key)} <span class="badge ${finalMeta(s.finalStatus).cls}" style="margin-inline-start:6px">${t(finalMeta(s.finalStatus).key)}</span></h3>
     <button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body"><div class="kv-grid" style="grid-template-columns:1fr">
       ${rows.map(([k, v]) => `<div class="kv-cell"><div class="k">${esc(k)}</div><div class="v" style="font-weight:500;white-space:pre-wrap">${esc(v)}</div></div>`).join('')}
@@ -4563,7 +4652,7 @@ function printServiceReport(id) {
     [t('svcElevator'), s.elevatorInfo || (p.name ? [p.name, p.location].filter(Boolean).join(' — ') : '—')],
     p.id ? [t('prType'), p.elevatorType === 'hydraulic' ? t('hydraulic') : t('traction')] : null,
     [t('svcTechnician'), s.technician],
-    [t('svcType'), t(SVC_META[s.serviceType].key)],
+    [t('svcType'), t(svcMeta(s.serviceType).key)],
     [t('svcComplaint'), s.complaint],
     [t('svcProblem'), s.problem],
     [t('svcDiagnosis'), s.diagnosis],
@@ -4571,7 +4660,7 @@ function printServiceReport(id) {
     [t('svcWork'), s.workDone],
     [t('svcParts'), s.partsReplaced],
     [t('svcRecommend'), s.recommendations],
-    [t('svcFinal'), t(FINAL_META[s.finalStatus].key)],
+    [t('svcFinal'), t(finalMeta(s.finalStatus).key)],
     [t('svcFollowUp'), s.followUpDate ? fmtDate(s.followUpDate) : '']
   ].filter(r => r && r[1]);
   sheet.innerHTML = `
@@ -4602,11 +4691,11 @@ function duplicateService(id) {
 }
 function deleteService(id) {
   confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteSvcMsg'), async () => {
-    const idx = state.services.findIndex(s => s.id === id);
-    const [removed] = state.services.splice(idx, 1);
+    const rb = optimisticRemove(state.services, id);
+    if (!rb) { closeModal(); return; }
     closeModal(); render();
     try { await api('/services/' + id, { method: 'DELETE' }); toast(t('deleted')); }
-    catch (e) { state.services.splice(idx, 0, removed); toast(t('errGeneric'), 'err'); render(); }
+    catch (e) { rb.restore(); toast(t('errGeneric'), 'err'); render(); }
   });
 }
 
@@ -4617,6 +4706,7 @@ const REMINDER_META = {
   custom:   { key: 'reminderCustom', icon: '📌', cls: 'b-gray' }
 };
 let calState = { jy: 0, jm: 0 }; // initialized to current Jalali month on first render
+let calSelDay = 0;                 // day highlighted in the grid (0 = none)
 
 /* Pure derivation of every active reminder from projects + services + manual entries.
    periodic  → project.serviceIntervalDays elapsed since its last maintenance/repair
@@ -4650,6 +4740,7 @@ function buildReminders() {
 function renderCalendar() {
   const c = $('#content');
   if (!calState.jy) { const j = tsToJalali(Date.now()); calState = { jy: j.jy, jm: j.jm }; }
+  calSelDay = 0;
   const reminders = buildReminders();
   c.innerHTML = `
     <div class="toolbar">
@@ -4665,6 +4756,7 @@ function renderCalendar() {
   drawReminderList(reminders);
 }
 function calShift(d) {
+  calSelDay = 0;
   calState.jm += d;
   if (calState.jm > 12) { calState.jm = 1; calState.jy++; }
   if (calState.jm < 1) { calState.jm = 12; calState.jy--; }
@@ -4672,10 +4764,11 @@ function calShift(d) {
 }
 function calToday() {
   const j = tsToJalali(Date.now());
+  calSelDay = 0;
   calState = { jy: j.jy, jm: j.jm };
   drawCalendar();
 }
-function drawCalendar() {
+function calCellsHTML() {
   const { jy, jm } = calState;
   const days = jalDaysInMonth(jy, jm);
   const firstTs = jalaliToTs(jy, jm, 1);
@@ -4695,17 +4788,29 @@ function drawCalendar() {
   for (let i = 0; i < startCol; i++) cells += '<span></span>';
   for (let d = 1; d <= days; d++) {
     const isToday = todayJ.jy === jy && todayJ.jm === jm && todayJ.jd === d;
+    const isSel = calSelDay === d;
     const n = dayCount[d] || 0;
-    cells += `<button class="cal-day ${isToday ? 'cal-today' : ''}" data-d="${d}" onclick="calPickDay(${d})">
+    cells += `<button class="cal-day ${isToday ? 'cal-today' : ''} ${isSel ? 'cal-sel' : ''}" data-d="${d}" onclick="calPickDay(${d})" aria-pressed="${isSel ? 'true' : 'false'}">
       <span class="cal-num">${faNum(d)}</span>
       ${n ? `<span class="cal-dot">${faNum(n)}</span>` : ''}
     </button>`;
   }
+  return cells;
+}
+/* repaint only the day grid (keeps the open day detail below intact) */
+function drawCalDays() {
+  const grid = $('#calGrid');
+  if (grid) grid.innerHTML = calCellsHTML();
+}
+function drawCalendar() {
+  if (!$('#calWrap')) return;
+  const { jy, jm } = calState;
+  const cells = calCellsHTML();
   $('#calWrap').innerHTML = `
     <div class="cal-head">
-      <button class="icon-btn" onclick="calShift(-1)">‹</button>
+      <button class="icon-btn" onclick="calShift(-1)" aria-label="${t('prevMonth')}" title="${t('prevMonth')}">${navArrows().prev}</button>
       <strong id="calHeader">${JAL_MONTHS[jm - 1]} ${faNum(jy)}</strong>
-      <button class="icon-btn" onclick="calShift(1)">›</button>
+      <button class="icon-btn" onclick="calShift(1)" aria-label="${t('nextMonth')}" title="${t('nextMonth')}">${navArrows().next}</button>
       <button class="btn btn-ghost btn-sm" onclick="calToday()">${t('today')}</button>
     </div>
     <div class="cal-week">${['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'].map(w => `<span>${w}</span>`).join('')}</div>
@@ -4714,28 +4819,31 @@ function drawCalendar() {
 }
 function calPickDay(d) {
   const { jy, jm } = calState;
-  const start = jalaliToTs(jy, jm, d);
-  const end = start + 86400000;
+  const { from: start, to: end } = jalDayRange(jy, jm, d);
   const svcs = (state.services || []).filter(s => s.date >= start && s.date < end);
   const rems = buildReminders().filter(r => r.due >= start && r.due < end);
+  calSelDay = d;
+  drawCalDays();
   if (!svcs.length && !rems.length) { $('#calDayDetail').innerHTML = `<div class="empty" data-cal="noevents" style="margin-top:12px"><p>${t('calNoEvents')}</p></div>`; return; }
   $('#calDayDetail').innerHTML = `
     <div class="card" style="margin-top:12px">
       <div class="card-title">${fmtJalali(start)}</div>
-      ${svcs.length ? `<div class="sub-title" data-cal="services">${t('calServicesOnDay')}</div>` + svcs.map(s => `<div class="row-item" onclick="openServiceView('${s.id}')"><span>${SVC_META[s.serviceType].icon}</span> ${esc(svcTarget(s))}</div>`).join('') : ''}
-      ${rems.length ? `<div class="sub-title" data-cal="reminders" style="margin-top:10px">${t('calRemindersDue')}</div>` + rems.map(r => `<div class="row-item ${r.overdue ? 'overdue' : ''}"><span>${(REMINDER_META[r.kind] || REMINDER_META.custom).icon}</span> ${esc(r.title)}</div>`).join('') : ''}
+      ${svcs.length ? `<div class="sub-title" data-cal="services">${t('calServicesOnDay')}</div>` + svcs.map(s => `<div class="row-item" onclick="openServiceView('${s.id}')"><span>${svcMeta(s.serviceType).icon}</span> ${esc(svcTarget(s))}</div>`).join('') : ''}
+      ${rems.length ? `<div class="sub-title" data-cal="reminders" style="margin-top:10px">${t('calRemindersDue')}</div>` + rems.map(r => `<div class="row-item ${r.overdue ? 'overdue' : ''}"><span>${remMeta(r.kind).icon}</span> ${esc(r.title)}</div>`).join('') : ''}
     </div>`;
 }
 function drawReminderList(reminders) {
   const el = $('#reminderList');
   if (!el) return;
   if (!reminders.length) { el.innerHTML = `<div class="empty"><p>${t('calNoReminders')}</p><p class="sub">${t('calTapDay')}</p></div>`; return; }
-  el.innerHTML = reminders.map(r => {
-    const m = REMINDER_META[r.kind] || REMINDER_META.custom;
+  el.innerHTML = `<p style="font-size:11.5px;color:var(--text-3);margin-bottom:8px">💡 ${t('reminderEditHint')}</p>` + reminders.map(r => {
+    const m = remMeta(r.kind);
     const label = r.overdue ? t('calOverdue') : (r.soon ? t('calDueSoon') : t('calUpcoming'));
     const cls = r.overdue ? 'b-red' : (r.soon ? 'b-amber' : 'b-gray');
-    const done = r.kind === 'custom' ? `<button class="btn btn-ghost btn-sm" onclick="markReminderDone('${r.reminderId}')">${t('reminderMarkDone')}</button>` : '';
-    return `<div class="row-item" style="justify-content:space-between">
+    /* only manual reminders own a record: they can be edited / completed / deleted */
+    const editable = !!r.reminderId;
+    const done = editable ? `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();markReminderDone('${r.reminderId}')">${t('reminderMarkDone')}</button>` : '';
+    return `<div class="row-item" style="justify-content:space-between${editable ? ';cursor:pointer' : ''}" ${editable ? `onclick="openReminderForm('${r.reminderId}')"` : ''}>
       <div class="row-body"><strong>${m.icon} ${esc(r.title)}</strong><span class="sub">${r.projectId ? esc(projName(r.projectId)) : ''}</span></div>
       <div class="row-side"><span class="badge ${cls}">${label} · ${fmtJalali(r.due)}</span>${done}</div>
     </div>`;
@@ -4752,27 +4860,52 @@ function openReminderForm(id) {
       <div class="field"><label>${t('svcType')}</label><select id="rm_kind">
         ${Object.keys(REMINDER_META).map(k => `<option value="${k}" ${v.kind === k ? 'selected' : ''}>${t(REMINDER_META[k].key)}</option>`).join('')}
       </select></div>
+      <div class="field span2"><label>${t('reminderProject')}</label><select id="rm_project">
+        <option value="">—</option>
+        ${(state.projects || []).map(p => `<option value="${p.id}" ${v.projectId === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}
+      </select></div>
     </form></div>
     <div class="modal-foot">
+      ${r ? `<button class="btn btn-soft-danger" onclick="deleteReminder('${r.id}')">${IC.trash}</button>` : ''}
       <button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button>
       <button class="btn btn-primary" id="rmSave">${r ? t('save') : t('create')}</button>
     </div>`);
-  $('#rmSave').onclick = async () => {
+  $('#rmSave').onclick = guard('#rmSave', async () => {
     const title = $('#rm_title').value.trim();
     if (!title) { toast(t('reminderTitleReq'), 'err'); return; }
-    const body = { title, due: jdateVal('rm_due') || (Date.now() + 7 * 86400000), kind: $('#rm_kind').value };
+    const body = {
+      title, due: jdateVal('rm_due') || (Date.now() + 7 * 86400000),
+      kind: $('#rm_kind').value, projectId: $('#rm_project').value
+    };
     try {
       if (r) { await api('/reminders/' + r.id, { method: 'PUT', body }); }
       else { await api('/reminders', { method: 'POST', body }); }
-      state.reminders = null; await loadAll(true);
-      closeModal(); render();
+      await reloadReminders();
+      closeModal(); toast(r ? t('saved') : t('created')); render();
     } catch (e) { toast(t('errGeneric'), 'err'); }
-  };
+  });
+}
+function deleteReminder(id) {
+  confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteReminderMsg'), async () => {
+    try {
+      await api('/reminders/' + id, { method: 'DELETE' });
+      await reloadReminders();
+      closeModal(); toast(t('reminderDeleted')); render();
+    } catch (e) { closeModal(); toast(t('errGeneric'), 'err'); }
+  });
+}
+/* refresh just the reminders collection (cheaper & safer than a full reload) */
+async function reloadReminders() {
+  const d = await api('/reminders');
+  state.reminders = d.reminders;
 }
 async function markReminderDone(id) {
-  await api('/reminders/' + id, { method: 'PUT', body: { done: true } });
-  state.reminders = null; await loadAll(true);
-  render();
+  try {
+    await api('/reminders/' + id, { method: 'PUT', body: { done: true } });
+    await reloadReminders();
+    render();
+    toast(t('saved'));
+  } catch (e) { reportError(e, 'markReminderDone'); }
 }
 
 /* ================= PARTS INVENTORY ================= */
@@ -4796,10 +4929,11 @@ function renderParts() {
   drawParts();
 }
 function drawParts() {
+  if (!$('#partList')) return;
   const q = partFilter.q.trim().toLowerCase();
   let list = state.parts;
   if (partFilter.low) list = list.filter(x => x.qty <= x.minQty);
-  if (q) list = list.filter(x => (x.name + ' ' + x.category + ' ' + x.location + ' ' + x.note).toLowerCase().includes(q));
+  if (q) list = list.filter(x => [x.name, x.category, x.location, x.note].map(v => v || '').join(' ').toLowerCase().includes(q));
   const el = $('#partList');
   if (!state.parts.length) {
     el.innerHTML = `<div class="empty" style="border:0"><div class="e-icon">📦</div><strong>${t('noParts')}</strong><p>${t('noPartsSub')}</p><button class="btn btn-primary" onclick="openPartForm()">${IC.plus} ${t('newPart')}</button></div>`;
@@ -4888,11 +5022,11 @@ function openPartForm(id) {
 }
 function deletePart(id) {
   confirmDialog(t('confirmDeleteTitle'), t('confirmDeletePartMsg'), async () => {
-    const idx = state.parts.findIndex(p => p.id === id);
-    const [removed] = state.parts.splice(idx, 1);
+    const rb = optimisticRemove(state.parts, id);
+    if (!rb) { closeModal(); return; }
     closeModal(); drawParts();
     try { await api('/parts/' + id, { method: 'DELETE' }); toast(t('deleted')); }
-    catch (e) { state.parts.splice(idx, 0, removed); toast(t('errGeneric'), 'err'); drawParts(); }
+    catch (e) { rb.restore(); toast(t('errGeneric'), 'err'); drawParts(); }
   });
 }
 
@@ -5099,6 +5233,8 @@ async function chFailedToIssue(tid) {
 
 /* ================= CALCULATIONS ================= */
 function computeCalc(cal) {
+  const out = $('#calcResult_' + cal.id);
+  if (!cal || !out) return;                       // card not on screen — nothing to do
   const vals = {};
   cal.inputs.forEach(inp => {
     const el = $(`#calc_${cal.id}_${inp.id}`);
@@ -5106,11 +5242,11 @@ function computeCalc(cal) {
   });
   try {
     const rows = cal.compute(vals);
-    $('#calcResult_' + cal.id).innerHTML = `<div class="calc-result">
+    out.innerHTML = `<div class="calc-result">
       ${rows.map(r => `<div class="r-row"><span class="r-label">${esc(r.label[LANG] || r.label.fa || r.label)}</span><span class="r-val">${esc(r.val)}</span></div>`).join('')}
     </div>`;
   } catch (e) {
-    $('#calcResult_' + cal.id).innerHTML = `<div class="error-box" style="padding:10px;margin-top:10px">⚠️</div>`;
+    out.innerHTML = `<div class="error-box" style="padding:10px;margin-top:10px">⚠️ ${t('errGeneric')}</div>`;
   }
 }
 let calcFilter = { cat: 'all', q: '' };
@@ -5264,6 +5400,7 @@ function startDiagFlow(id) {
   window.scrollTo(0, 0);
 }
 function diagAnswer(nodeId) {
+  if (!diagSession) return;                       // stale button after the flow was closed
   const f = DIAG_FLOWS.find(x => x.id === diagSession.flowId);
   if (!f || !f.nodes[nodeId]) return;
   diagSession.path.push(diagSession.current);
@@ -5289,6 +5426,7 @@ function renderDiagFlow(c) {
   const f = DIAG_FLOWS.find(x => x.id === diagSession.flowId);
   if (!f) { diagSession = null; renderDiagnostics(); return; }
   const node = f.nodes[diagSession.current];
+  if (!node) { diagSession = null; renderDiagnostics(); return; }
   const stepNo = diagSession.path.length + 1;
   const isResult = !node.q;
 
@@ -5431,7 +5569,7 @@ function openKbArticle(id) {
       ${kbSection('👁️', 'kbInspect', k.inspect)}
       ${kbSection('🧪', 'kbTest', k.test)}
       ${kbSection('💥', 'kbCauses', k.causes)}
-      ${k.related && k.related.length ? `<h4>🔗 ${t('kbRelated')}</h4><div style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0">${k.related.map(r => `<span class="badge b-blue" style="cursor:pointer" title="${t('kbRelClick')}" onclick="kbOpenRelated('${esc(r).replace(/'/g, '')}')">${esc(r)} ←</span>`).join('')}</div>` : ''}
+      ${k.related && k.related.length ? `<h4>🔗 ${t('kbRelated')}</h4><div style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0">${k.related.map(r => `<span class="badge b-blue" style="cursor:pointer" title="${t('kbRelClick')}" onclick="kbOpenRelated('${jsAttr(r)}')">${esc(r)} ←</span>`).join('')}</div>` : ''}
       ${k.safety ? `<div class="safety-banner" style="margin-top:14px"><span style="font-size:17px">⚠️</span><span>${esc(k.safety)}</span></div>` : ''}
       ${k.diag ? `<div class="note-block" style="margin-top:10px">🧭 <b>${t('kbDiag')}:</b> ${esc(k.diag)} — <a href="#/diagnostics" onclick="closeModal()">${t('diagnostics')} ←</a></div>` : ''}
     </div>`;
@@ -5925,11 +6063,11 @@ function openNoteForm(id) {
 }
 function deleteNote(id) {
   confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteNoteMsg'), async () => {
-    const idx = state.notes.findIndex(n => n.id === id);
-    const [removed] = state.notes.splice(idx, 1);
+    const rb = optimisticRemove(state.notes, id);
+    if (!rb) { closeModal(); return; }
     closeModal(); drawNotes();
     try { await api('/notes/' + id, { method: 'DELETE' }); toast(t('deleted')); }
-    catch (e) { state.notes.splice(idx, 0, removed); toast(t('errGeneric'), 'err'); drawNotes(); }
+    catch (e) { rb.restore(); toast(t('errGeneric'), 'err'); drawNotes(); }
   });
 }
 
@@ -5993,7 +6131,7 @@ function renderIssues() {
     ${closed.length ? `<div class="section-title"><h3>✔️ ${t('issueClosed')}</h3></div>` + closed.map(issueRow).join('') : ''}`;
 }
 function issueRow(i) {
-  const m = ISSUE_META[i.kind] || ISSUE_META.open;
+  const m = issueMeta(i.kind);
   return `<div class="row-item" style="${i.closed ? 'opacity:.55' : ''}" onclick="openIssueForm('${i.id}')">
     <div class="row-icon" style="background:var(--bg-soft);border:1px solid var(--border);font-size:18px">${i.closed ? '✔️' : m.icon}</div>
     <div class="row-body">
@@ -6045,11 +6183,11 @@ function openIssueForm(id, presetProject) {
 }
 function deleteIssue(id) {
   confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteIssueMsg'), async () => {
-    const idx = state.issues.findIndex(x => x.id === id);
-    const [rm] = state.issues.splice(idx, 1);
+    const rb = optimisticRemove(state.issues, id);
+    if (!rb) { closeModal(); return; }
     closeModal(); render();
     try { await api('/issues/' + id, { method: 'DELETE' }); toast(t('deleted')); }
-    catch (e) { state.issues.splice(idx, 0, rm); toast(t('errGeneric'), 'err'); render(); }
+    catch (e) { rb.restore(); toast(t('errGeneric'), 'err'); render(); }
   });
 }
 
@@ -6071,7 +6209,7 @@ function renderToolsPage() {
     : `<div class="empty"><div class="e-icon">🧰</div><strong>${t('noTools')}</strong></div>`}
     ${suggestions.length ? `<div class="section-title"><h3>💡 ${t('toolSuggest')}</h3></div>
     <div style="display:flex;flex-wrap:wrap;gap:8px">
-      ${suggestions.map(s => `<button class="chip" onclick="quickAddTool('${esc(s)}')">${IC.plus} ${esc(s)}</button>`).join('')}
+      ${suggestions.map(s => `<button class="chip" onclick="quickAddTool('${jsAttr(s)}')">${IC.plus} ${esc(s)}</button>`).join('')}
     </div>` : ''}`;
 }
 async function quickAddTool(name) {
@@ -6312,8 +6450,14 @@ function openConsumeForm(partId) {
       <button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button>
       <button class="btn btn-primary" id="cnSave">📉 ${t('consume')}</button>
     </div>`);
+  let overStockConfirmed = false;
   $('#cnSave').onclick = guard('#cnSave', async () => {
-    const qty = Math.max(1, +$('#cn_qty').value || 1);
+    const qty = Math.max(1, Math.round(+$('#cn_qty').value || 1));
+    if (qty > (+part.qty || 0) && !overStockConfirmed) {
+      overStockConfirmed = true;                 // second tap confirms
+      toast(t('consumeOverStock'), 'err');
+      return;
+    }
     try {
       const d = await api('/parts-consume', { method: 'POST', body: { partId: part.id, qty, projectId: $('#cn_project').value, note: $('#cn_note').value } });
       Object.assign(part, d.part);
@@ -6352,6 +6496,8 @@ function openPhotoForm(presetProject) {
     if (!file) return;
     const img = new Image();
     const fr = new FileReader();
+    fr.onerror = () => toast(t('errGeneric'), 'err');
+    img.onerror = () => { dataUrl = ''; $('#phSave').disabled = true; toast(t('errGeneric'), 'err'); };
     fr.onload = () => {
       img.onload = () => {
         // downscale to max 1280px to keep storage sane
@@ -6395,11 +6541,11 @@ function viewPhoto(id) {
 }
 function deletePhoto(id) {
   confirmDialog(t('confirmDeleteTitle'), t('confirmDeletePhotoMsg'), async () => {
-    const idx = state.photos.findIndex(x => x.id === id);
-    const [rm] = state.photos.splice(idx, 1);
+    const rb = optimisticRemove(state.photos, id);
+    if (!rb) { closeModal(); return; }
     closeModal(); render();
     try { await api('/photos/' + id, { method: 'DELETE' }); toast(t('deleted')); }
-    catch (e) { state.photos.splice(idx, 0, rm); toast(t('errGeneric'), 'err'); render(); }
+    catch (e) { rb.restore(); toast(t('errGeneric'), 'err'); render(); }
   });
 }
 
@@ -6452,6 +6598,7 @@ function renderInvoices() {
   drawInvList();
 }
 function drawInvList() {
+  if (!$('#invList')) return;
   const q = invFilter.q.trim().toLowerCase();
   let list = state.invoices;
   if (invFilter.status !== 'all') {
@@ -6518,16 +6665,26 @@ function invWireItems() {
   });
 }
 function invDelItem(i) {
+  if (!invDraft) return;
   const it = invDraft.items[i];
-  if (it && it.partId) invDraft.releasedParts.push({ partId: it.partId, qty: +it.qty || 0 });
+  if (it && it.partId) {
+    /* a row added in THIS editing session was never taken from stock yet —
+       just cancel its pending consumption. Rows that came from the saved
+       invoice did consume stock, so removing them gives the parts back. */
+    const pend = it.rowKey ? invDraft.consumedParts.findIndex(c => c.rowKey === it.rowKey) : -1;
+    if (pend >= 0) invDraft.consumedParts.splice(pend, 1);
+    else if (+it.qty > 0) invDraft.releasedParts.push({ partId: it.partId, qty: Math.round(+it.qty) });
+  }
   invDraft.items.splice(i, 1);
   invRefreshItems();
 }
 function invAddItem(item) {
+  if (!invDraft) return;
   invDraft.items.push(item || { desc: '', qty: 1, price: 0 });
   invRefreshItems();
 }
 function invRefreshTotals() {
+  if (!invDraft) return;
   const items = invDraft.items.reduce((a, it) => a + (+it.qty || 0) * (+it.price || 0), 0);
   const labor = +($('#inv_labor') && $('#inv_labor').value) || 0;
   const disc = +($('#inv_discount') && $('#inv_discount').value) || 0;
@@ -6545,6 +6702,7 @@ function invRefreshTotals() {
     </div>`;
 }
 function invPickPart() {
+  invSyncDraftFromForm();
   const opts = state.parts.map(p => `
     <div class="row-item" style="margin-bottom:7px" onclick="invUsePart('${p.id}')">
       <div class="row-body"><strong style="font-size:13.5px">${esc(p.name)}</strong>
@@ -6557,12 +6715,30 @@ function invPickPart() {
 }
 function invUsePart(partId) {
   const p = state.parts.find(x => x.id === partId);
-  if (!p) return;
-  invDraft.items.push({ desc: p.name, qty: 1, price: p.price || 0, partId: p.id });
-  invDraft.consumedParts.push({ partId: p.id });
+  if (!p || !invDraft) return;
+  const rowKey = 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  invDraft.items.push({ desc: p.name, qty: 1, price: p.price || 0, partId: p.id, rowKey });
+  invDraft.consumedParts.push({ partId: p.id, rowKey });
   invBackToForm();
 }
-function invBackToForm() { openInvoiceForm(invDraft.editingId, null, true); }
+function invBackToForm() {
+  if (!invDraft) { closeModal(); return; }
+  openInvoiceForm(invDraft.editingId, null, true);
+}
+/* copy the values currently typed in the form into the draft, so they survive
+   a round-trip through the part-picker / payment sub-modal */
+function invSyncDraftFromForm() {
+  if (!invDraft) return;
+  const g = id => $('#' + id);
+  if (g('inv_customer')) invDraft.customerOverride = g('inv_customer').value;
+  if (g('inv_project')) invDraft.projectOverride = g('inv_project').value;
+  if (g('inv_service')) invDraft.serviceOverride = g('inv_service').value;
+  if (g('inv_note')) invDraft.noteOverride = g('inv_note').value;
+  if (g('inv_labor')) invDraft.laborOverride = Math.max(0, Math.round(+g('inv_labor').value || 0));
+  if (g('inv_discount')) invDraft.discountOverride = Math.max(0, Math.round(+g('inv_discount').value || 0));
+  const dt = jdateVal('inv_date');
+  if (dt) invDraft.dateOverride = dt;
+}
 
 function openInvoiceForm(id, presetProject, keepDraft) {
   const inv = id ? state.invoices.find(x => x.id === id) : null;
@@ -6643,6 +6819,7 @@ function openInvoiceForm(id, presetProject, keepDraft) {
   $('#inv_date').addEventListener('change', () => { invDraft.dateOverride = jdateVal('inv_date') || Date.now(); });
 
   $('#invPayBtn').onclick = () => {
+    invSyncDraftFromForm();
     openModal(`
       <div class="modal-head"><h3>💵 ${t('invAddPay')}</h3><button class="icon-btn" onclick="invBackToForm()">✕</button></div>
       <div class="modal-body">
@@ -6661,8 +6838,8 @@ function openInvoiceForm(id, presetProject, keepDraft) {
       if (amount <= 0) { toast(t('errGeneric'), 'err'); return; }
       // overpayment guard: compute balance from current draft
       const items = invDraft.items.reduce((a, it) => a + (Math.round(+it.qty || 0) * Math.round(+it.price || 0)), 0);
-      const labor = Math.round(invDraft.laborOverride !== undefined ? +invDraft.laborOverride : 0);
-      const disc = Math.round(invDraft.discountOverride !== undefined ? +invDraft.discountOverride : 0);
+      const labor = Math.round(invDraft.laborOverride !== undefined ? +invDraft.laborOverride : (inv ? +inv.labor || 0 : 0));
+      const disc = Math.round(invDraft.discountOverride !== undefined ? +invDraft.discountOverride : (inv ? +inv.discount || 0 : 0));
       const grand = Math.max(0, items + labor - disc);
       const paid = invDraft.payments.reduce((a, p) => a + (Math.round(+p.amount) || 0), 0);
       if (grand > 0 && paid + amount > grand && !payConfirmedOver) {
@@ -6703,33 +6880,47 @@ function openInvoiceForm(id, presetProject, keepDraft) {
         const d = await api('/invoices', { method: 'POST', body });
         state.invoices.unshift(d.item); saved = d.item;
       }
-      // consume newly-added inventory parts (only once, on save)
-      for (const cp of invDraft.consumedParts) {
-        const it = body.items.find(x => x.partId === cp.partId);
-        if (!it) continue;
+      // 1) give stock back for inventory rows removed from a saved invoice
+      for (const rp of invDraft.releasedParts) {
+        if (!(+rp.qty > 0)) continue;
+        const local = state.parts.find(x => x.id === rp.partId);
+        if (!local) continue;
         try {
-          const d = await api('/parts-consume', { method: 'POST', body: { partId: cp.partId, qty: +it.qty || 1, projectId: body.projectId, note: t('invoice') + ' #' + saved.id.slice(0, 6).toUpperCase() } });
+          const d = await api('/parts/' + rp.partId, { method: 'PUT', body: { qty: (+local.qty || 0) + Math.round(+rp.qty || 0) } });
+          Object.assign(local, d.part);
+        } catch (e) {}
+      }
+      invDraft.releasedParts = [];
+      // 2) consume newly-added inventory parts (only once, on save)
+      for (const cp of invDraft.consumedParts) {
+        const it = invDraft.items.find(x => x.rowKey && x.rowKey === cp.rowKey);
+        if (!it) continue;
+        const qty = Math.max(1, Math.round(+it.qty || 1));
+        try {
+          const d = await api('/parts-consume', { method: 'POST', body: { partId: cp.partId, qty, projectId: body.projectId, note: t('invoice') + ' #' + saved.id.slice(0, 6).toUpperCase() } });
           const local = state.parts.find(x => x.id === cp.partId);
           if (local) Object.assign(local, d.part);
         } catch (e) {}
       }
+      invDraft.consumedParts = [];
       invDraft = null;
       closeModal(); toast(t('saved')); render();
     } catch (e) { toast(t('errGeneric'), 'err'); btn.disabled = false; }
   };
 }
 function invDelPay(i) {
+  if (!invDraft) return;
   invDraft.payments.splice(i, 1);
   invBackToForm();
 }
 function deleteInvoice(id) {
   confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteInvMsg'), async () => {
-    const idx = state.invoices.findIndex(x => x.id === id);
-    const [rm] = state.invoices.splice(idx, 1);
+    const rb = optimisticRemove(state.invoices, id);
     invDraft = null;
+    if (!rb) { closeModal(); return; }
     closeModal(); render();
     try { await api('/invoices/' + id, { method: 'DELETE' }); toast(t('deleted')); }
-    catch (e) { state.invoices.splice(idx, 0, rm); toast(t('errGeneric'), 'err'); render(); }
+    catch (e) { rb.restore(); toast(t('errGeneric'), 'err'); render(); }
   });
 }
 function printInvoice(id) {
@@ -6833,7 +7024,7 @@ function drawGlobalSearch(qRaw) {
 
   grp(t('srCalc'), CALCULATORS
     .filter(c2 => (c2.title.fa + ' ' + (c2.title.en || '') + ' ' + c2.desc.fa + ' ' + c2.formula).toLowerCase().includes(q))
-    .slice(0, 5).map(c2 => gsRow('🧮', esc(c2.title.fa), esc(c2.desc.fa), `closeModal();calcFilter={cat:'all',q:'${esc(qRaw).replace(/'/g, '')}'} ;navigate('/calculations')`)));
+    .slice(0, 5).map(c2 => gsRow('🧮', esc(c2.title.fa), esc(c2.desc.fa), `closeModal();calcFilter={cat:'all',q:'${jsAttr(qRaw)}'};navigate('/calculations')`)));
 
   out.innerHTML = S.length ? S.join('') : `<div class="empty" style="padding:26px"><div class="e-icon">🔍</div><strong>${t('noResults')}</strong></div>`;
 }
@@ -6842,12 +7033,14 @@ function drawGlobalSearch(qRaw) {
 
 /* ================= CONTRACTS (monthly maintenance) ================= */
 /* contract: { id, building, amount, startTs, months, projectId, note, paid: { 'jy-jm': true } } */
+function ctStartTs(ct) { return +ct.startTs || +ct.createdAt || Date.now(); }
 function ctMonthList(ct) {
   // list of {jy,jm,key,ts} for the contract duration
   const out = [];
-  let { jy, jm } = tsToJalali(ct.startTs || ct.createdAt || Date.now());
-  for (let i = 0; i < (ct.months || 12); i++) {
-    out.push({ jy, jm, key: jy + '-' + jm, ts: jalaliToTs(jy, jm, 1) });
+  let { jy, jm } = tsToJalali(ctStartTs(ct));
+  const months = Math.max(1, Math.min(120, Math.round(+ct.months || 12)));
+  for (let i = 0; i < months; i++) {
+    out.push({ jy, jm, key: jy + '-' + jm, ts: jalDayStart(jy, jm, 1) });
     jm++; if (jm > 12) { jm = 1; jy++; }
   }
   return out;
@@ -6858,9 +7051,12 @@ function ctStats(ct) {
   const started = list.filter(m => m.ts <= now);
   const paidCount = list.filter(m => ct.paid && ct.paid[m.key]).length;
   const overdue = started.filter(m => !(ct.paid && ct.paid[m.key])).length;
-  const active = list.length && list[list.length - 1].ts >= now && (list[0].ts <= now);
-  const expired = list.length && list[list.length - 1].ts < now;
-  return { list, paidCount, overdue, active, expired, total: list.length };
+  /* a contract runs until the END of its last month, not its first day */
+  const last = list[list.length - 1];
+  const endTs = last ? jalMonthRange(last.jy, last.jm).to : 0;
+  const active = !!list.length && endTs > now && list[0].ts <= now;
+  const expired = !!list.length && endTs <= now;
+  return { list, paidCount, overdue, active, expired, total: list.length, endTs };
 }
 function renderContracts() {
   const c = $('#content');
@@ -6894,7 +7090,7 @@ function renderContracts() {
         <div class="row-icon" style="background:${st.overdue ? 'var(--danger-soft)' : 'var(--ok-soft)'};font-size:18px">${st.overdue ? '🔴' : '📄'}</div>
         <div class="row-body">
           <strong>${esc(ct.building)}</strong>
-          <span class="sub">${money(ct.amount)} ${t('rial')} / ${JAL_MONTHS[tsToJalali(ct.startTs).jm - 1]} ${faNum(tsToJalali(ct.startTs).jy)} · ${faNum(st.total)} ${LANG === 'fa' ? 'ماه' : 'months'}</span>
+          <span class="sub">${money(ct.amount)} ${t('rial')} / ${JAL_MONTHS[tsToJalali(ctStartTs(ct)).jm - 1]} ${faNum(tsToJalali(ctStartTs(ct)).jy)} · ${faNum(st.total)} ${LANG === 'fa' ? 'ماه' : 'months'}</span>
         </div>
         <div class="row-side">
           ${st.overdue ? `<span class="badge b-red">${faNum(st.overdue)} ${t('ctOverdueMonths')}</span>` : `<span class="badge b-green">${st.expired ? t('ctExpired') : t('ctActive')}</span>`}
@@ -6905,7 +7101,8 @@ function renderContracts() {
 }
 function openContractForm(id) {
   const ct = id ? state.contracts.find(x => x.id === id) : null;
-  const v = ct || { building: '', amount: 0, startTs: Date.now(), months: 12, projectId: '', note: '', paid: {} };
+  const v = ct ? Object.assign({}, ct, { startTs: ctStartTs(ct) })
+              : { building: '', amount: 0, startTs: Date.now(), months: 12, projectId: '', note: '', paid: {} };
   openModal(`
     <div class="modal-head"><h3>${ct ? '✏️ ' + t('editContract') : '📄 ' + t('newContract')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body">
@@ -6972,11 +7169,11 @@ async function ctTogglePaid(ctId, key) {
 }
 function deleteContract(id) {
   confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteCtMsg'), async () => {
-    const idx = state.contracts.findIndex(x => x.id === id);
-    const [rm] = state.contracts.splice(idx, 1);
+    const rb = optimisticRemove(state.contracts, id);
+    if (!rb) { closeModal(); return; }
     closeModal(); render();
     try { await api('/contracts/' + id, { method: 'DELETE' }); toast(t('deleted')); }
-    catch (e) { state.contracts.splice(idx, 0, rm); toast(t('errGeneric'), 'err'); render(); }
+    catch (e) { rb.restore(); toast(t('errGeneric'), 'err'); render(); }
   });
 }
 
@@ -6987,8 +7184,7 @@ function renderMonthlyReport() {
   if (!mrMonth) { const j = tsToJalali(Date.now()); mrMonth = { jy: j.jy, jm: j.jm }; }
   const c = $('#content');
   const { jy, jm } = mrMonth;
-  const from = jalaliToTs(jy, jm, 1);
-  const to = from + jalDaysInMonth(jy, jm) * 86400000;
+  const { from, to } = jalMonthRange(jy, jm);
   const inMonth = ts => ts >= from && ts < to;
 
   const svcs = state.services.filter(s => inMonth(s.date));
@@ -7027,9 +7223,9 @@ function renderMonthlyReport() {
   c.innerHTML = `
     <div class="card" style="margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-        <button class="icon-btn" onclick="_mrNext()">‹</button>
+        <button class="icon-btn" onclick="_mrPrev()" aria-label="${t('prevMonth')}" title="${t('prevMonth')}">${navArrows().prev}</button>
         <strong style="font-size:16.5px">📈 ${JAL_MONTHS[jm - 1]} ${faNum(jy)}</strong>
-        <button class="icon-btn" onclick="_mrPrev()">›</button>
+        <button class="icon-btn" onclick="_mrNext()" aria-label="${t('nextMonth')}" title="${t('nextMonth')}">${navArrows().next}</button>
       </div>
     </div>
     ${!hasData ? `<div class="empty"><div class="e-icon">📭</div><strong>${t('mrEmpty')}</strong></div>` : `
@@ -7044,7 +7240,7 @@ function renderMonthlyReport() {
         <div class="card-title">🔧 ${t('mrByType')}</div>
         ${Object.keys(byType).length ? Object.keys(byType).map(k => `
           <div class="sb-row" style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-            <span style="font-size:12.5px;color:var(--text-2);flex:1">${SVC_META[k].icon} ${t(SVC_META[k].key)}</span>
+            <span style="font-size:12.5px;color:var(--text-2);flex:1">${svcMeta(k).icon} ${t(svcMeta(k).key)}</span>
             <span class="badge b-blue">${faNum(byType[k])}</span>
           </div>`).join('') : `<p style="font-size:12.5px;color:var(--text-3)">—</p>`}
         ${newProjects ? `<div class="sb-row" style="display:flex;align-items:center;gap:10px"><span style="font-size:12.5px;color:var(--text-2);flex:1">🏗️ ${t('mrNewProjects')}</span><span class="badge b-purple">${faNum(newProjects)}</span></div>` : ''}
@@ -7069,8 +7265,7 @@ function renderMonthlyReport() {
 }
 function buildMonthlyText() {
   const { jy, jm } = mrMonth;
-  const from = jalaliToTs(jy, jm, 1);
-  const to = from + jalDaysInMonth(jy, jm) * 86400000;
+  const { from, to } = jalMonthRange(jy, jm);
   const inMonth = ts => ts >= from && ts < to;
   const svcs = state.services.filter(s => inMonth(s.date));
   let invIncome = 0;
@@ -7083,8 +7278,7 @@ function buildMonthlyText() {
 }
 function printMonthlyReport() {
   const { jy, jm } = mrMonth;
-  const from = jalaliToTs(jy, jm, 1);
-  const to = from + jalDaysInMonth(jy, jm) * 86400000;
+  const { from, to } = jalMonthRange(jy, jm);
   const inMonth = ts => ts >= from && ts < to;
   const svcs = state.services.filter(s => inMonth(s.date));
   let invIncome = 0, ctIncome = 0;
@@ -7108,7 +7302,7 @@ function printMonthlyReport() {
     </table>
     <table>
       <tr><th style="width:90px">${t('svcDate')}</th><th>${t('svcCustomer')}</th><th>${t('svcProblem')}</th><th style="width:80px">${t('svcFinal')}</th></tr>
-      ${svcs.map(s => `<tr><td>${fmtJalali(s.date)}</td><td>${esc(svcTarget(s))}</td><td>${esc(s.problem || s.complaint || '—')}</td><td>${t(FINAL_META[s.finalStatus].key)}</td></tr>`).join('')}
+      ${svcs.map(s => `<tr><td>${fmtJalali(s.date)}</td><td>${esc(svcTarget(s))}</td><td>${esc(s.problem || s.complaint || '—')}</td><td>${t(finalMeta(s.finalStatus).key)}</td></tr>`).join('')}
     </table>
     <div class="sig-row"><div class="sig">${t('signTech')}</div></div>`;
   window.print();
@@ -7160,13 +7354,13 @@ function buildServiceText(s) {
   L.push('👤 ' + (s.customer || (p && p.customer) || '—'));
   if (p) L.push('🏢 ' + p.name);
   L.push('📅 ' + fmtJalali(s.date));
-  L.push('🔧 ' + t(SVC_META[s.serviceType].key));
+  L.push('🔧 ' + t(svcMeta(s.serviceType).key));
   if (s.problem) L.push('❗ ' + t('svcProblem') + ': ' + s.problem);
   if (s.diagnosis) L.push('🔎 ' + t('svcDiagnosis') + ': ' + s.diagnosis);
   if (s.workDone) L.push('✅ ' + t('svcWork') + ': ' + s.workDone);
   if (s.partsReplaced && s.partsReplaced !== '—') L.push('📦 ' + t('svcParts') + ': ' + s.partsReplaced);
   if (s.recommendations) L.push('💡 ' + t('svcRecommend') + ': ' + s.recommendations);
-  L.push('🏁 ' + t('svcFinal') + ': ' + t(FINAL_META[s.finalStatus].key));
+  L.push('🏁 ' + t('svcFinal') + ': ' + t(finalMeta(s.finalStatus).key));
   L.push('👨‍🔧 ' + s.technician);
   return L.join('\n');
 }
@@ -9642,9 +9836,9 @@ function drawJdate() {
   }
   box.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <button class="icon-btn" style="width:34px;height:34px" onclick="jdShift(1)">‹</button>
+      <button class="icon-btn" style="width:34px;height:34px" onclick="jdShift(-1)" aria-label="${t('prevMonth')}" title="${t('prevMonth')}">${navArrows().prev}</button>
       <strong style="font-size:14.5px">${JAL_MONTHS[jm - 1]} ${faNum(jy)}</strong>
-      <button class="icon-btn" style="width:34px;height:34px" onclick="jdShift(-1)">›</button>
+      <button class="icon-btn" style="width:34px;height:34px" onclick="jdShift(1)" aria-label="${t('nextMonth')}" title="${t('nextMonth')}">${navArrows().next}</button>
     </div>
     <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;font-size:10.5px;color:var(--text-3);margin-bottom:5px">
       <span>ش</span><span>ی</span><span>د</span><span>س</span><span>چ</span><span>پ</span><span>ج</span>
@@ -9790,9 +9984,13 @@ async function init() {
     LANG = LANG === 'fa' ? 'en' : 'fa';
     localStorage.setItem('zlift_lang', LANG);
     applyLang();
+    updateOnlineBadge();
     if (state.user) { renderNav(); render(); $('#userName').textContent = state.user.name; }
     setAuthMode(authMode);
   };
+  updateOnlineBadge();
+  window.addEventListener('online', updateOnlineBadge);
+  window.addEventListener('offline', updateOnlineBadge);
   $('#menuBtn').onclick = () => {
     $('#sidebar').classList.add('open');
     $('#backdrop').classList.add('show');
@@ -9939,8 +10137,22 @@ function _lsLoad() {
   if (!_lsDB.settings) _lsDB.settings = { company: 'Z Lift', phone: '', address: '' };
   ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders'].forEach(k => { if (!Array.isArray(_lsDB[k])) _lsDB[k] = []; });
   if (!_lsDB.schemaVersion) _lsDB.schemaVersion = 1;
+  if (!_lsDB.sessions || typeof _lsDB.sessions !== 'object') _lsDB.sessions = {};
+  _lsPruneSessions();
   _lsMigrateServices();
   return _lsDB;
+}
+
+/* drop login sessions older than 180 days (and the current token is always kept) */
+function _lsPruneSessions() {
+  const db = _lsDB, keep = Date.now() - 180 * 86400000;
+  let changed = false;
+  Object.keys(db.sessions).forEach(tok => {
+    const ss = db.sessions[tok];
+    const alive = ss && (+ss.createdAt || 0) >= keep;
+    if (!alive && tok !== state.token) { delete db.sessions[tok]; changed = true; }
+  });
+  return changed;
 }
 
 /* Migration: services = independent collection. Idempotent, no deletes, no duplicates. */
@@ -9976,21 +10188,32 @@ function _lsMigrateServices() {
 
 let _lsMirrorTick = 0;
 function _lsSave() {
+  let raw;
+  try { raw = JSON.stringify(_lsDB); }
+  catch (e) { console.error('[ZLift] serialize failed', e); return false; }
   try {
-    const raw = JSON.stringify(_lsDB);
     localStorage.setItem('zlift_db', raw);
     window._lsSaveFailed = false;
     // mirror copy every ~10th save (cheap data-loss protection against partial corruption)
     if (++_lsMirrorTick % 10 === 1) {
       try { localStorage.setItem('zlift_db_mirror', raw); } catch (e2) {}
     }
-  }
-  catch (e) {
+    return true;
+  } catch (e) {
+    /* quota exceeded — free the mirror (it is only a safety copy) and retry once
+       before telling the user, so a single big photo can't block all writes */
+    try {
+      localStorage.removeItem('zlift_db_mirror');
+      localStorage.setItem('zlift_db', raw);
+      window._lsSaveFailed = false;
+      return true;
+    } catch (e2) {}
     // storage full — warn loudly instead of silent data loss
     if (!window._lsSaveFailed) {
       window._lsSaveFailed = true;
-      try { toast(t('storageFull'), 'err'); } catch (e2) { alert('Storage full! حافظه پر است — عکس‌های قدیمی را حذف و بکاپ بگیرید.'); }
+      try { toast(t('storageFull'), 'err'); } catch (e3) { alert('Storage full! حافظه پر است — عکس‌های قدیمی را حذف و بکاپ بگیرید.'); }
     }
+    return false;
   }
 }
 function _lsUsage() {
@@ -10281,10 +10504,11 @@ init();
 </script>
   <script>
     /* PWA: service worker + install prompt */
+    let _swReloading = false;
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').then(reg => {
-          function offer() { showUpdateBanner(); }
+          const offer = () => showUpdateBanner();
           if (reg.waiting && navigator.serviceWorker.controller) offer();
           reg.addEventListener('updatefound', () => {
             const nw = reg.installing;
@@ -10293,24 +10517,53 @@ init();
               if ((nw.state === 'installed' || nw.state === 'activated') && navigator.serviceWorker.controller) offer();
             });
           });
+          /* look for a new release when the app comes back to the foreground
+             (installed PWAs are rarely reloaded by hand) */
+          let lastCheck = Date.now();
+          document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState !== 'visible') return;
+            if (Date.now() - lastCheck < 60 * 60 * 1000) return;
+            lastCheck = Date.now();
+            reg.update().catch(() => {});
+          });
         }).catch(() => {});
+        /* the new worker took over → load the fresh shell exactly once */
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (_swReloading) return;
+          _swReloading = true;
+          location.reload();
+        });
       });
     }
     function showUpdateBanner() {
       if (document.getElementById('updBanner')) return;
+      const fa = (document.documentElement.lang || 'fa') === 'fa';
       const b = document.createElement('div');
       b.id = 'updBanner';
       b.style.cssText = 'position:fixed;bottom:14px;inset-inline:14px;z-index:500;background:#2563eb;color:#fff;padding:12px 16px;border-radius:14px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 30px rgba(0,0,0,.35);font-size:13.5px;font-weight:600';
-      b.innerHTML = '<span style="flex:1">🔄 نسخه جدید Z Lift آماده است</span>';
+      const span = document.createElement('span');
+      span.style.flex = '1';
+      span.textContent = fa ? '🔄 نسخه جدید Z Lift آماده است' : '🔄 A new version of Z Lift is ready';
+      b.appendChild(span);
       const btn = document.createElement('button');
-      btn.textContent = 'بروزرسانی';
+      btn.textContent = fa ? 'بروزرسانی' : 'Update';
       btn.style.cssText = 'background:#fff;color:#2563eb;border:0;border-radius:9px;padding:8px 14px;font-weight:700;font-family:inherit;cursor:pointer';
       btn.onclick = () => {
+        btn.disabled = true;
         navigator.serviceWorker.getRegistration().then(reg => {
           if (reg && reg.waiting) reg.waiting.postMessage('SKIP_WAITING');
-        }).finally(() => setTimeout(() => location.reload(), 400));
+        }).catch(() => {}).finally(() => {
+          // controllerchange normally reloads; this is the safety net
+          setTimeout(() => { if (!_swReloading) { _swReloading = true; location.reload(); } }, 1500);
+        });
       };
       b.appendChild(btn);
+      const later = document.createElement('button');
+      later.textContent = '✕';
+      later.setAttribute('aria-label', fa ? 'بستن' : 'Dismiss');
+      later.style.cssText = 'background:transparent;color:#fff;border:0;font-size:15px;cursor:pointer;padding:4px 6px';
+      later.onclick = () => b.remove();
+      b.appendChild(later);
       document.body.appendChild(b);
     }
     let _deferredInstall = null;
