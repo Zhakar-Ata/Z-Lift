@@ -1,5 +1,5 @@
 /* Z Lift — Service Worker (offline-first PWA) */
-const CACHE = 'zlift-pwa-v16';
+const CACHE = 'zlift-pwa-v18';
 const CORE = [
   './',
   './index.html',

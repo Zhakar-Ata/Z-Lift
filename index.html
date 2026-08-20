@@ -801,6 +801,10 @@ const I18N = {
     dashboard: 'داشبورد', projects: 'پروژه‌های نصب', services: 'سرویس‌ها',
     checklists: 'چک‌لیست‌ها', calculations: 'محاسبات فنی', diagnostics: 'عیب‌یابی',
     knowledge: 'دانش فنی', notes: 'یادداشت‌ها',
+    standards: 'استاندارد EN 81-20', stdSearch: 'جستجوی الزام، مقدار یا بند استاندارد…',
+    stdBanner: 'مرجع سریع الزامات کلیدی EN 81-20:2020 (مطابق استاندارد ملی ISIRI 6303-20). برای تصمیم‌گیری سریع تکنسین در محل؛ در بازرسی رسمی، متن مصوب استاندارد ملاک است.',
+    stdClause: 'بند', stdExpand: 'جزئیات کامل', stdNoMatch: 'الزامی با این عبارت یافت نشد',
+    stdDisclaimer: 'خلاصه کاربردی الزامات — جایگزین متن کامل استاندارد نیست.',
     // dashboard
     latestProject: 'آخرین پروژه', currentStatus: 'وضعیت فعلی', progress: 'پیشرفت پروژه',
     viewDetails: 'مشاهده جزئیات', newService: 'ثبت سرویس', quickAccess: 'دسترسی سریع',
@@ -815,7 +819,7 @@ const I18N = {
     // projects
     newProject: 'پروژه جدید', editProject: 'ویرایش پروژه', deleteProject: 'حذف پروژه',
     searchProjects: 'جستجوی پروژه، مشتری، محل...',
-    all: 'همه', traction: 'کششی', hydraulic: 'هیدرولیک',
+    all: 'همه', traction: 'کششی', hydraulic: 'هیدرولیک', bothTypes: 'هر دو نوع',
     prName: 'نام پروژه', prCustomer: 'نام مشتری / کارفرما', prPhone: 'تلفن تماس', prLocation: 'آدرس / محل پروژه',
     prType: 'نوع آسانسور', prCapacity: 'ظرفیت (kg)', prPersons: 'ظرفیت (نفر)', prFloors: 'تعداد طبقات',
     prStops: 'تعداد توقف', prSpeed: 'سرعت (m/s)', prController: 'تابلو فرمان', prMotor: 'موتور / پاوریونیت',
@@ -1005,6 +1009,10 @@ const I18N = {
     dashboard: 'Dashboard', projects: 'Installation Projects', services: 'Services',
     checklists: 'Checklists', calculations: 'Calculations', diagnostics: 'Diagnostics',
     knowledge: 'Knowledge Base', notes: 'Notes',
+    standards: 'EN 81-20 Standard', stdSearch: 'Search requirement, value or clause…',
+    stdBanner: 'Quick reference of key EN 81-20:2020 requirements (mirrored by ISIRI 6303-20). For quick on-site decisions; the approved standard text prevails in official inspection.',
+    stdClause: 'Clause', stdExpand: 'Full details', stdNoMatch: 'No requirement found for this term',
+    stdDisclaimer: 'Practical summary — not a substitute for the full standard text.',
     latestProject: 'Latest Project', currentStatus: 'Current status', progress: 'Project progress',
     viewDetails: 'View details', newService: 'Log service', quickAccess: 'Quick access',
     recentServices: 'Recent services', viewAll: 'View all',
@@ -1017,7 +1025,7 @@ const I18N = {
     noProjects: 'No projects yet', noProjectsSub: 'Create your first elevator project',
     newProject: 'New Project', editProject: 'Edit Project', deleteProject: 'Delete Project',
     searchProjects: 'Search project, customer, location...',
-    all: 'All', traction: 'Traction', hydraulic: 'Hydraulic',
+    all: 'All', traction: 'Traction', hydraulic: 'Hydraulic', bothTypes: 'Both types',
     prName: 'Project name', prCustomer: 'Customer', prPhone: 'Phone', prLocation: 'Address / location',
     prType: 'Elevator type', prCapacity: 'Capacity (kg)', prPersons: 'Capacity (persons)', prFloors: 'Floors',
     prStops: 'Stops', prSpeed: 'Speed (m/s)', prController: 'Controller', prMotor: 'Motor / Power unit',
@@ -1285,8 +1293,8 @@ const CHECKLIST_TEMPLATES = [
         title: { fa: '۱) بررسی چاه و آماده‌سازی', en: '1) Shaft survey & preparation' },
         items: [
           { id: 't1', fa: 'کنترل ابعاد چاه (عرض، عمق، شاقول‌بودن دیوارها) با نقشه', en: 'Verify shaft dimensions (width, depth, plumb walls) against drawings' },
-          { id: 't2', fa: 'کنترل عمق چاهک و ارتفاع بالاسری مطابق نقشه و فضاهای جان‌پناه EN 81-20', en: 'Check pit depth and headroom incl. EN 81-20 refuge spaces', ref: 'EN 81-20 §5.2.5' },
-          { id: 't3', fa: 'وجود نردبان چاهک، روشنایی چاه و پریز برق در چاهک', en: 'Pit ladder, shaft lighting and pit socket present', ref: 'EN 81-20 §5.2.1.5' },
+          { id: 't2', fa: 'کنترل عمق چاهک و ارتفاع بالاسری مطابق نقشه و فضاهای جان‌پناه (خمیده 0.5×0.7×1.0 متر و بلوک‌های دیگر)', en: 'Check pit depth and headroom incl. refuge spaces (crouching 0.5×0.7×1.0 m and other blocks)', ref: 'EN 81-20 §5.2.5.7 / §5.2.5.8' },
+          { id: 't3', fa: 'وجود نردبان چاهک، روشنایی چاه (۵۰ لوکس) و پریز برق در چاهک', en: 'Pit ladder, shaft lighting (50 lux) and pit socket present', ref: 'EN 81-20 §5.2.1.4 / §5.2.1.5' },
           { id: 't4', fa: 'کنترل موقعیت و ابعاد درگاه‌های طبقات', en: 'Check landing entrance positions and dimensions' },
           { id: 't5', fa: 'نصب داربست یا سکوی کار ایمن داخل چاه', en: 'Install safe scaffolding / working platform in shaft' }
         ]
@@ -1323,7 +1331,7 @@ const CHECKLIST_TEMPLATES = [
       {
         title: { fa: '۵) درب‌ها و سیم‌کشی چاه', en: '5) Doors & shaft wiring' },
         items: [
-          { id: 't20', fa: 'نصب درب‌های طبقات؛ تنظیم گپ‌ها (فاصله لته‌ها حداکثر ۶ میلی‌متر)', en: 'Landing doors installed; gaps adjusted (max 6 mm panel gaps)', ref: 'EN 81-20 §5.3' },
+          { id: 't20', fa: 'نصب درب‌های طبقات؛ تنظیم گپ‌ها (فاصله لته‌ها حداکثر ۶ میلی‌متر، با سایش تا ۱۰)', en: 'Landing doors installed; gaps adjusted (max 6 mm panel gaps, 10 mm after wear)', ref: 'EN 81-20 §5.3.1.4' },
           { id: 't21', fa: 'قفل‌های درب طبقات: درگیری حداقل ۷ میلی‌متر و تست کنتاکت', en: 'Landing door locks: min 7 mm engagement, contact tested', ref: 'EN 81-20 §5.3.9.1' },
           { id: 't22', fa: 'نصب درب کابین، سردرب و پرده نوری/فتوسل', en: 'Car door operator and light curtain installed' },
           { id: 't23', fa: 'نصب تراول کابل و شینه/سنسورهای احضار در چاه', en: 'Travelling cable, shaft switches and landing sensors installed' },
@@ -1334,10 +1342,10 @@ const CHECKLIST_TEMPLATES = [
         title: { fa: '۶) راه‌اندازی و تست‌های نهایی', en: '6) Commissioning & final tests' },
         items: [
           { id: 't25', fa: 'کنترل مدار ایمنی (سری‌کامل) و تست تک‌تک کنتاکت‌ها', en: 'Safety chain checked; every contact tested individually' },
-          { id: 't26', fa: 'تنظیم درایو (Auto-tune)، منحنی حرکت و دقت توقف (±۱۰ میلی‌متر هدف)', en: 'Drive tuned; ride curve & leveling accuracy (±10 mm target)' },
+          { id: 't26', fa: 'تنظیم درایو (Auto-tune)، منحنی حرکت و دقت توقف (±۱۰ میلی‌متر)', en: 'Drive tuned; ride curve & leveling accuracy (±10 mm)', ref: 'EN 81-20 §5.12.1.1.4' },
           { id: 't27', fa: 'تست پاراشوت با بار مطابق دستورالعمل', en: 'Loaded safety gear test per procedure', ref: 'EN 81-20 §6.3' },
           { id: 't28', fa: 'تست ترمز موتور با بار ۱۲۵٪ (توقف و نگهداری)', en: 'Machine brake test at 125% load (stop & hold)', ref: 'EN 81-20 §5.9.2.2' },
-          { id: 't29', fa: 'تست سیستم نجات اضطراری، روشنایی اضطراری و زنگ خطر', en: 'Emergency rescue, emergency light and alarm tested', ref: 'EN 81-20 §5.4.10' },
+          { id: 't29', fa: 'تست زنگ خطر اضطراری و اینترکام (باطری ≥ ۱ ساعت)، روشنایی اضطراری و سیستم نجات', en: 'Emergency alarm & intercom (battery ≥1 h), emergency light and rescue tested', ref: 'EN 81-20 §5.12.3 / §5.4.10' },
           { id: 't30', fa: 'نصب برچسب ظرفیت، شماره پلاک و راهنمای نجات؛ تکمیل مدارک بازرسی', en: 'Capacity plate, ID and rescue instructions fitted; inspection docs ready', ref: 'ISIRI 6303' }
         ]
       }
@@ -1391,7 +1399,7 @@ const CHECKLIST_TEMPLATES = [
       {
         title: { fa: '۵) تست‌های نهایی', en: '5) Final tests' },
         items: [
-          { id: 'h19', fa: 'تست فشار استاتیک ۲۰۰٪ فشار بار کامل به مدت ۵ دقیقه (افت غیرمجاز نداشته باشد)', en: 'Static pressure test at 200% FL pressure for 5 min', ref: 'EN 81-20 §6.3.11' },
+          { id: 'h19', fa: 'تست فشار استاتیک ۲۰۰٪ فشار بار کامل به مدت ۵ دقیقه (افت غیرمجاز نداشته باشد)', en: 'Static pressure test at 200% FL pressure for 5 min', ref: 'EN 81-20 §6.3.10' },
           { id: 'h20', fa: 'تست ریزش: افت کابین با بار در ۱۰ دقیقه حداکثر ۱۰ میلی‌متر', en: 'Creep test: max 10 mm drop in 10 min with load' },
           { id: 'h21', fa: 'تست شیر پاراشوت با شبیه‌سازی پارگی لوله', en: 'Rupture valve tripping test' },
           { id: 'h22', fa: 'تست سیستم پایین‌آوردن اضطراری دستی (Hand lowering)', en: 'Manual emergency lowering tested', ref: 'EN 81-20 §5.9.3.9' },
@@ -1564,6 +1572,82 @@ const CHECKLIST_TEMPLATES = [
           { id: 'y23', fa: 'سفر کامل بالا/پایین با توقف همه طبقات', en: 'Full up/down trip with all stops' },
           { id: 'y24', fa: 'تمرین نجات اضطراری با شیر پایین‌بر دستی', en: 'Emergency rescue drill with manual lowering' },
           { id: 'y25', fa: 'ثبت گزارش سرویس و اطلاع موارد مردود به کارفرما', en: 'Log report; inform customer of failed items' }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'en81-safety-audit',
+    type: 'both',
+    kind: 'maintenance',
+    title: { fa: 'بازرسی ایمنی EN 81-20 (دوره‌ای)', en: 'EN 81-20 Safety Audit (periodic)' },
+    desc: { fa: 'ممیزی الزامات ایمنی کلیدی EN 81-20 / ۶۳۰۳-۲۰ برای هر دو نوع آسانسور — موارد هیدرولیک را می‌توانید «غیرمرتبط» بزنید', en: 'Audit of key EN 81-20 / ISIRI 6303-20 safety requirements for both lift types — mark hydraulic items N.A. where not applicable' },
+    groups: [
+      {
+        title: { fa: '۱) درب‌ها', en: '1) Doors' },
+        items: [
+          { id: 'e1', fa: 'درگیری قفل درب طبقه حداقل ۷ میلی‌متر قبل از بسته شدن کنتاکت (همه طبقات)', en: 'Landing lock engagement ≥7 mm before contact closes (all floors)', ref: 'EN 81-20 §5.3.9.1' },
+          { id: 'e2', fa: 'فاصله لته‌های درب حداکثر ۶ میلی‌متر (تا ۱۰ با سایش)', en: 'Door panel gaps ≤6 mm (10 mm after wear)', ref: 'EN 81-20 §5.3.1.4' },
+          { id: 'e3', fa: 'نیروی بستن درب حداکثر ۱۵۰ نیوتن؛ انرژی جنبشی ≤۱۰ ژول', en: 'Closing force ≤150 N; kinetic energy ≤10 J', ref: 'EN 81-20 §5.3.6.2' },
+          { id: 'e4', fa: 'برگشت خودکار درب (فتوسل/پرده نوری) در همه طبقات', en: 'Door reopening device works at all floors', ref: 'EN 81-20 §5.3.6.2.3' },
+          { id: 'e5', fa: 'باز نشدن درب طبقه با دست وقتی کابین خارج از ناحیه ±۰.۲۰ متر است', en: 'Landing door cannot be opened by hand outside the ±0.20 m zone', ref: 'EN 81-20 §5.3.9.3' }
+        ]
+      },
+      {
+        title: { fa: '۲) مدار ایمنی و حرکت', en: '2) Safety circuit & travel' },
+        items: [
+          { id: 'e6', fa: 'کنتاکت‌های ایمنی مثبت‌گسست؛ تست تک‌تک کنتاکت‌ها (بدون پل زدن)', en: 'Positive-opening safety contacts; test each contact (no bridging)', ref: 'EN 81-20 §5.11.2' },
+          { id: 'e7', fa: 'استپ‌های چاهک، سقف کابین، موتورخانه/تابلو MRL', en: 'Pit, car-roof and machine-room/MRL stop switches', ref: 'EN 81-20 §5.12.1.11' },
+          { id: 'e8', fa: 'لیمیت‌های نهایی بالا/پایین و برگشت فقط با ریست تعمیرکار', en: 'Final limits and competent-person reset', ref: 'EN 81-20 §5.12.2' },
+          { id: 'e9', fa: 'حالت بازرسی: کنترل فقط از سقف، سرعت حداکثر ۰.۳ متر بر ثانیه', en: 'Inspection mode: car-roof control only, speed ≤0.3 m/s', ref: 'EN 81-20 §5.12.1.8' },
+          { id: 'e10', fa: 'دقت توقف همه طبقات در محدوده ±۱۰ میلی‌متر', en: 'Stopping accuracy within ±10 mm at all floors', ref: 'EN 81-20 §5.12.1.1.4' }
+        ]
+      },
+      {
+        title: { fa: '۳) کابین، چاه و چاهک', en: '3) Car, well & pit' },
+        items: [
+          { id: 'e11', fa: 'روشنایی چاه: ≥۵۰ لوکس در ۱ متری سقف کابین و کف چاهک؛ ≥۲۰ لوکس سایر نقاط', en: 'Well lighting: ≥50 lux at 1 m above car roof & pit floor; ≥20 lux elsewhere', ref: 'EN 81-20 §5.2.1.4.1' },
+          { id: 'e12', fa: 'فضای جان‌پناه چاهک آزاد (ایستاده/خمیده/خوابیده) با کابین روی بافر', en: 'Pit refuge space clear (upright/crouching/lying) with car on buffers', ref: 'EN 81-20 §5.2.5.8.1' },
+          { id: 'e13', fa: 'فضای جان‌پناه سقف کابین + فاصله بالاسری 1.0+0.035v²', en: 'Car-roof refuge + headroom 1.0+0.035v²', ref: 'EN 81-20 §5.2.5.7' },
+          { id: 'e14', fa: 'فاصله کف چاهک تا کابین ≥۰.۵ متر (پیش‌بند ۰.۱ متر نزدیک دیوار)', en: 'Pit floor to car ≥0.5 m (apron 0.1 m near wall)', ref: 'EN 81-20 §5.2.5.8.2' },
+          { id: 'e15', fa: 'زنگ خطر + اینترکام دوطرفه + باطری ≥۱ ساعت + روشنایی اضطراری', en: 'Alarm + two-way intercom + ≥1 h battery + emergency light', ref: 'EN 81-20 §5.12.3 / §5.4.10' },
+          { id: 'e16', fa: 'پلاک ظرفیت، تعداد نفر و شماره شناسایی داخل کابین', en: 'Capacity, persons and ID plates inside the car', ref: 'EN 81-20 §5.4.2' }
+        ]
+      },
+      {
+        title: { fa: '۴) گاورنر، پاراشوت و محافظت حرکت', en: '4) Governor, safety gear & movement protection' },
+        items: [
+          { id: 'e17', fa: 'سرعت تریپ گاورنر بین ۱۱۵٪ سرعت نامی و سقف مجاز نوع پاراشوت', en: 'Governor tripping between 115% of rated speed and the type limit', ref: 'EN 81-20 §5.6.2.2.2' },
+          { id: 'e18', fa: 'نوع پاراشوت متناسب با سرعت (لحظه‌ای فقط ≤۰.۶۳ متر بر ثانیه)', en: 'Safety gear type matches speed (instantaneous only ≤0.63 m/s)', ref: 'EN 81-20 §5.6.2.2.1' },
+          { id: 'e19', fa: 'کنتاکت الکتریکی گاورنر قبل از تریپ مکانیکی قطع می‌کند', en: 'Governor electrical contact trips before mechanical tripping', ref: 'EN 81-20 §5.6.2.2.2' },
+          { id: 'e20', fa: 'پاراشوت وزنه تعادل در صورت وجود فضای قابل دسترس زیر چاهک', en: 'Counterweight safety gear where space below pit is accessible', ref: 'EN 81-20 §5.6.2.6' },
+          { id: 'e21', fa: 'محافظت اضافه‌سرعت صعود (ACOP) سالم و تست‌شده', en: 'Ascending overspeed protection (ACOP) present and tested', ref: 'EN 81-20 §5.6.6' },
+          { id: 'e22', fa: 'محافظت حرکت ناخواسته (UCMP): توقف ≤۱.۲ متر با درب باز + ریست دستی', en: 'UCMP: stops within 1.2 m with doors open + manual reset', ref: 'EN 81-20 §5.6.7' }
+        ]
+      },
+      {
+        title: { fa: '۵) بافرها، بکسل‌ها و ترمز', en: '5) Buffers, ropes & brake' },
+        items: [
+          { id: 'e23', fa: 'بافر کابین و وزنه سالم؛ کورس مطابق نوع (0.135v² / 0.0674v²، حداقل ۶۵ میلی‌متر)', en: 'Car & counterweight buffers OK; stroke per type (0.135v² / 0.0674v², min 65 mm)', ref: 'EN 81-20 §5.8' },
+          { id: 'e24', fa: 'تست ترمز: توقف و نگهداری با ۱۲۵٪ بار نامی', en: 'Brake test: stop & hold at 125% rated load', ref: 'EN 81-20 §5.9.2.2 / §6.3.1' },
+          { id: 'e25', fa: 'ضریب اطمینان بکسل ≥۱۲ (۳+ رشته) یا ≥۱۶ (۲ رشته)؛ نسبت D/d ≥۴۰', en: 'Rope safety factor ≥12 (3+ ropes) or ≥16 (2 ropes); D/d ≥40', ref: 'EN 81-20 §5.5.2' },
+          { id: 'e26', fa: 'توزیع یکنواخت بار بکسل‌ها و سلامت پایانه‌ها', en: 'Even rope load distribution and sound terminations', ref: 'EN 81-20 §5.5.5' }
+        ]
+      },
+      {
+        title: { fa: '۶) هیدرولیک (در صورت وجود)', en: '6) Hydraulic (where applicable)' },
+        items: [
+          { id: 'e27', fa: 'تنظیم شیر اطمینان ≤۱۴۰٪ فشار بار کامل (مانومتر + پلمپ)', en: 'Relief valve ≤140% of full-load pressure (gauge + sealed)', ref: 'EN 81-20 §5.9.3.5.3' },
+          { id: 'e28', fa: 'شیر قطع‌کن دستی و شیر پایین‌بر اضطراری دستی', en: 'Manual shut-off valve and manual emergency lowering', ref: 'EN 81-20 §5.9.3.5.4 / §5.9.3.9' },
+          { id: 'e29', fa: 'شیر پاراشوت + ریسترکتور عملکرد صحیح', en: 'Rupture valve + restrictor working', ref: 'EN 81-20 §5.6.3 / §5.6.4' },
+          { id: 'e30', fa: 'تست ریزش: افت ≤۱۰ میلی‌متر در ۱۰ دقیقه با بار نامی', en: 'Creep test: drop ≤10 mm in 10 min at rated load', ref: 'رویه بازرسی' }
+        ]
+      },
+      {
+        title: { fa: '۷) مستندات و ثبت', en: '7) Records & documentation' },
+        items: [
+          { id: 'e31', fa: 'گزارش تست‌های قبل از بهره‌برداری (ترمز ۱۲۵٪، پاراشوت، بافر، UCMP و…) موجود است', en: 'Commissioning test records available (125% brake, safety gear, buffers, UCMP…)', ref: 'EN 81-20 §6.3' },
+          { id: 'e32', fa: 'موارد مردود به کارفرما کتباً اطلاع داده شده', en: 'Failed items reported to the customer in writing' }
         ]
       }
     ]
@@ -2507,15 +2591,18 @@ const KNOWLEDGE = [
   {
     id: 'k3', icon: '📏', cat: 'ref', tags: ['استاندارد', 'EN 81-20', '6303'],
     title: { fa: 'الزامات کلیدی EN 81-20 / استاندارد ملی ۶۳۰۳-۲۰', en: 'Key requirements of EN 81-20 / ISIRI 6303-20' },
-    summary: { fa: 'فضای جان‌پناه، درب‌ها، مدار ایمنی، روشنایی، تست ترمز ۱۲۵٪ و موارد پرکاربرد در بازرسی.', en: 'Refuge spaces, doors, safety circuit, lighting, 125% brake test.' },
+    summary: { fa: 'فضای جان‌پناه، درب‌ها، گاورنر، UCMP، تست ترمز ۱۲۵٪ و موارد پرکاربرد در بازرسی — با شماره بند.', en: 'Refuge spaces, doors, governor, UCMP, 125% brake test — with clause numbers.' },
     body: {
-      fa: `<p>استاندارد ملی ایران ۶۳۰۳-۲۰ بر مبنای EN 81-20 تدوین شده است. موارد پرکاربرد برای تکنسین:</p>
-<h4>چاه و چاهک</h4><ul><li>فضای جان‌پناه چاهک: حداقل بلوک 0.5×0.6×1.0 متر با کابین روی بافر فشرده.</li><li>فضای بالاسری روی سقف کابین طبق بلوک‌های استاندارد.</li><li>نردبان دائمی چاهک، کلید استپ، پریز و روشنایی الزامی.</li><li>روشنایی چاه: حداقل ۵۰ لوکس در ۱ متری سقف کابین و کف چاهک.</li></ul>
-<h4>درب‌ها</h4><ul><li>درگیری قفل درب طبقه حداقل ۷ میلی‌متر قبل از بسته شدن کنتاکت.</li><li>فاصله لته‌ها حداکثر ۶ میلی‌متر (با سایش تا ۱۰).</li><li>نیروی بستن حداکثر ۱۵۰ نیوتن.</li><li>درب کابین الزامی است.</li></ul>
-<h4>الکتریکال و ایمنی</h4><ul><li>کنتاکت‌های ایمنی از نوع اجباری-گسست.</li><li>تست ترمز: توقف و نگهداری ۱۲۵٪ بار نامی.</li><li>زنگ دوطرفه و روشنایی اضطراری کابین.</li><li>گاورنر+پاراشوت (کششی)؛ شیر پاراشوت (هیدرولیک).</li></ul>
+      fa: `<p>استاندارد ملی ایران ۶۳۰۳-۲۰ بر مبنای EN 81-20:2020 تدوین شده است. پرکاربردترین الزامات برای تکنسین (ماژول کامل با جزئیات در «استاندارد EN 81-20» همین اپ):</p>
+<h4>چاه، چاهک و فضاهای جان‌پناه</h4><ul><li>فضای جان‌پناه چاهک با کابین روی بافر فشرده: ایستاده 0.4×0.5×2.0 متر، خمیده 0.5×0.7×1.0 متر، خوابیده 0.7×1.0×0.5 متر (§5.2.5.8.1).</li><li>فضای جان‌پناه سقف کابین: ایستاده 0.4×0.5×2.0 یا خمیده 0.5×0.7×1.0 متر (§5.2.5.7.1).</li><li>بالاسری: با وزنه روی بافر فشرده، فاصله سقف کابین تا سقف چاه حداقل 1.0 + 0.035·v² متر (§5.2.5.7.2).</li><li>فاصله کف چاهک تا پایین‌ترین نقطه کابین حداقل ۰.۵ متر؛ پیش‌بند نزدیک دیوار ۰.۱ متر (§5.2.5.8.2).</li><li>دسترسی چاهک: عمق بالای ۲.۵ متر → درب دسترسی؛ کمتر → درب یا نردبان (§5.2.2.4).</li><li>روشنایی چاه: حداقل ۵۰ لوکس در ۱ متری سقف کابین و کف چاهک؛ ۲۰ لوکس سایر نقاط (§5.2.1.4.1).</li><li>کلید استپ، پریز و روشنایی چاهک الزامی (§5.2.1.5).</li></ul>
+<h4>درب‌ها</h4><ul><li>درگیری قفل درب طبقه حداقل ۷ میلی‌متر قبل از بسته شدن کنتاکت (§5.3.9.1).</li><li>فاصله لته‌ها حداکثر ۶ میلی‌متر (با سایش تا ۱۰) (§5.3.1.4).</li><li>نیروی بستن حداکثر ۱۵۰ نیوتن و انرژی جنبشی حداکثر ۱۰ ژول (§5.3.6.2).</li><li>درب کابین الزامی؛ باز شدن قفل فقط در ناحیه ±۰.۲۰ متر از تراز طبقه (§5.3.9.3).</li></ul>
+<h4>گاورنر، پاراشوت و محافظت حرکت</h4><ul><li>تریپ گاورنر: حداقل ۱۱۵٪ سرعت نامی؛ سقف بسته به نوع پاراشوت 0.8 / 1.0 / 1.5 / 1.25v+0.25/v (§5.6.2.2.2).</li><li>پاراشوت لحظه‌ای فقط تا سرعت ۰.۶۳ متر بر ثانیه؛ بالاتر → پیشرونده (§5.6.2.2.1).</li><li>محافظت اضافه‌سرعت صعود ACOP (§5.6.6) و محافظت حرکت ناخواسته UCMP با توقف حداکثر ۱.۲ متر (§5.6.7) الزامی.</li><li>فضای قابل دسترس زیر چاهک → پاراشوت وزنه تعادل الزامی (§5.6.2.6).</li></ul>
+<h4>بکسل، ترمز و هیدرولیک</h4><ul><li>ضریب اطمینان بکسل: حداقل ۱۲ (۳+ رشته) یا ۱۶ (۲ رشته) (§5.5.2.2)؛ نسبت D/d حداقل ۴۰ (§5.5.2.1).</li><li>ترمز: توقف و نگهداری با ۱۲۵٪ بار نامی (§5.9.2.2)؛ تست §6.3.1.</li><li>هیدرولیک: رلیف حداکثر ۱۴۰٪ فشار بار کامل (§5.9.3.5.3)؛ تست فشار استاتیک ۲۰۰٪ به مدت ۵ دقیقه (§6.3.10)؛ شیر پاراشوت (§5.6.3) و پایین‌بر دستی (§5.9.3.9).</li></ul>
+<h4>الکتریکال و ارتباط</h4><ul><li>کنتاکت‌های ایمنی از نوع مثبت‌گسست (§5.11.2).</li><li>زنگ اضطراری + اینترکام دوطرفه با مرکز نجات و باطری حداقل ۱ ساعت (§5.12.3).</li><li>روشنایی اضطراری کابین (§5.4.10) و دقت توقف ±۱۰ میلی‌متر (§5.12.1.1.4).</li></ul>
 <h4>ظرفیت و مساحت کابین</h4><table><tr><th>ظرفیت (kg)</th><th>نفر</th><th>حداکثر مساحت (m²)</th></tr><tr><td>320</td><td>4</td><td>0.95</td></tr><tr><td>450</td><td>6</td><td>1.30</td></tr><tr><td>630</td><td>8</td><td>1.66</td></tr><tr><td>800</td><td>10</td><td>2.00</td></tr><tr><td>1000</td><td>13</td><td>2.40</td></tr></table>
-<p class="hint">این جدول با محدود کردن مساحت کف از اضافه‌بار جلوگیری می‌کند (هر نفر ۷۵ کیلوگرم).</p>`,
-      en: `<p>ISIRI 6303-20 mirrors EN 81-20. Frequently used items: pit refuge 0.5×0.6×1.0 m; lock engagement ≥7 mm; door force ≤150 N; brake 125% test; positive-opening safety contacts; capacity/area table (75 kg/person).</p>`
+<p class="hint">این جدول با محدود کردن مساحت کف از اضافه‌بار جلوگیری می‌کند (هر نفر ۷۵ کیلوگرم) — جدول ۶ استاندارد.</p>
+<p><a href="#/standards">🛡️ مشاهده ماژول کامل استاندارد EN 81-20 ←</a></p>`,
+      en: `<p>ISIRI 6303-20 mirrors EN 81-20:2020. Key items: pit refuge 0.5×0.7×1.0 m crouching (§5.2.5.8.1); headroom 1.0 + 0.035·v² m (§5.2.5.7.2); lock engagement ≥7 mm (§5.3.9.1); door force ≤150 N / 10 J (§5.3.6.2); governor trip ≥115% (§5.6.2.2.2); UCMP ≤1.2 m (§5.6.7); rope SF ≥12/16 (§5.5.2.2); brake 125% (§5.9.2.2); relief ≤140% (§5.9.3.5.3); pressure test 200%/5 min (§6.3.10); alarm §5.12.3. Full module: <a href="#/standards">EN 81-20 Standards ←</a></p>`
     }
   },
   {
@@ -2563,8 +2650,8 @@ const KNOWLEDGE = [
 /* ================= CALCULATORS ================= */
 /* Each: { id, title, desc, formula, inputs[{id,label,value,step,unit}], compute(v)->rows, assume, note } */
 const CALC_GUIDE = {
-  fa: 'نتایج این ابزارها «راهنمای تکنسین» هستند، نه طراحی مهندسی نهایی. انتخاب نهایی قطعات با محاسبات کامل، کاتالوگ سازنده و تأیید مهندس ناظر انجام می‌شود.',
-  en: 'These results are technician guidance, not final engineering design. Final selection requires full calculations, manufacturer data and engineering approval.'
+  fa: 'نتایج این ابزارها «راهنمای تکنسین» هستند، نه طراحی مهندسی نهایی. ماشین‌حساب‌های بخش «استاندارد EN 81-20» مقادیر الزامی استاندارد (گاورنر، بافر، بالاسری) را محاسبه می‌کنند؛ در بازرسی رسمی متن مصوب استاندارد ملاک است.',
+  en: 'These results are technician guidance, not final engineering design. The EN 81-20 category calculators compute standard-mandated values (governor, buffer, headroom); the approved standard text prevails in official inspection.'
 };
 const CALCULATORS = [
   {
@@ -2633,7 +2720,7 @@ const CALCULATORS = [
   {
     id: 'c4',
     title: { fa: 'سیم‌بکسل: ضریب اطمینان', en: 'Rope safety factor' },
-    desc: { fa: 'کنترل ضریب اطمینان بکسل‌ها (حداقل ۱۲)', en: 'Check rope safety factor (min 12)' },
+    desc: { fa: 'کنترل ضریب اطمینان بکسل‌ها (EN 81-20 §5.5.2.2: حداقل ۱۲ برای ۳+ رشته، ۱۶ برای ۲ رشته)', en: 'Check rope safety factor (EN 81-20 §5.5.2.2: min 12 for 3+ ropes, 16 for 2 ropes)' },
     formula: 'SF = (n × F_break) / ((P + Q) × g / roping)',
     inputs: [
       { id: 'n', label: { fa: 'تعداد بکسل', en: 'Number of ropes' }, value: 5 },
@@ -2645,15 +2732,17 @@ const CALCULATORS = [
     compute(v) {
       const staticLoad = (v.p + v.q) * 9.81 / 1000 / (v.rop || 1);
       const sf = (v.n * v.fb) / staticLoad;
-      const okTxt = LANG === 'fa' ? (sf >= 12 ? '✅ قابل قبول (≥12)' : '❌ کمتر از حد مجاز!') : (sf >= 12 ? '✅ OK (≥12)' : '❌ Below limit!');
+      const min = (v.n >= 3) ? 12 : 16;
+      const okTxt = LANG === 'fa' ? (sf >= min ? '✅ قابل قبول (≥' + faNum(min) + ')' : '❌ کمتر از حد مجاز (' + faNum(min) + ')!') : (sf >= min ? '✅ OK (≥' + min + ')' : '❌ Below limit (' + min + ')!');
       return [
         { label: { fa: 'بار استاتیک روی بکسل‌ها', en: 'Static load' }, val: staticLoad.toFixed(1) + ' kN' },
         { label: { fa: 'ضریب اطمینان', en: 'Safety factor' }, val: sf.toFixed(1) },
+        { label: { fa: 'حد مجاز برای این تعداد رشته', en: 'Limit for this rope count' }, val: faNum(min) },
         { label: { fa: 'وضعیت', en: 'Status' }, val: okTxt }
       ];
     },
-    assume: { fa: 'بار استاتیک ساده؛ جرم بکسل و تراول کابل صرف‌نظر شده. نمونه گسیختگی: ⌀۸ ~۳۵kN، ⌀۱۰ ~۵۵kN، ⌀۱۳ ~۹۲kN.', en: 'Simple static load; rope/cable mass ignored. Typical: Ø8 ~35, Ø10 ~55, Ø13 ~92 kN.' },
-    note: { fa: 'مقدار واقعی گسیختگی را از گواهی بکسل بخوانید — بین سازنده‌ها فرق دارد.', en: 'Read actual breaking force from the rope certificate.' }
+    assume: { fa: 'بار استاتیک ساده؛ جرم بکسل و تراول کابل صرف‌نظر شده. EN 81-20 §5.5.2.2: حداقل ۱۲ با ۳ رشته یا بیشتر، ۱۶ با ۲ رشته. نمونه گسیختگی: ⌀۸ ~۳۵kN، ⌀۱۰ ~۵۵kN، ⌀۱۳ ~۹۲kN.', en: 'Simple static load; rope/cable mass ignored. EN 81-20 §5.5.2.2: min 12 with 3+ ropes, 16 with 2 ropes. Typical: Ø8 ~35, Ø10 ~55, Ø13 ~92 kN.' },
+    note: { fa: 'مقدار واقعی گسیختگی را از گواهی بکسل بخوانید — بین سازنده‌ها فرق دارد. حداقل تعداد بکسل ۲ رشته است (§5.5.1).', en: 'Read actual breaking force from the rope certificate. Minimum rope count is 2 (§5.5.1).' }
   },
   {
     id: 'c5',
@@ -2861,6 +2950,7 @@ const CALC_CATS = [
   { id: 'hyd', fa: '🛢️ هیدرولیک', en: 'Hydraulic' },
   { id: 'motor', fa: '🌀 موتور و حرکت', en: 'Motor' },
   { id: 'door', fa: '🚪 درب', en: 'Doors' },
+  { id: 'std', fa: '📏 استاندارد EN 81-20', en: 'EN 81-20' },
   { id: 'quick', fa: '⚡ سریع', en: 'Quick' }
 ];
 /* categorize existing calculators */
@@ -3118,6 +3208,66 @@ const CONVERTERS = [
   { id: 'q8', fa: 'kW ↔ HP', a: 'kW', b: 'HP', f: x => x / 0.7457, g: x => x * 0.7457 }
 ];
 
+/* ---- EN 81-20 standards calculators ---- */
+CALCULATORS.push(
+  {
+    id: 'std-gov', cat: 'std',
+    title: { fa: 'گاورنر: محدوده مجاز سرعت عملکرد', en: 'Governor: allowed tripping range' },
+    desc: { fa: 'حداقل و حداکثر سرعت تریپ گاورنر بر اساس سرعت نامی و نوع پاراشوت (EN 81-20 §5.6.2.2.2)', en: 'Min/max governor tripping speed per rated speed and safety gear type (EN 81-20 §5.6.2.2.2)' },
+    formula: 'v_trip ≥ 1.15·v  |  v_trip < 0.8 / 1.0 / 1.5 / (1.25·v + 0.25/v)',
+    inputs: [{ id: 'v', label: { fa: 'سرعت نامی کابین', en: 'Rated car speed' }, value: 1, step: 0.05, unit: 'm/s' }],
+    compute(v) {
+      const x = v.v;
+      return [
+        { label: { fa: 'حداقل سرعت تریپ (۱۱۵٪ سرعت نامی)', en: 'Min tripping speed (115% rated)' }, val: (1.15 * x).toFixed(2) + ' m/s' },
+        { label: { fa: 'سقف — پاراشوت لحظه‌ای', en: 'Max — instantaneous safety gear' }, val: '0.80 m/s' },
+        { label: { fa: 'سقف — لحظه‌ای غلتک‌محور', en: 'Max — captive roller type' }, val: '1.00 m/s' },
+        { label: { fa: 'سقف — ضربه‌گیر/پیشرونده تا سرعت نامی ۱', en: 'Max — buffered/progressive, rated ≤ 1 m/s' }, val: '1.50 m/s' },
+        { label: { fa: 'سقف — پیشرونده (سرعت نامی بالای ۱)', en: 'Max — progressive (rated > 1 m/s)' }, val: (1.25 * x + 0.25 / x).toFixed(2) + ' m/s' },
+        { label: { fa: 'یادآوری: پاراشوت لحظه‌ای فقط تا', en: 'Reminder: instantaneous gear only up to' }, val: '0.63 m/s' }
+      ];
+    },
+    assume: { fa: 'گاورنر کابین در حرکت رو به پایین (EN 81-20 §5.6.2.2.2).', en: 'Car governor, downward direction (EN 81-20 §5.6.2.2.2).' },
+    note: { fa: 'کنتاکت الکتریکی گاورنر باید قبل از تریپ مکانیکی قطع کند. مقدار واقعی را با پلاک گاورنر و دستگاه تاکومتر مقایسه کنید.', en: 'The governor electrical contact must trip before mechanical tripping. Compare actual value with the governor nameplate.' }
+  },
+  {
+    id: 'std-buffer', cat: 'std',
+    title: { fa: 'بافر: حداقل کورس لازم', en: 'Buffer: minimum required stroke' },
+    desc: { fa: 'محاسبه کورس بافر بر اساس سرعت نامی (EN 81-20 §5.8.2.2)', en: 'Buffer stroke per rated speed (EN 81-20 §5.8.2.2)' },
+    formula: 'S ≥ 0.135·v² (انباشت انرژی) | S ≥ 0.0674·v² (اتلاف انرژی) — حداقل ۶۵ میلی‌متر',
+    inputs: [{ id: 'v', label: { fa: 'سرعت نامی کابین', en: 'Rated car speed' }, value: 1, step: 0.05, unit: 'm/s' }],
+    compute(v) {
+      const x = v.v;
+      const acc = Math.max(0.135 * x * x * 1000, 65);
+      const diss = Math.max(0.0674 * x * x * 1000, 65);
+      return [
+        { label: { fa: 'انباشت انرژی با برگشت ضربه‌گیر', en: 'Energy accumulation, buffered return' }, val: acc.toFixed(0) + ' mm' },
+        { label: { fa: 'اتلاف انرژی (بافر هیدرولیک)', en: 'Energy dissipation (hydraulic)' }, val: diss.toFixed(0) + ' mm' },
+        { label: { fa: 'حداقل مطلق کورس', en: 'Absolute minimum stroke' }, val: '65 mm' }
+      ];
+    },
+    assume: { fa: 'بافر کابین؛ سرعت ضربه برابر ۱۱۵٪ سرعت نامی فرض می‌شود.', en: 'Car buffer; impact speed assumed at 115% of rated speed.' },
+    note: { fa: 'بافر وزنه تعادل ممکن است کورس متفاوت طبق طراحی داشته باشد. کورس واقعی را با متر روی بافر فشرده کنترل کنید.', en: 'Counterweight buffers may have different design strokes. Verify actual stroke on the compressed buffer.' }
+  },
+  {
+    id: 'std-headroom', cat: 'std',
+    title: { fa: 'بالاسری و چاهک: فاصله‌های ایمن', en: 'Headroom & pit safety distances' },
+    desc: { fa: 'فاصله آزاد بالاسری و چاهک بر اساس سرعت نامی (EN 81-20 §5.2.5.7.2 / §5.2.5.8.2)', en: 'Headroom and pit free distances per rated speed (EN 81-20 §5.2.5.7.2 / §5.2.5.8.2)' },
+    formula: 'Headroom ≥ 1.0 + 0.035·v² m | Pit ≥ 0.5 m (پیش‌بند ۰.۱ متر نزدیک دیوار)',
+    inputs: [{ id: 'v', label: { fa: 'سرعت نامی کابین', en: 'Rated car speed' }, value: 1, step: 0.05, unit: 'm/s' }],
+    compute(v) {
+      const x = v.v;
+      return [
+        { label: { fa: 'فاصله آزاد بالاسری (وزنه روی بافر فشرده)', en: 'Headroom clearance (counterweight on compressed buffers)' }, val: (1.0 + 0.035 * x * x).toFixed(3) + ' m' },
+        { label: { fa: 'فاصله کف چاهک تا پایین‌ترین نقطه کابین', en: 'Pit floor to lowest car part' }, val: '≥ 0.50 m' },
+        { label: { fa: 'پیش‌بند/درب کابین نزدیک دیوار (≤ ۱۵ سانتی‌متر)', en: 'Apron/car door near wall (≤ 0.15 m)' }, val: '≥ 0.10 m' }
+      ];
+    },
+    assume: { fa: 'کششی با وزنه تعادل؛ بدون طناب جبران‌کننده.', en: 'Traction with counterweight; no compensating ropes.' },
+    note: { fa: 'فضای جان‌پناه (۰.۵×۰.۷×۱.۰ متر خمیده و غیره) علاوه بر این فاصله‌ها باید تأمین باشد — بخش «فضاهای جان‌پناه» در ماژول استاندارد.', en: 'Refuge spaces (0.5×0.7×1.0 m crouching etc.) must be provided on top of these distances — see the standards module.' }
+  }
+);
+
 /* ================= MEASUREMENT FIELDS (diagnostics) ================= */
 const MEASURE_FIELDS = [
   { id: 'v_rs', fa: 'ولتاژ R-S', unit: 'V', group: 'elec' },
@@ -3128,7 +3278,12 @@ const MEASURE_FIELDS = [
   { id: 'p_hyd', fa: 'فشار هیدرولیک', unit: 'bar', group: 'hyd' },
   { id: 'temp', fa: 'دما (موتور/روغن)', unit: '°C', group: 'both' },
   { id: 'lvl_err', fa: 'خطای همسطحی', unit: 'mm', group: 'both' },
-  { id: 't_travel', fa: 'زمان سفر', unit: 's', group: 'both' }
+  { id: 't_travel', fa: 'زمان سفر', unit: 's', group: 'both' },
+  { id: 'v_rated', fa: 'سرعت نامی کابین', unit: 'm/s', group: 'std' },
+  { id: 'v_gov', fa: 'سرعت تریپ گاورنر', unit: 'm/s', group: 'std' },
+  { id: 'door_force', fa: 'نیروی بستن درب', unit: 'N', group: 'std' },
+  { id: 'door_gap', fa: 'فاصله لته‌های درب', unit: 'mm', group: 'std' },
+  { id: 'lock_eng', fa: 'درگیری قفل درب طبقه', unit: 'mm', group: 'std' }
 ];
 
 /* ================= VVVF FAULT DATABASE =================
@@ -3312,9 +3467,9 @@ const FINAL_META = {
 };
 function statusBadge(s) { const m = STATUS_META[s] || STATUS_META.contract; return `<span class="badge ${m.cls}">${t(m.key)}</span>`; }
 function typeBadge(type) {
-  return type === 'hydraulic'
-    ? `<span class="badge b-teal">🛢️ ${t('hydraulic')}</span>`
-    : `<span class="badge b-blue">⚙️ ${t('traction')}</span>`;
+  if (type === 'hydraulic') return `<span class="badge b-teal">🛢️ ${t('hydraulic')}</span>`;
+  if (type === 'both') return `<span class="badge b-purple">⚖️ ${t('bothTypes')}</span>`;
+  return `<span class="badge b-blue">⚙️ ${t('traction')}</span>`;
 }
 
 /* ---------- icons ---------- */
@@ -3342,7 +3497,8 @@ const IC = {
   chip: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>',
   wrench: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
   cam: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
-  print: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>'
+  print: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>',
+  std: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>'
 };
 
 /* ---------- theme & lang ---------- */
@@ -3563,6 +3719,7 @@ const NAV = [
   { route: '/calculations', key: 'calculations', icon: 'calc' },
   { route: '/diagnostics', key: 'diagnostics', icon: 'diag' },
   { route: '/vvvf', key: 'vvvf', icon: 'chip' },
+  { route: '/standards', key: 'standards', icon: 'std' },
   { section: 'navKnowledge' },
   { route: '/knowledge', key: 'knowledge', icon: 'kb' },
   { route: '/tools', key: 'tools', icon: 'wrench' },
@@ -3619,7 +3776,7 @@ async function render() {
     '/dashboard': 'dashboard', '/projects': 'projects', '/services': 'services',
     '/parts': 'parts', '/checklists': 'checklists', '/calculations': 'calculations',
     '/diagnostics': 'diagnostics', '/knowledge': 'knowledge', '/notes': 'notes',
-    '/vvvf': 'vvvf', '/issues': 'issues', '/tools': 'tools', '/invoices': 'invoices', '/contracts': 'contracts', '/report': 'monthlyReport'
+    '/vvvf': 'vvvf', '/issues': 'issues', '/tools': 'tools', '/invoices': 'invoices', '/contracts': 'contracts', '/report': 'monthlyReport', '/standards': 'standards'
   };
   const baseRoute = '/' + r.split('/')[1];
   $('#pageTitle').textContent = t(titles[baseRoute] || 'dashboard');
@@ -3642,6 +3799,7 @@ async function render() {
     else if (r === '/report') renderMonthlyReport();
     else if (r === '/tools') renderToolsPage();
     else if (r === '/knowledge') renderKnowledge();
+    else if (r === '/standards') renderStandards();
     else if (r === '/notes') renderNotes();
     else renderDashboard();
   } catch (e) {
@@ -3992,7 +4150,7 @@ function renderProjectDetail(id) {
   const c = $('#content');
   if (!p) { c.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong></div>`; return; }
   const services = state.services.filter(s => s.projectId === id).sort((a, b) => b.date - a.date);
-  const templates = CHECKLIST_TEMPLATES.filter(tp => tp.type === p.elevatorType);
+  const templates = CHECKLIST_TEMPLATES.filter(tp => tp.type === p.elevatorType || tp.type === 'both');
   const insts = state.checklists.filter(x => x.projectId === id);
 
   const kv = [
@@ -4567,7 +4725,7 @@ function renderChecklistDetail(idWithQuery) {
       <button class="btn btn-primary" onclick="navigate('/checklists')">${t('checklists')}</button></div>`;
     return;
   }
-  const eligible = state.projects.filter(p => p.elevatorType === tp.type);
+  const eligible = state.projects.filter(p => p.elevatorType === tp.type || tp.type === 'both');
   if (selectedProject && !eligible.find(p => p.id === selectedProject)) selectedProject = '';
 
   function getInst() {
@@ -4664,12 +4822,18 @@ function renderChecklistDetail(idWithQuery) {
       if (selectedProject) {
         let inst2 = getInst();
         if (!inst2) {
-          inst2 = { id: 'tmp', projectId: selectedProject, templateId: tid, checked: {}, updatedAt: Date.now() };
-          state.checklists.push(inst2);
+          /* create the real record first, then keep its reference —
+             state.checklists and the storage share the same array,
+             so pushing a temporary object would poison the DB with a
+             fake id ('tmp') that gets persisted. */
           try {
             const d = await api('/checklists', { method: 'POST', body: { projectId: selectedProject, templateId: tid, checked: {} } });
-            inst2.id = d.checklist.id;
-          } catch (e) {}
+            inst2 = d.checklist;
+            if (!state.checklists.includes(inst2)) state.checklists.push(inst2);
+          } catch (e) {
+            toast(t('errGeneric'), 'err');
+            return;
+          }
         }
         store = inst2.checked;
         inst2.updatedAt = Date.now();
@@ -4735,7 +4899,10 @@ async function chFailedToIssue(tid) {
 /* ================= CALCULATIONS ================= */
 function computeCalc(cal) {
   const vals = {};
-  cal.inputs.forEach(inp => { vals[inp.id] = parseFloat($(`#calc_${cal.id}_${inp.id}`).value) || 0; });
+  cal.inputs.forEach(inp => {
+    const el = $(`#calc_${cal.id}_${inp.id}`);
+    vals[inp.id] = el ? (parseFloat(el.value) || 0) : (+inp.value || 0);
+  });
   try {
     const rows = cal.compute(vals);
     $('#calcResult_' + cal.id).innerHTML = `<div class="calc-result">
@@ -5078,6 +5245,410 @@ function openKbArticle(id) {
     <div class="modal-foot"><button class="btn btn-primary" onclick="closeModal()">${t('close')}</button></div>`, { size: 'lg' });
 }
 
+/* ================= EN 81-20 STANDARDS LIBRARY =================
+   Verified requirements & values from EN 81-20:2020 (aligned with ISIRI 6303-20).
+   Structure: { id, cat, icon, title, clause, vals:[{fa,en,v,unit}], note }
+   — short practical summaries with clause refs; NOT the full standard text. */
+const STD81_CATS = [
+  { id: 'all', fa: 'همه', en: 'All' },
+  { id: 'well', fa: '🏗️ چاه و چاهک', en: 'Well & pit' },
+  { id: 'refuge', fa: '🛡️ فضاهای جان‌پناه', en: 'Refuge spaces' },
+  { id: 'doors', fa: '🚪 درب‌ها', en: 'Doors' },
+  { id: 'car', fa: '🛗 کابین', en: 'Car' },
+  { id: 'gov', fa: '⚙️ گاورنر و پاراشوت', en: 'Governor & safety gear' },
+  { id: 'ucmp', fa: '🛑 حرکت ناخواسته و اضافه‌سرعت', en: 'UCM & overspeed' },
+  { id: 'buffers', fa: '🛞 بافرها', en: 'Buffers' },
+  { id: 'ropes', fa: '🔗 بکسل و زنجیر', en: 'Suspension means' },
+  { id: 'machine', fa: '🌀 محرکه و موتورخانه', en: 'Machine & rooms' },
+  { id: 'hyd', fa: '🛢️ هیدرولیک', en: 'Hydraulic' },
+  { id: 'elec', fa: '⚡ برق و مدار ایمنی', en: 'Electrical safety' },
+  { id: 'tests', fa: '🧪 تست‌ها و بازرسی', en: 'Tests & inspection' }
+];
+const STD81 = [
+  /* ---------- well & pit ---------- */
+  { id: 's-well-light', cat: 'well', icon: '💡', title: { fa: 'روشنایی چاه', en: 'Well lighting' }, clause: '§5.2.1.4.1', kind: 'limit',
+    vals: [
+      { fa: 'روشنایی در ۱ متری بالای سقف کابین (در هر موقعیت کابین)', en: 'At 1 m above the car roof, any car position', v: '≥ 50', unit: 'lux' },
+      { fa: 'روشنایی در ۱ متری کف چاهک (تمام نقاط کار)', en: 'At 1 m above pit floor, all working areas', v: '≥ 50', unit: 'lux' },
+      { fa: 'سایر نقاط چاه (خارج از سایه اجزا)', en: 'Remaining well areas (excluding shadows)', v: '≥ 20', unit: 'lux' }
+    ],
+    note: { fa: 'روشنایی دائمی چاه حتی با بسته بودن همه درب‌ها باید تأمین باشد.', en: 'Permanent lighting must work even with all doors closed.' } },
+  { id: 's-well-elec', cat: 'well', icon: '🔌', title: { fa: 'تجهیزات برقی چاهک', en: 'Electrical equipment in the pit' }, clause: '§5.2.1.5', kind: 'req',
+    vals: [
+      { fa: 'کلید استپ چاهک — قابل مشاهده و دسترسی از درب چاهک و کف چاهک', en: 'Pit stop switch — visible/accessible from the pit door and pit floor', v: 'الزامی', unit: '' },
+      { fa: 'پریز برق در چاهک', en: 'Socket outlet in the pit', v: 'الزامی', unit: '' },
+      { fa: 'روشنایی چاهک', en: 'Pit lighting', v: 'الزامی', unit: '' }
+    ],
+    note: { fa: 'عمق چاهک ≤ ۱.۶ متر: استپ نزدیک درب؛ عمق بیشتر: استپ دوم نزدیک نردبان.', en: 'Pit ≤ 1.6 m deep: stop near the door; deeper: second stop near the ladder.' } },
+  { id: 's-well-access', cat: 'well', icon: '🪜', title: { fa: 'دسترسی به چاهک', en: 'Pit access' }, clause: '§5.2.2.4', kind: 'limit',
+    vals: [
+      { fa: 'عمق چاهک بیشتر از ۲.۵ متر → درب دسترسی الزامی', en: 'Pit depth > 2.5 m → access door mandatory', v: '> 2.5', unit: 'm' },
+      { fa: 'عمق چاهک تا ۲.۵ متر → درب دسترسی یا نردبان داخل چاه', en: 'Pit depth ≤ 2.5 m → access door or well ladder', v: '≤ 2.5', unit: 'm' }
+    ],
+    note: { fa: 'نردبان چاهک باید مطابق Annex F باشد (ابعاد، فاصله پله‌ها و محل نصب).', en: 'Pit ladders must comply with Annex F (dimensions, rung spacing, location).' } },
+  { id: 's-well-wall', cat: 'well', icon: '🧱', title: { fa: 'استحکام دیوار چاه', en: 'Well wall strength' }, clause: '§5.2.1.1', kind: 'limit',
+    vals: [
+      { fa: 'تحمل نیروی افقی استاتیک ۱۰۰۰ نیوتن روی سطح ۰.۳×۰.۳ متر در هر نقطه', en: 'Withstand 1000 N static force over 0.3×0.3 m at any point', v: '1000 N', unit: '' },
+      { fa: 'مقاومت بدون تغییر شکل دائمی', en: 'No permanent deformation', v: '—', unit: '' }
+    ],
+    note: { fa: 'برای دیوارهای پیش‌ساخته یا سبک، گواهی سازنده دیوار لازم است.', en: 'For lightweight/prefab walls, a wall-maker certificate is required.' } },
+  { id: 's-well-below', cat: 'well', icon: '⬇️', title: { fa: 'فضای قابل دسترس زیر چاهک', en: 'Accessible space below the pit' }, clause: '§5.2.5.4', kind: 'req',
+    vals: [
+      { fa: 'کف چاهک باید بار اضافی حداقل ۵۰۰۰ نیوتن بر مترمربع را تحمل کند', en: 'Pit base must withstand at least 5000 N/m² imposed load', v: '5000', unit: 'N/m²' },
+      { fa: 'وزنه تعادل باید پاراشوت داشته باشد (راه‌حل قدیمی «پایه بتنی» دیگر مجاز نیست)', en: 'Counterweight safety gear required (solid pier no longer accepted)', v: 'الزامی', unit: '' }
+    ],
+    note: { fa: 'وقتی زیر چاهک پارکینگ/فضای قابل دسترس است، پاراشوت وزنه تعادل اجباری است.', en: 'Where occupied space exists below the pit, counterweight safety gear is mandatory.' } },
+  /* ---------- refuge spaces ---------- */
+  { id: 's-refuge-pit', cat: 'refuge', icon: '🛡️', title: { fa: 'فضای جان‌پناه چاهک', en: 'Refuge space in the pit' }, clause: '§5.2.5.8.1 / Table 4', kind: 'limit',
+    vals: [
+      { fa: 'حالت ایستاده', en: 'Upright position', v: '0.4 × 0.5 × 2.0', unit: 'm' },
+      { fa: 'حالت خمیده', en: 'Crouching position', v: '0.5 × 0.7 × 1.0', unit: 'm' },
+      { fa: 'حالت خوابیده', en: 'Lying position', v: '0.7 × 1.0 × 0.5', unit: 'm' }
+    ],
+    note: { fa: 'با کابین روی بافر کاملاً فشرده باید حداقل یکی از این بلوک‌ها آزاد بماند. تعداد نفرات مجاز روی تابلو در چاهک قید می‌شود.', en: 'With the car on fully compressed buffers at least one of these blocks must remain clear. Allowed persons indicated on a pit sign.' } },
+  { id: 's-refuge-roof', cat: 'refuge', icon: '🛡️', title: { fa: 'فضای جان‌پناه سقف کابین', en: 'Refuge space on the car roof' }, clause: '§5.2.5.7.1 / Table 3', kind: 'limit',
+    vals: [
+      { fa: 'حالت ایستاده', en: 'Upright position', v: '0.4 × 0.5 × 2.0', unit: 'm' },
+      { fa: 'حالت خمیده', en: 'Crouching position', v: '0.5 × 0.7 × 1.0', unit: 'm' }
+    ],
+    note: { fa: 'در بالاترین موقعیت کابین، بالای سقف کابین. حالت خوابیده روی سقف کابین مجاز نیست.', en: 'At the highest car position, above the car roof. Lying position is not allowed on the car roof.' } },
+  { id: 's-refuge-headroom', cat: 'refuge', icon: '📏', title: { fa: 'فاصله آزاد بالاسری', en: 'Headroom clearance' }, clause: '§5.2.5.7.2', kind: 'limit',
+    vals: [
+      { fa: 'با وزنه تعادل روی بافر فشرده: فاصله آزاد بالاترین نقطه سقف کابین تا سقف چاه', en: 'With counterweight on fully compressed buffers: free distance from car roof top to well ceiling', v: '1.0 + 0.035·v²', unit: 'm' },
+      { fa: 'مثال سرعت ۱ متر بر ثانیه', en: 'Example at 1 m/s', v: '1.035', unit: 'm' },
+      { fa: 'مثال سرعت ۲ متر بر ثانیه', en: 'Example at 2 m/s', v: '1.14', unit: 'm' }
+    ],
+    note: { fa: 'v سرعت نامی بر حسب m/s است. در صورت وجود طناب‌های جبران‌کننده یا ضدبرگشت، طبق §5.2.5.6.1 ممکن است متفاوت باشد.', en: 'v = rated speed in m/s. With compensating ropes or anti-rebound devices, see §5.2.5.6.1.' } },
+  { id: 's-refuge-pit-clear', cat: 'refuge', icon: '📏', title: { fa: 'فاصله آزاد کف چاهک', en: 'Pit bottom clearance' }, clause: '§5.2.5.8.2', kind: 'limit',
+    vals: [
+      { fa: 'با کابین روی بافر فشرده: فاصله آزاد کف چاهک تا پایین‌ترین نقطه کابین', en: 'With car on fully compressed buffers: free distance from pit floor to lowest car part', v: '≥ 0.5', unit: 'm' },
+      { fa: 'پیش‌بند یا درب کابین: در فاصله افقی حداکثر ۰.۱۵ متر از دیوار', en: 'Apron or vertical car door parts: within 0.15 m horizontally from the wall', v: '≥ 0.1', unit: 'm' }
+    ],
+    note: { fa: 'کاهش ۰.۵ به ۰.۱ متر فقط برای پیش‌بند/درب کابین و فقط در فاصله ۱۵ سانتی‌متری دیوار مجاز است.', en: 'The 0.5→0.1 m reduction applies only to apron/car door parts within 0.15 m of the wall.' } },
+  /* ---------- doors ---------- */
+  { id: 's-door-lock', cat: 'doors', icon: '🔒', title: { fa: 'درگیری قفل درب طبقه', en: 'Landing door lock engagement' }, clause: '§5.3.9.1', kind: 'limit',
+    vals: [
+      { fa: 'درگیری مکانیکی قفل قبل از بسته شدن کنتاکت الکتریکی', en: 'Mechanical engagement before the electrical contact closes', v: '≥ 7', unit: 'mm' },
+      { fa: 'کنتاکت ایمنی از نوع مثبت‌گسست', en: 'Safety contact, positive opening type', v: '§5.11.2', unit: '' }
+    ],
+    note: { fa: 'با درگیری کمتر از ۷ میلی‌متر مدار ایمنی نباید بسته شود — رایج‌ترین مردودی بازرسی.', en: 'Below 7 mm engagement the safety circuit must not close — a very common inspection failure.' } },
+  { id: 's-door-gap', cat: 'doors', icon: '🚪', title: { fa: 'فاصله لته‌های درب', en: 'Door panel gaps' }, clause: '§5.3.1.4', kind: 'limit',
+    vals: [
+      { fa: 'فاصله بین لته‌ها یا لته و چهارچوب/آستانه هنگام بسته بودن درب', en: 'Gap between panels or panel/frame/sill when closed', v: '≤ 6', unit: 'mm' },
+      { fa: 'حد مجاز بر اثر سایش', en: 'Allowed after wear', v: '≤ 10', unit: 'mm' }
+    ],
+    note: { fa: 'بیش از ۱۰ میلی‌متر در هر شرایطی مردود است.', en: 'More than 10 mm fails in all cases.' } },
+  { id: 's-door-force', cat: 'doors', icon: '💪', title: { fa: 'نیروی بستن درب', en: 'Door closing force' }, clause: '§5.3.6.2', kind: 'limit',
+    vals: [
+      { fa: 'حداکثر نیروی بستن درب (جلوگیری از آسیب به نفر)', en: 'Max closing force (injury protection)', v: '≤ 150', unit: 'N' },
+      { fa: 'حداکثر انرژی جنبشی لته‌ها', en: 'Max kinetic energy of panels', v: '≤ 10', unit: 'J' }
+    ],
+    note: { fa: 'بعد از هر تنظیم سردرب/فنر، نیروی بستن باید با نیروسنج اندازه‌گیری شود. برگشت خودکار درب (§5.3.6.2.3) پیش از رسیدن به این نیرو باید عمل کند.', en: 'Re-measure after any operator/spring adjustment. The reopening device (§5.3.6.2.3) must act before this force is reached.' } },
+  { id: 's-door-cardoor', cat: 'doors', icon: '🛗', title: { fa: 'درب کابین', en: 'Car door' }, clause: '§5.3.1.1', kind: 'req',
+    vals: [
+      { fa: 'آسانسور مسافربری باید حتماً درب کابین داشته باشد', en: 'Passenger lifts must have a car door', v: 'الزامی', unit: '' },
+      { fa: 'مدار ایمنی وجود درب کابین (کنتاکت بسته بودن)', en: 'Car door closed safety contact', v: '§5.3.13', unit: '' }
+    ],
+    note: { fa: 'حرکت بدون درب کابین بسته — جز در حالت‌های مجاز استاندارد — ممنوع است.', en: 'Travel with the car door not closed is prohibited except where the standard allows.' } },
+  { id: 's-door-unlock', cat: 'doors', icon: '🔓', title: { fa: 'ناحیه باز شدن قفل', en: 'Unlocking zone' }, clause: '§5.3.9.3', kind: 'limit',
+    vals: [
+      { fa: 'باز شدن قفل درب طبقه فقط در ناحیه ±۰.۲۰ متر از تراز طبقه', en: 'Landing door unlock only within ±0.20 m of landing level', v: '± 0.20', unit: 'm' },
+      { fa: 'خارج از این ناحیه درب طبقه نباید با دست باز شود', en: 'Outside this zone the landing door must not be openable by hand', v: 'ممنوع', unit: '' }
+    ],
+    note: { fa: 'وقتی کابین خارج از ناحیه است، تلاش برای باز کردن درب طبقه باید ناموفق بماند — تست ایمنی مهم.', en: 'With the car outside the zone, opening attempts must fail — an important safety test.' } },
+  /* ---------- car ---------- */
+  { id: 's-car-area', cat: 'car', icon: '📐', title: { fa: 'مساحت مجاز کابین', en: 'Available car area' }, clause: '§5.4.2 / Table 6', kind: 'limit',
+    vals: [
+      { fa: 'ظرفیت ۶۳۰ کیلوگرم (۸ نفر)', en: '630 kg (8 persons)', v: '1.66', unit: 'm²' },
+      { fa: 'ظرفیت ۱۰۰۰ کیلوگرم (۱۳ نفر)', en: '1000 kg (13 persons)', v: '2.40', unit: 'm²' },
+      { fa: 'ظرفیت ۲۵۰۰ کیلوگرم (۳۳ نفر)', en: '2500 kg (33 persons)', v: '5.00', unit: 'm²' }
+    ],
+    note: { fa: 'هر نفر ۷۵ کیلوگرم؛ بیش از ۲۵۰۰ کیلوگرم به ازای هر ۱۰۰ کیلوگرم، ۰.۱۶ مترمربع اضافه می‌شود. ماشین‌حساب «ظرفیت و مساحت» در همین اپ جدول کامل را دارد.', en: '75 kg per person; beyond 2500 kg add 0.16 m² per 100 kg. The capacity/area calculator in this app has the full table.' } },
+  { id: 's-car-vent', cat: 'car', icon: '🌬️', title: { fa: 'تهویه کابین', en: 'Car ventilation' }, clause: '§5.4.9', kind: 'limit',
+    vals: [
+      { fa: 'منافذ تهویه در قسمت بالا و پایین کابین، هر یک حداقل ۱٪ مساحت کف کابین', en: 'Ventilation openings at top and bottom, each ≥ 1% of the car floor area', v: '≥ 1%', unit: 'each' }
+    ],
+    note: { fa: 'منافذ نباید به داخل چاه یا خارج بدنه باز شوند به نحوی که خطر گیر کردن عضو ایجاد شود.', en: 'Openings must not create entrapment hazards toward the well.' } },
+  { id: 's-car-light', cat: 'car', icon: '💡', title: { fa: 'روشنایی کابین', en: 'Car lighting' }, clause: '§5.4.10', kind: 'limit',
+    vals: [
+      { fa: 'روشنایی روی سطح صفحه شستی', en: 'At the control device level', v: '≥ 100', unit: 'lux' },
+      { fa: 'روشنایی در ۱ متری کف کابین', en: 'At 1 m above the car floor', v: '≥ 50', unit: 'lux' },
+      { fa: 'روشنایی اضطراری (برق قطع)', en: 'Emergency lighting (mains off)', v: '≥ 1', unit: 'hour' }
+    ],
+    note: { fa: 'روشنایی اضطراری با قطع برق باید خودکار روشن شود و حداقل ۱ ساعت کار کند.', en: 'Emergency light must switch on automatically and last ≥ 1 hour.' } },
+  { id: 's-car-alarm', cat: 'car', icon: '🔔', title: { fa: 'آلارم اضطراری و اینترکام', en: 'Emergency alarm & intercom' }, clause: '§5.12.3', kind: 'req',
+    vals: [
+      { fa: 'زنگ خطر اضطراری قابل شنیدن بیرون از چاه', en: 'Emergency alarm audible outside the well', v: 'الزامی', unit: '' },
+      { fa: 'اینترکام دوطرفه با مرکز نجات/مسئول ساختمان', en: 'Two-way intercom to the rescue service', v: '§5.12.3.3', unit: '' },
+      { fa: 'منبع برق اضطراری آلارم (باطری) حداقل', en: 'Alarm emergency power (battery) at least', v: '1', unit: 'hour' }
+    ],
+    note: { fa: 'بعد از فشردن دکمه، ادامه ارتباط نباید نیاز به اقدام مجدد مسافر داشته باشد. الزامات تفصیلی: EN 81-28.', en: 'After initiation, communication must not require further passenger action. Details: EN 81-28.' } },
+  /* ---------- governor & safety gear ---------- */
+  { id: 's-gov-trip', cat: 'gov', icon: '⚙️', title: { fa: 'سرعت عملکرد گاورنر', en: 'Governor tripping speed' }, clause: '§5.6.2.2.2', kind: 'limit',
+    vals: [
+      { fa: 'حداقل سرعت تریپ: ۱۱۵٪ سرعت نامی', en: 'Minimum tripping speed: 115% of rated speed', v: '≥ 1.15·v', unit: '' },
+      { fa: 'سقف — پاراشوت لحظه‌ای (به‌جز غلتک‌محور)', en: 'Max — instantaneous (except captive roller)', v: '0.8', unit: 'm/s' },
+      { fa: 'سقف — پاراشوت لحظه‌ای غلتک‌محور', en: 'Max — captive roller instantaneous', v: '1.0', unit: 'm/s' },
+      { fa: 'سقف — لحظه‌ای ضربه‌گیر و پیشرونده با سرعت نامی ≤ ۱', en: 'Max — buffered instantaneous & progressive, rated speed ≤ 1 m/s', v: '1.5', unit: 'm/s' },
+      { fa: 'سقف — پیشرونده با سرعت نامی > ۱', en: 'Max — progressive, rated speed > 1 m/s', v: '1.25·v + 0.25/v', unit: 'm/s' }
+    ],
+    note: { fa: 'کنتاکت الکتریکی گاورنر باید قبل از تریپ مکانیکی عمل کند. ماشین‌حساب «گاورنر» همین اپ محدوده را محاسبه می‌کند.', en: 'The governor electrical contact must trip before the mechanical tripping. See the governor calculator in this app.' } },
+  { id: 's-gov-type', cat: 'gov', icon: '🛠️', title: { fa: 'نوع پاراشوت مجاز', en: 'Safety gear type vs speed' }, clause: '§5.6.2.2.1', kind: 'limit',
+    vals: [
+      { fa: 'پاراشوت لحظه‌ای فقط تا سرعت نامی ۰.۶۳ متر بر ثانیه', en: 'Instantaneous safety gear only up to 0.63 m/s rated speed', v: '≤ 0.63', unit: 'm/s' },
+      { fa: 'سرعت نامی بالاتر → پاراشوت پیشرونده الزامی', en: 'Higher rated speeds → progressive safety gear mandatory', v: '> 0.63', unit: 'm/s' }
+    ],
+    note: { fa: 'در سرعت‌های بالای ۰.۶۳ حتی با بافر هم پاراشوت لحظه‌ای مجاز نیست.', en: 'Above 0.63 m/s instantaneous gears are not compliant even with buffering.' } },
+  { id: 's-gov-cwt', cat: 'gov', icon: '⚖️', title: { fa: 'گاورنر وزنه تعادل', en: 'Counterweight governor' }, clause: '§5.6.2.2.2', kind: 'limit',
+    vals: [
+      { fa: 'سرعت تریپ حداکثر ۱۰٪ بالاتر از سرعت تریپ گاورنر کابین', en: 'Tripping speed at most 10% above the car governor', v: '≤ +10%', unit: '' }
+    ],
+    note: { fa: 'گاورنر وزنه فقط وقتی لازم است که پاراشوت وزنه تعادل نصب باشد (فضای قابل دسترس زیر چاهک).', en: 'A counterweight governor is only needed where a counterweight safety gear is fitted (accessible space below the pit).' } },
+  { id: 's-gov-cwtsg', cat: 'gov', icon: '🛡️', title: { fa: 'پاراشوت وزنه تعادل', en: 'Counterweight safety gear' }, clause: '§5.6.2.6', kind: 'req',
+    vals: [
+      { fa: 'وجود فضای قابل دسترس زیر مسیر وزنه → پاراشوت وزنه الزامی', en: 'Accessible space below the counterweight path → safety gear mandatory', v: 'الزامی', unit: '' },
+      { fa: 'تریپ توسط گاورنر (یا وسیله هم‌ارز)', en: 'Tripped by governor (or equivalent)', v: 'الزامی', unit: '' }
+    ],
+    note: { fa: 'راه‌حل قدیمی «پایه سخت زیر وزنه» در EN 81-20 پذیرفته نیست.', en: 'The old solid-pier solution is no longer accepted under EN 81-20.' } },
+  /* ---------- UCM & overspeed ---------- */
+  { id: 's-ucmp', cat: 'ucmp', icon: '🛑', title: { fa: 'محافظت حرکت ناخواسته (UCMP)', en: 'Unintended car movement protection' }, clause: '§5.6.7', kind: 'req',
+    vals: [
+      { fa: 'تشخیص حرکت ناخواسته کابین وقتی درب طبقه قفل نشده و درب کابین بسته نیست', en: 'Detect unintended car movement with landing door unlocked and car door open', v: 'الزامی', unit: '' },
+      { fa: 'حداکثر جابه‌جایی مجاز از لبه ناحیه باز شدن قفل تا توقف کامل', en: 'Max movement from the unlocking zone edge to full stop', v: '≤ 1.2', unit: 'm' },
+      { fa: 'نگه‌داشتن کابین متوقف + ریست دستی توسط شخص مجاز', en: 'Hold the car stopped + manual reset by authorized person', v: 'الزامی', unit: '' }
+    ],
+    note: { fa: 'در آسانسور کششی وسیله توقف می‌تواند پاراشوت دوطرفه، ترمز بکسل یا ترمز دوم باشد. تست طبق §6.3.13 با کابین خالی (رو به بالا) و بار نامی (رو به پایین).', en: 'Stopping means may be bidirectional safety gear, rope brake or secondary brake. Test per §6.3.13 with empty car (up) and rated load (down).' } },
+  { id: 's-acop', cat: 'ucmp', icon: '⬆️', title: { fa: 'محافظت اضافه‌سرعت صعود (ACOP)', en: 'Ascending car overspeed protection' }, clause: '§5.6.6', kind: 'req',
+    vals: [
+      { fa: 'تشخیص اضافه‌سرعت کابین در حرکت رو به بالا (کششی)', en: 'Detect upward overspeed of the car (traction lifts)', v: 'الزامی', unit: '' },
+      { fa: 'توقف کابین یا کاهش سرعت تا حد مجاز بافر وزنه تعادل', en: 'Stop the car or slow it to the counterweight buffer rated speed', v: 'الزامی', unit: '' },
+      { fa: 'تست قبل از بهره‌برداری', en: 'Test before putting into service', v: '§6.3.11', unit: '' }
+    ],
+    note: { fa: 'وسیله توقف معمولاً ترمز بکسل یا پاراشوت دوطرفه است. ریست دستی لازم است.', en: 'Usually a rope brake or bidirectional safety gear; manual reset required.' } },
+  { id: 's-rupture', cat: 'ucmp', icon: '🛢️', title: { fa: 'شیر پاراشوت (هیدرولیک)', en: 'Rupture valve (hydraulic)' }, clause: '§5.6.3', kind: 'limit',
+    vals: [
+      { fa: 'تریپ حداکثر در سرعت vd + 0.30 متر بر ثانیه (با ریسترکتور)', en: 'Trip at latest at vd + 0.30 m/s (with restrictor)', v: 'vd + 0.3', unit: 'm/s' },
+      { fa: 'سایر موارد: تریپ از سرعت ۱۱۵٪ سرعت نامی رو به پایین', en: 'Otherwise: from 115% of rated downward speed', v: '1.15·vd', unit: '' },
+      { fa: 'توقف و نگه‌داشتن کابین در حرکت رو به پایین', en: 'Stop the downward car and hold it', v: 'الزامی', unit: '' }
+    ],
+    note: { fa: 'تست قبل از بهره‌برداری طبق §6.3.8 و به‌صورت دوره‌ای طبق دستور سازنده.', en: 'Test per §6.3.8 and periodically per manufacturer.' } },
+  { id: 's-restrictor', cat: 'ucmp', icon: '🌊', title: { fa: 'ریسترکتور (محدودکننده جریان)', en: 'Restrictor / one-way restrictor' }, clause: '§5.6.4', kind: 'limit',
+    vals: [
+      { fa: 'با نشتی بزرگ در مدار، سرعت پایین‌روی کابین با بار نامی حداکثر vd + 0.30', en: 'With a major leak, downward speed at rated load ≤ vd + 0.30 m/s', v: '≤ vd + 0.3', unit: 'm/s' }
+    ],
+    note: { fa: 'ریسترکتور یک‌طرفه با اجزای صرفاً مکانیکی جزء ایمنی محسوب می‌شود.', en: 'A one-way restrictor with purely mechanical parts counts as a safety component.' } },
+  /* ---------- buffers ---------- */
+  { id: 's-buffer-req', cat: 'buffers', icon: '🛞', title: { fa: 'بافر کابین و وزنه تعادل', en: 'Car & counterweight buffers' }, clause: '§5.8.1', kind: 'req',
+    vals: [
+      { fa: 'بافر در انتهای کورس کابین و وزنه تعادل', en: 'Buffers at the end of car and counterweight travel', v: 'الزامی', unit: '' },
+      { fa: 'برگشت بافر انرژی‌انباشت باید با وسیله ضدبرگشت کنترل شود', en: 'Energy-accumulation rebound must be controlled', v: '§5.8.2.2.2', unit: '' }
+    ],
+    note: { fa: 'نوع بافر باید با حداکثر سرعت ضربه (تریپ گاورنر) هم‌خوان باشد.', en: 'Buffer type must match the maximum impact speed (governor tripping).' } },
+  { id: 's-buffer-stroke', cat: 'buffers', icon: '📏', title: { fa: 'کورس (حرکت) بافر', en: 'Buffer stroke' }, clause: '§5.8.2.2', kind: 'limit',
+    vals: [
+      { fa: 'انباشت انرژی با برگشت ضربه‌گیر: حداقل 0.135·v² متر (و نه کمتر از ۶۵ میلی‌متر)', en: 'Energy accumulation, buffered return: ≥ 0.135·v² m (min 65 mm)', v: '0.135·v²', unit: 'm' },
+      { fa: 'اتلاف انرژی (هیدرولیک): حداقل 0.0674·v² متر', en: 'Energy dissipation (hydraulic): ≥ 0.0674·v² m', v: '0.0674·v²', unit: 'm' },
+      { fa: 'حداقل کورس در هر دو نوع', en: 'Minimum stroke in all cases', v: '65', unit: 'mm' }
+    ],
+    note: { fa: 'ماشین‌حساب «کورس بافر» همین اپ مقدار دقیق را می‌دهد. شتاب متوسط مجاز در اتلاف انرژی حدود ۱g و قله آن حداکثر 2.5g برای بیش از ۰.۰۴ ثانیه است.', en: 'See the buffer-stroke calculator in this app. Energy dissipation: mean deceleration ~1g, peak ≤ 2.5g for more than 0.04 s.' } },
+  /* ---------- suspension ---------- */
+  { id: 's-rope-num', cat: 'ropes', icon: '🔗', title: { fa: 'تعداد سیم‌بکسل', en: 'Number of suspension ropes' }, clause: '§5.5.1', kind: 'limit',
+    vals: [
+      { fa: 'حداقل تعداد بکسل در آسانسور کششی', en: 'Minimum number of ropes, traction lifts', v: '≥ 2', unit: '' }
+    ],
+    note: { fa: 'بکسل‌ها باید مستقل از هم مهار شوند (پایانه مجزا).', en: 'Ropes must have independent terminations.' } },
+  { id: 's-rope-sf', cat: 'ropes', icon: '🧮', title: { fa: 'ضریب اطمینان بکسل', en: 'Rope safety factor' }, clause: '§5.5.2.2', kind: 'limit',
+    vals: [
+      { fa: 'کششی با ۳ رشته بکسل یا بیشتر', en: 'Traction with 3 or more ropes', v: '≥ 12', unit: '' },
+      { fa: 'کششی با ۲ رشته بکسل', en: 'Traction with 2 ropes', v: '≥ 16', unit: '' }
+    ],
+    note: { fa: 'مخرج کسر: بار استاتیک روی بکسل‌ها با کابین در پایین‌ترین طبقه با بار نامی. ماشین‌حساب «ضریب اطمینان بکسل» در اپ این قاعده را اعمال می‌کند.', en: 'Denominator: static load with car at the lowest landing with rated load. The rope calculator in this app applies this rule.' } },
+  { id: 's-rope-dd', cat: 'ropes', icon: '🛞', title: { fa: 'نسبت قطر فلکه به بکسل', en: 'Sheave/rope diameter ratio' }, clause: '§5.5.2.1', kind: 'limit',
+    vals: [
+      { fa: 'نسبت قطر فلکه کشش/هرزگرد به قطر بکسل', en: 'Traction/diverter sheave diameter to rope diameter', v: '≥ 40', unit: 'D/d' }
+    ],
+    note: { fa: 'مقادیر بالاتر برای فلکه‌های جبران‌کننده و تعداد برگشت زیاد لازم است.', en: 'Higher ratios apply for compensation sheaves and multiple reverse bends.' } },
+  { id: 's-rope-balance', cat: 'ropes', icon: '⚖️', title: { fa: 'توزیع بار بکسل‌ها', en: 'Rope load distribution' }, clause: '§5.5.5', kind: 'req',
+    vals: [
+      { fa: 'توزیع یکنواخت بار بین رشته‌ها + تشخیص شلی/پارگی در صورت نیاز', en: 'Even load distribution + slack/broken rope detection where required', v: 'الزامی', unit: '' },
+      { fa: 'در هیدرولیک 2:1: کنتاکت شلی بکسل', en: 'Hydraulic 2:1: slack-rope contact', v: 'الزامی', unit: '' }
+    ],
+    note: { fa: 'اختلاف کشش رشته‌ها را با ترازوی کشش بسنجید (هدف معمول ≤ ۵٪).', en: 'Check rope tensions with a tension gauge (typical target ≤ 5%).' } },
+  /* ---------- machine ---------- */
+  { id: 's-brake', cat: 'machine', icon: '🛑', title: { fa: 'ترمز موتور', en: 'Machine brake' }, clause: '§5.9.2.2', kind: 'req',
+    vals: [
+      { fa: 'توقف و نگه‌داری کابین با ۱۲۵٪ بار نامی در حرکت رو به پایین', en: 'Stop and hold the car with 125% rated load moving downward', v: '125%', unit: '' },
+      { fa: 'ترمز مکانیکی-الکتریکی «عادی بسته» (با فنر می‌گیرد)', en: 'Electro-mechanical, normally closed (spring applied)', v: 'الزامی', unit: '' },
+      { fa: 'تست قبل از بهره‌برداری', en: 'Test before putting into service', v: '§6.3.1', unit: '' }
+    ],
+    note: { fa: 'ترمز باید حداقل دو مجموعه مستقل فنر/کفشک داشته باشد یا الزامات افزونگی §5.9.2.2 را برآورده کند. هرگز با ترمز باز کابین را رها نکنید.', en: 'Two independent spring/shoe sets or the redundancy of §5.9.2.2. Never release the brake with an unbalanced car.' } },
+  { id: 's-brake-release', cat: 'machine', icon: '🖐️', title: { fa: 'رهاسازی اضطراری ترمز', en: 'Emergency brake release' }, clause: '§5.9.2.3', kind: 'req',
+    vals: [
+      { fa: 'باز کردن دستی ترمز با فرمان دستی برای نجات مسافران', en: 'Manual brake release for rescue', v: 'الزامی', unit: '' },
+      { fa: 'نیروی مداوم دست هنگام رهاسازی', en: 'Continuous manual force while released', v: 'الزامی', unit: '' }
+    ],
+    note: { fa: 'در MRL وسیله رهاسازی باید خارج از چاه قابل دسترس باشد (یا هم‌ارز آن).', en: 'In MRL lifts the release means must be reachable from outside the well (or equivalent).' } },
+  { id: 's-mr-space', cat: 'machine', icon: '🚧', title: { fa: 'فضاهای موتورخانه', en: 'Machine room spaces' }, clause: '§5.2.6', kind: 'limit',
+    vals: [
+      { fa: 'ارتفاع آزاد مسیر حرکت و دسترسی', en: 'Clear height for movement/access', v: '≥ 1.8', unit: 'm' },
+      { fa: 'ارتفاع کاری نزدیک تجهیزات', en: 'Working height at equipment', v: '≥ 2.1', unit: 'm' }
+    ],
+    note: { fa: 'درب‌های دسترسی: ارتفاع ≥ ۲.۰ متر، عرض ≥ ۰.۶ متر (درب اتاق فلکه: ارتفاع ≥ ۱.۴ متر).', en: 'Access doors: height ≥ 2.0 m, width ≥ 0.6 m (pulley room: ≥ 1.4 m).' } },
+  /* ---------- hydraulic ---------- */
+  { id: 's-hyd-relief', cat: 'hyd', icon: '🌡️', title: { fa: 'شیر اطمینان (رلیف)', en: 'Pressure relief valve' }, clause: '§5.9.3.5.3', kind: 'limit',
+    vals: [
+      { fa: 'تنظیم شیر اطمینان حداکثر ۱۴۰٪ فشار بار کامل', en: 'Relief setting ≤ 140% of full-load pressure', v: '≤ 140%', unit: '' }
+    ],
+    note: { fa: 'آسانسورهایی با تنظیم رلیف بالای ۵۰ مگاپاسکال خارج از شمول EN 81-20 هستند. تنظیم با مانومتر و پلمپ.', en: 'Relief settings above 50 MPa fall outside EN 81-20 scope. Set with a gauge and seal.' } },
+  { id: 's-hyd-shutoff', cat: 'hyd', icon: '🔧', title: { fa: 'شیر قطع‌کن دستی', en: 'Manual shut-off valve' }, clause: '§5.9.3.5.4', kind: 'req',
+    vals: [
+      { fa: 'شیر قطع‌کن دستی بین پاوریونیت و جک', en: 'Manual shut-off valve between power unit and jack', v: 'الزامی', unit: '' }
+    ],
+    note: { fa: 'برای تعمیرات و نجات باید قابل دسترس باشد.', en: 'Must be accessible for maintenance and rescue.' } },
+  { id: 's-hyd-lowering', cat: 'hyd', icon: '⬇️', title: { fa: 'پایین‌آوردن اضطراری دستی', en: 'Manual emergency lowering' }, clause: '§5.9.3.9', kind: 'req',
+    vals: [
+      { fa: 'شیر پایین‌بر دستی برای نجات در قطع برق', en: 'Manual lowering valve for rescue during power failure', v: 'الزامی', unit: '' },
+      { fa: 'نیازمند نیروی مداوم دست هنگام کار', en: 'Continuous manual force while operating', v: 'الزامی', unit: '' }
+    ],
+    note: { fa: 'همراه اینترکام (§5.12.3.3) امکان نجات کامل را فراهم می‌کند. سرعت پایین‌روی باید محدود باشد.', en: 'Together with the intercom (§5.12.3.3) enables full rescue. Lowering speed must be limited.' } },
+  { id: 's-hyd-motor', cat: 'hyd', icon: '⏱️', title: { fa: 'محافظت موتور پمپ', en: 'Motor protection' }, clause: '§5.9.3.10', kind: 'req',
+    vals: [
+      { fa: 'محدودکننده زمان کار موتور + حفاظت دمایی', en: 'Motor run-time limiter + thermal protection', v: 'الزامی', unit: '' }
+    ],
+    note: { fa: 'توقف‌های مکرر/طولانی نباید به داغی و سوختن موتور منجر شود؛ بی‌متال را هرگز روی جریان بالاتر تنظیم نکنید.', en: 'Repeated long runs must not overheat the motor; never re-set the thermal relay higher.' } },
+  { id: 's-hyd-pressure-test', cat: 'hyd', icon: '🧪', title: { fa: 'تست فشار استاتیک', en: 'Static pressure test' }, clause: '§6.3.10', kind: 'req',
+    vals: [
+      { fa: 'فشار تست: ۲۰۰٪ فشار بار کامل', en: 'Test pressure: 200% of full-load pressure', v: '200%', unit: '' },
+      { fa: 'مدت نگه‌داشتن فشار', en: 'Hold time', v: '5', unit: 'min' },
+      { fa: 'افت فشار غیرمجاز در طول تست', en: 'Unacceptable pressure drop during the test', v: 'مردود', unit: '' }
+    ],
+    note: { fa: 'قبل از بهره‌برداری و بعد از هر تغییر مهم در مدار هیدرولیک تکرار شود.', en: 'Repeat before commissioning and after any major hydraulic circuit change.' } },
+  { id: 's-hyd-creep', cat: 'hyd', icon: '📉', title: { fa: 'تست ریزش کابین', en: 'Creep / sink test' }, clause: 'رویه بازرسی', kind: 'limit',
+    vals: [
+      { fa: 'افت کابین با بار نامی در ۱۰ دقیقه', en: 'Car drop with rated load in 10 minutes', v: '≤ 10', unit: 'mm' }
+    ],
+    note: { fa: 'معیار رایج پذیرفته‌شده در بازرسی‌ها برای سلامت چک‌والو/سیل؛ همیشه با کابین بارگذاری‌شده و درب‌ها بسته انجام شود.', en: 'Common inspection criterion for check-valve/seal health; run loaded, doors closed.' } },
+  /* ---------- electrical ---------- */
+  { id: 's-elec-contacts', cat: 'elec', icon: '⚡', title: { fa: 'کنتاکت‌های ایمنی', en: 'Electric safety devices' }, clause: '§5.11.2', kind: 'req',
+    vals: [
+      { fa: 'کنتاکت‌های ایمنی باید از نوع مثبت‌گسست (باز شدن اجباری) باشند', en: 'Safety contacts must be positive-opening (forced break)', v: 'الزامی', unit: '' },
+      { fa: 'قطع مدار ایمنی باید مستقیماً حرکت را متوقف کند', en: 'Opening the safety circuit must directly stop movement', v: 'الزامی', unit: '' }
+    ],
+    note: { fa: 'کنتاکت درب، قفل، استپ، گاورنر، پاراشوت و شلی بکسل همگی در این دسته‌اند. پل زدن آن‌ها ممنوع است.', en: 'Door, lock, stop, governor, safety gear and slack-rope contacts all qualify. Never bridge them.' } },
+  { id: 's-elec-limits', cat: 'elec', icon: '🏁', title: { fa: 'لیمیت‌های نهایی', en: 'Final limit switches' }, clause: '§5.12.2', kind: 'req',
+    vals: [
+      { fa: 'توقف حرکت قبل از برخورد کابین/وزنه به بافر', en: 'Stop travel before the car/counterweight hits the buffers', v: 'الزامی', unit: '' },
+      { fa: 'بازگشت به کار عادی فقط با مداخله شخص مجاز (ریست)', en: 'Return to normal only via competent-person reset', v: 'الزامی', unit: '' }
+    ],
+    note: { fa: 'عملکرد لیمیت نهایی باید مستقل از لیمیت‌های کندکننده/توقف عادی باشد.', en: 'Final limits must work independently of normal slowdown/stop switches.' } },
+  { id: 's-elec-inspect', cat: 'elec', icon: '🐢', title: { fa: 'حالت بازرسی', en: 'Inspection operation' }, clause: '§5.12.1.8', kind: 'limit',
+    vals: [
+      { fa: 'حداکثر سرعت در حالت بازرسی', en: 'Max inspection speed', v: '≤ 0.30', unit: 'm/s' },
+      { fa: 'کنترل حرکت فقط از روی سقف کابین', en: 'Movement control only from the car roof', v: 'الزامی', unit: '' }
+    ],
+    note: { fa: 'کار روی سقف کابین فقط در این حالت؛ استپ در دسترس باشد.', en: 'Car-roof work only in this mode; keep the stop switch at hand.' } },
+  { id: 's-elec-level', cat: 'elec', icon: '🎯', title: { fa: 'دقت توقف', en: 'Stopping / levelling accuracy' }, clause: '§5.12.1.1.4', kind: 'limit',
+    vals: [
+      { fa: 'دقت توقف (اختلاف آستانه کابین و طبقه)', en: 'Stopping accuracy (car sill to landing sill)', v: '± 10', unit: 'mm' },
+      { fa: 'تست قبل از بهره‌برداری', en: 'Test before putting into service', v: '§6.3.12', unit: '' }
+    ],
+    note: { fa: 'خارج از ±۱۰ میلی‌متر را در سرویس‌ها ثبت و تنظیم کنید — خطر زمین خوردن مسافر.', en: 'Log and correct anything beyond ±10 mm — a trip hazard for passengers.' } },
+  { id: 's-elec-stops', cat: 'elec', icon: '✋', title: { fa: 'کلیدهای استپ', en: 'Stop switches' }, clause: '§5.12.1.11', kind: 'req',
+    vals: [
+      { fa: 'استپ در: چاهک، سقف کابین، موتورخانه (در صورت وجود) و کنار تابلو MRL', en: 'Stops at: pit, car roof, machine room (where present) and MRL panel', v: 'الزامی', unit: '' },
+      { fa: 'عملکرد قفل در حالت فشرده + ریست دستی', en: 'Latch in the operated position + manual reset', v: 'الزامی', unit: '' }
+    ],
+    note: { fa: 'استپ باید از نوع کنتاکت ایمنی مثبت‌گسست باشد.', en: 'Stops must use positive-opening safety contacts.' } },
+  /* ---------- tests ---------- */
+  { id: 's-test-list', cat: 'tests', icon: '🧪', title: { fa: 'تست‌های قبل از بهره‌برداری', en: 'Tests before putting into service' }, clause: '§6.3', kind: 'req',
+    vals: [
+      { fa: 'ترمز با ۱۲۵٪ بار', en: 'Brake at 125% load', v: '§6.3.1', unit: '' },
+      { fa: 'پاراشوت کابین / پاراشوت وزنه', en: 'Car safety gear / counterweight safety gear', v: '§6.3.4 / §6.3.5', unit: '' },
+      { fa: 'بافرها', en: 'Buffers', v: '§6.3.7', unit: '' },
+      { fa: 'شیر پاراشوت / ریسترکتور (هیدرولیک)', en: 'Rupture valve / restrictor (hydraulic)', v: '§6.3.8 / §6.3.9', unit: '' },
+      { fa: 'تست فشار ۲۰۰٪ (هیدرولیک)', en: 'Pressure test 200% (hydraulic)', v: '§6.3.10', unit: '' },
+      { fa: 'محافظت اضافه‌سرعت صعود', en: 'Ascending overspeed protection', v: '§6.3.11', unit: '' },
+      { fa: 'دقت توقف', en: 'Levelling accuracy', v: '§6.3.12', unit: '' },
+      { fa: 'محافظت حرکت ناخواسته', en: 'Unintended movement protection', v: '§6.3.13', unit: '' }
+    ],
+    note: { fa: 'آزمون‌های دوره‌ای و بعد از تغییر مهم یا حادثه: Annex C استاندارد و مقررات ملی.', en: 'Periodic tests and after major modification/accident: Annex C and national rules.' } },
+  { id: 's-test-plate', cat: 'tests', icon: '🏷️', title: { fa: 'برچسب‌ها و اطلاعات داخل کابین', en: 'Car marking & information' }, clause: '§5.4.2 / §7', kind: 'req',
+    vals: [
+      { fa: 'پلاک ظرفیت (کیلوگرم) و تعداد نفر', en: 'Rated load (kg) and persons plate', v: 'الزامی', unit: '' },
+      { fa: 'شماره شناسایی آسانسور و اطلاعات سازنده', en: 'Lift identification number and manufacturer data', v: 'الزامی', unit: '' },
+      { fa: 'دفترچه سرویس (Logbook) نزد مالک', en: 'Logbook kept by the owner', v: '§7.3', unit: '' }
+    ],
+    note: { fa: 'برچسب‌ها باید در داخل کابین، قابل خواندن و دائمی باشند.', en: 'Plates must be inside the car, legible and permanent.' } }
+];
+let stdQuery = '';
+let stdCat = 'all';
+function stdSearchText(s) {
+  let str = s.title.fa + ' ' + (s.title.en || '') + ' ' + s.clause + ' ' + (s.note ? s.note.fa + ' ' + s.note.en : '');
+  s.vals.forEach(v => { str += ' ' + v.fa + ' ' + (v.en || '') + ' ' + v.v + ' ' + (v.unit || ''); });
+  return str.toLowerCase();
+}
+function renderStandards() {
+  const c = $('#content');
+  c.innerHTML = `
+    <div class="safety-banner" style="background:var(--accent-soft);border-color:var(--accent-2);color:var(--accent-2)">
+      <span style="font-size:18px">🛡️</span><span>${t('stdBanner')}</span>
+    </div>
+    <div class="toolbar">
+      <div class="search">${IC.search}<input id="stdSearch" placeholder="${t('stdSearch')}" value="${esc(stdQuery)}" /></div>
+      <div class="chip-row">
+        ${STD81_CATS.map(ct => `<button class="chip ${stdCat === ct.id ? 'active' : ''}" data-sc="${ct.id}">${esc(ct[LANG] || ct.fa)}</button>`).join('')}
+      </div>
+    </div>
+    <div id="stdList" class="grid-2"></div>
+    <p class="calc-note" style="margin-top:16px">📖 ${t('stdDisclaimer')}</p>`;
+  $('#stdSearch').oninput = debounce(e => { stdQuery = e.target.value; drawStd(); }, 200);
+  $$('.chip[data-sc]').forEach(ch => ch.onclick = () => { stdCat = ch.dataset.sc; renderStandards(); });
+  drawStd();
+}
+function drawStd() {
+  const q = stdQuery.trim().toLowerCase();
+  let list = STD81;
+  if (stdCat !== 'all') list = list.filter(s => s.cat === stdCat);
+  if (q) list = list.filter(s => stdSearchText(s).includes(q));
+  const el = $('#stdList');
+  if (!list.length) {
+    el.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('stdNoMatch')}</p></div>`;
+    return;
+  }
+  el.innerHTML = list.map(s => `
+    <div class="card kb-card" onclick="openStdArticle('${s.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <h4><span style="font-size:19px">${s.icon}</span> ${esc(s.title[LANG] || s.title.fa)}</h4>
+        <span class="badge b-blue" style="direction:ltr;white-space:nowrap">${esc(s.clause)}</span>
+      </div>
+      <div class="std-vals" style="margin:8px 0 4px">
+        ${s.vals.slice(0, 2).map(v => `<div style="font-size:12.6px;color:var(--text-2)">${esc(v.fa)}: <b style="color:var(--text);direction:ltr;display:inline-block">${esc(v.v)}</b> ${esc(v.unit || '')}</div>`).join('')}
+        ${s.vals.length > 2 ? `<div style="font-size:11.5px;color:var(--text-3);margin-top:2px">+ ${faNum(s.vals.length - 2)} ${LANG === 'fa' ? 'مورد دیگر' : 'more'} …</div>` : ''}
+      </div>
+      <div class="kb-tags"><span class="badge b-green">${t('stdExpand')} ←</span></div>
+    </div>`).join('');
+}
+function openStdArticle(id) {
+  const s = STD81.find(x => x.id === id);
+  if (!s) return;
+  openModal(`
+    <div class="modal-head"><h3>${s.icon} ${esc(s.title[LANG] || s.title.fa)}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="modal-body kb-article">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <span class="badge b-blue" style="direction:ltr;font-size:13px">EN 81-20 ${esc(s.clause)}</span>
+        <span style="font-size:11.5px;color:var(--text-3)">${t('stdClause')}</span>
+      </div>
+      <div class="calc-result" style="margin-bottom:12px">
+        ${s.vals.map(v => `<div class="r-row" style="flex-wrap:wrap;gap:4px 10px">
+          <span class="r-label" style="font-size:13px;max-width:100%">${esc(v.fa)}${v.en && LANG === 'en' ? ` — ${esc(v.en)}` : ''}</span>
+          <span class="r-val" style="direction:ltr;font-size:15px">${esc(v.v)} ${esc(v.unit || '')}</span>
+        </div>`).join('')}
+      </div>
+      ${s.note ? `<div class="note-block">📌 ${esc(s.note[LANG] || s.note.fa)}</div>` : ''}
+    </div>
+    <div class="modal-foot"><button class="btn btn-primary" onclick="closeModal()">${t('close')}</button></div>`, { size: 'lg' });
+}
+
 /* ================= NOTES ================= */
 let noteQuery = '';
 function renderNotes() {
@@ -5385,7 +5956,22 @@ function evalMeasures(list) {
   const tmp = g('temp');
   if (tmp != null) msgs.push({ ok: tmp < 70, text: (LANG === 'fa' ? 'دما: ' : 'Temp: ') + faNum(tmp) + '°C' + (tmp >= 70 ? (LANG === 'fa' ? ' — بالای ~۷۰ درجه معمولاً بحرانی است؛ خنک‌کاری را بررسی کنید' : ' — above ~70 °C usually critical') : '') });
   const lvl = g('lvl_err');
-  if (lvl != null) msgs.push({ ok: Math.abs(lvl) <= 10, text: (LANG === 'fa' ? 'خطای همسطحی: ' : 'Leveling error: ') + faNum(lvl) + 'mm' + (Math.abs(lvl) > 10 ? (LANG === 'fa' ? ' — بیش از هدف ±۱۰ میلی‌متر' : ' — beyond ±10 mm target') : ' ✓') });
+  if (lvl != null) msgs.push({ ok: Math.abs(lvl) <= 10, text: (LANG === 'fa' ? 'خطای همسطحی: ' : 'Leveling error: ') + faNum(lvl) + 'mm' + (Math.abs(lvl) > 10 ? (LANG === 'fa' ? ' — خارج از دقت توقف ±۱۰ میلی‌متر (EN 81-20 §5.12.1.1.4)' : ' — beyond ±10 mm stopping accuracy (EN 81-20 §5.12.1.1.4)') : ' ✓') });
+  /* ---- EN 81-20 field checks ---- */
+  const df = g('door_force');
+  if (df != null) msgs.push({ ok: df <= 150, text: (LANG === 'fa' ? 'نیروی بستن درب: ' : 'Door closing force: ') + faNum(df) + ' N' + (df > 150 ? (LANG === 'fa' ? ' — بیش از حد مجاز ۱۵۰ نیوتن (EN 81-20 §5.3.6.2)' : ' — above the 150 N limit (EN 81-20 §5.3.6.2)') : ' ✓') });
+  const dg = g('door_gap');
+  if (dg != null) msgs.push({ ok: dg <= 6, text: (LANG === 'fa' ? 'فاصله لته‌های درب: ' : 'Door panel gap: ') + faNum(dg) + ' mm' + (dg > 10 ? (LANG === 'fa' ? ' — بیش از ۱۰ میلی‌متر؛ مردود در هر شرایطی (EN 81-20 §5.3.1.4)' : ' — over 10 mm; fails in all cases (EN 81-20 §5.3.1.4)') : dg > 6 ? (LANG === 'fa' ? ' — بالای ۶ میلی‌متر؛ فقط بر اثر سایش تا ۱۰ قابل قبول است' : ' — over 6 mm; only acceptable from wear up to 10 mm') : ' ✓') });
+  const le = g('lock_eng');
+  if (le != null) msgs.push({ ok: le >= 7, text: (LANG === 'fa' ? 'درگیری قفل درب طبقه: ' : 'Landing lock engagement: ') + faNum(le) + ' mm' + (le < 7 ? (LANG === 'fa' ? ' — کمتر از ۷ میلی‌متر؛ مردود (EN 81-20 §5.3.9.1)' : ' — below 7 mm; fail (EN 81-20 §5.3.9.1)') : ' ✓') });
+  const vr = g('v_rated'), vg = g('v_gov');
+  if (vr != null && vr > 0) {
+    const min = 1.15 * vr;
+    if (vg != null) {
+      const maxCap = vr > 1 ? (1.25 * vr + 0.25 / vr) : 1.5;
+      msgs.push({ ok: vg >= min && vg < maxCap, text: (LANG === 'fa' ? 'گاورنر: ' : 'Governor: ') + faNum(vg) + ' m/s — ' + (LANG === 'fa' ? 'محدوده مجاز برای این سرعت: ' : 'allowed range for this speed: ') + faNum(min.toFixed(2)) + ' تا ' + faNum(maxCap.toFixed(2)) + ' m/s (EN 81-20 §5.6.2.2.2)' });
+    }
+  }
   return msgs;
 }
 function wireMeasurePanel(prefix) {
@@ -9109,7 +9695,7 @@ function _lsSeed() {
         content: 'OC: اضافه جریان — چک اتصال موتور و ترمز. OV: اضافه ولتاژ — مقاومت ترمز را چک کن. LV: افت ولتاژ ورودی. PGF: خطای انکودر — سیم‌کشی و شیلد انکودر. OH: داغ شدن هیت‌سینک — فن تابلو.',
         createdAt: now - 50 * day },
       { id: _lsUid(), title: 'فاصله‌های ایمنی مهم EN 81-20', tags: ['استاندارد', 'EN81'],
-        content: 'عمق چاهک: باید فضای جان‌پناه (مستطیل 0.5×0.6×1.0 متر) بعد از نشستن کامل کابین روی بافر حفظ شود. بالاسری: حداقل 1.0 متر فضای ایستاده روی سقف کابین در بالاترین وضعیت. فاصله در لبه پاگرد تا سیل کابین حداکثر 35 میلی‌متر.',
+        content: 'چاهک: بعد از نشستن کامل کابین روی بافر، فضای جان‌پناه باید حفظ شود — خمیده 0.5×0.7×1.0، ایستاده 0.4×0.5×2.0 یا خوابیده 0.7×1.0×0.5 متر (§5.2.5.8.1). بالاسری: فضای ایستاده 0.4×0.5×2.0 متر روی سقف کابین + فاصله آزاد حداقل 1.0+0.035v² متر (§5.2.5.7). فاصله سیل کابین تا سیل طبقه حداکثر 35 میلی‌متر (§5.3.4.1).',
         createdAt: now - 70 * day }
     ],
     checklists: [],
