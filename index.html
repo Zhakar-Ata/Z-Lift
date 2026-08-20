@@ -819,7 +819,7 @@ const I18N = {
     // projects
     newProject: 'پروژه جدید', editProject: 'ویرایش پروژه', deleteProject: 'حذف پروژه',
     searchProjects: 'جستجوی پروژه، مشتری، محل...',
-    all: 'همه', traction: 'کششی', hydraulic: 'هیدرولیک',
+    all: 'همه', traction: 'کششی', hydraulic: 'هیدرولیک', bothTypes: 'هر دو نوع',
     prName: 'نام پروژه', prCustomer: 'نام مشتری / کارفرما', prPhone: 'تلفن تماس', prLocation: 'آدرس / محل پروژه',
     prType: 'نوع آسانسور', prCapacity: 'ظرفیت (kg)', prPersons: 'ظرفیت (نفر)', prFloors: 'تعداد طبقات',
     prStops: 'تعداد توقف', prSpeed: 'سرعت (m/s)', prController: 'تابلو فرمان', prMotor: 'موتور / پاوریونیت',
@@ -1025,7 +1025,7 @@ const I18N = {
     noProjects: 'No projects yet', noProjectsSub: 'Create your first elevator project',
     newProject: 'New Project', editProject: 'Edit Project', deleteProject: 'Delete Project',
     searchProjects: 'Search project, customer, location...',
-    all: 'All', traction: 'Traction', hydraulic: 'Hydraulic',
+    all: 'All', traction: 'Traction', hydraulic: 'Hydraulic', bothTypes: 'Both types',
     prName: 'Project name', prCustomer: 'Customer', prPhone: 'Phone', prLocation: 'Address / location',
     prType: 'Elevator type', prCapacity: 'Capacity (kg)', prPersons: 'Capacity (persons)', prFloors: 'Floors',
     prStops: 'Stops', prSpeed: 'Speed (m/s)', prController: 'Controller', prMotor: 'Motor / Power unit',
@@ -1578,7 +1578,7 @@ const CHECKLIST_TEMPLATES = [
   },
   {
     id: 'en81-safety-audit',
-    type: 'traction',
+    type: 'both',
     kind: 'maintenance',
     title: { fa: 'بازرسی ایمنی EN 81-20 (دوره‌ای)', en: 'EN 81-20 Safety Audit (periodic)' },
     desc: { fa: 'ممیزی الزامات ایمنی کلیدی EN 81-20 / ۶۳۰۳-۲۰ برای هر دو نوع آسانسور — موارد هیدرولیک را می‌توانید «غیرمرتبط» بزنید', en: 'Audit of key EN 81-20 / ISIRI 6303-20 safety requirements for both lift types — mark hydraulic items N.A. where not applicable' },
@@ -3467,9 +3467,9 @@ const FINAL_META = {
 };
 function statusBadge(s) { const m = STATUS_META[s] || STATUS_META.contract; return `<span class="badge ${m.cls}">${t(m.key)}</span>`; }
 function typeBadge(type) {
-  return type === 'hydraulic'
-    ? `<span class="badge b-teal">🛢️ ${t('hydraulic')}</span>`
-    : `<span class="badge b-blue">⚙️ ${t('traction')}</span>`;
+  if (type === 'hydraulic') return `<span class="badge b-teal">🛢️ ${t('hydraulic')}</span>`;
+  if (type === 'both') return `<span class="badge b-purple">⚖️ ${t('bothTypes')}</span>`;
+  return `<span class="badge b-blue">⚙️ ${t('traction')}</span>`;
 }
 
 /* ---------- icons ---------- */
@@ -4150,7 +4150,7 @@ function renderProjectDetail(id) {
   const c = $('#content');
   if (!p) { c.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong></div>`; return; }
   const services = state.services.filter(s => s.projectId === id).sort((a, b) => b.date - a.date);
-  const templates = CHECKLIST_TEMPLATES.filter(tp => tp.type === p.elevatorType);
+  const templates = CHECKLIST_TEMPLATES.filter(tp => tp.type === p.elevatorType || tp.type === 'both');
   const insts = state.checklists.filter(x => x.projectId === id);
 
   const kv = [
@@ -4725,7 +4725,7 @@ function renderChecklistDetail(idWithQuery) {
       <button class="btn btn-primary" onclick="navigate('/checklists')">${t('checklists')}</button></div>`;
     return;
   }
-  const eligible = state.projects.filter(p => p.elevatorType === tp.type);
+  const eligible = state.projects.filter(p => p.elevatorType === tp.type || tp.type === 'both');
   if (selectedProject && !eligible.find(p => p.id === selectedProject)) selectedProject = '';
 
   function getInst() {
@@ -4822,12 +4822,18 @@ function renderChecklistDetail(idWithQuery) {
       if (selectedProject) {
         let inst2 = getInst();
         if (!inst2) {
-          inst2 = { id: 'tmp', projectId: selectedProject, templateId: tid, checked: {}, updatedAt: Date.now() };
-          state.checklists.push(inst2);
+          /* create the real record first, then keep its reference —
+             state.checklists and the storage share the same array,
+             so pushing a temporary object would poison the DB with a
+             fake id ('tmp') that gets persisted. */
           try {
             const d = await api('/checklists', { method: 'POST', body: { projectId: selectedProject, templateId: tid, checked: {} } });
-            inst2.id = d.checklist.id;
-          } catch (e) {}
+            inst2 = d.checklist;
+            if (!state.checklists.includes(inst2)) state.checklists.push(inst2);
+          } catch (e) {
+            toast(t('errGeneric'), 'err');
+            return;
+          }
         }
         store = inst2.checked;
         inst2.updatedAt = Date.now();
@@ -4893,7 +4899,10 @@ async function chFailedToIssue(tid) {
 /* ================= CALCULATIONS ================= */
 function computeCalc(cal) {
   const vals = {};
-  cal.inputs.forEach(inp => { vals[inp.id] = parseFloat($(`#calc_${cal.id}_${inp.id}`).value) || 0; });
+  cal.inputs.forEach(inp => {
+    const el = $(`#calc_${cal.id}_${inp.id}`);
+    vals[inp.id] = el ? (parseFloat(el.value) || 0) : (+inp.value || 0);
+  });
   try {
     const rows = cal.compute(vals);
     $('#calcResult_' + cal.id).innerHTML = `<div class="calc-result">
@@ -9686,7 +9695,7 @@ function _lsSeed() {
         content: 'OC: اضافه جریان — چک اتصال موتور و ترمز. OV: اضافه ولتاژ — مقاومت ترمز را چک کن. LV: افت ولتاژ ورودی. PGF: خطای انکودر — سیم‌کشی و شیلد انکودر. OH: داغ شدن هیت‌سینک — فن تابلو.',
         createdAt: now - 50 * day },
       { id: _lsUid(), title: 'فاصله‌های ایمنی مهم EN 81-20', tags: ['استاندارد', 'EN81'],
-        content: 'عمق چاهک: باید فضای جان‌پناه (مستطیل 0.5×0.6×1.0 متر) بعد از نشستن کامل کابین روی بافر حفظ شود. بالاسری: حداقل 1.0 متر فضای ایستاده روی سقف کابین در بالاترین وضعیت. فاصله در لبه پاگرد تا سیل کابین حداکثر 35 میلی‌متر.',
+        content: 'چاهک: بعد از نشستن کامل کابین روی بافر، فضای جان‌پناه باید حفظ شود — خمیده 0.5×0.7×1.0، ایستاده 0.4×0.5×2.0 یا خوابیده 0.7×1.0×0.5 متر (§5.2.5.8.1). بالاسری: فضای ایستاده 0.4×0.5×2.0 متر روی سقف کابین + فاصله آزاد حداقل 1.0+0.035v² متر (§5.2.5.7). فاصله سیل کابین تا سیل طبقه حداکثر 35 میلی‌متر (§5.3.4.1).',
         createdAt: now - 70 * day }
     ],
     checklists: [],
