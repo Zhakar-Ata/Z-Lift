@@ -71,8 +71,8 @@ async function T(name, cond, info) {
     /* ---------- render every route ---------- */
     const routes = [
       '/dashboard', '/projects', '/services', '/parts', '/checklists', '/calculations',
-      '/diagnostics', '/vvvf', '/knowledge', '/tools', '/notes', '/invoices', '/contracts',
-      '/report', '/standards'
+      '/diagnostics', '/vvvf', '/knowledge', '/tools', '/notes', '/calendar', '/invoices',
+      '/contracts', '/report', '/standards'
     ];
     for (const route of routes) {
       await ev(`navigate('${route}')`);
@@ -210,6 +210,73 @@ async function T(name, cond, info) {
       return errs;
     })()`);
     await T('data integrity: unique ids & required fields', integrity.length === 0, integrity.join(' | '));
+
+    /* ---------- service calendar & reminders ---------- */
+    await ev(`navigate('/calendar')`); await waitLoaded();
+    await T('calendar page title set', () => ev(`document.querySelector('#pageTitle').textContent === 'تقویم سرویس'`), await ev(`document.querySelector('#pageTitle').textContent`));
+    await T('calendar grid rendered', () => ev(`document.querySelector('#calGrid') && document.querySelector('#calGrid').children.length > 27`));
+    await T('calendar header shows Jalali month/year', () => ev(`document.querySelector('#calHeader').textContent.trim().length > 0`));
+    await T('calendar shows 7 Persian weekday labels', () => ev(`document.querySelectorAll('.cal-week span').length === 7`));
+
+    const projC = await ev(`api('/projects', { method: 'POST', body: { name: 'برج کالندر QA', elevatorType: 'traction', capacityKg: 630, persons: 8, floors: 8, stops: 8, speed: 1, serviceIntervalDays: 30 } })`);
+    await T('calendar test project created', !!projC.project);
+    await ev(`state.projects = null; state.services = null; loadAll(true);`);
+    await T('periodic reminder derived from service interval', () => ev(`buildReminders().filter(r => r.kind === 'periodic').length >= 2`));
+    await T('periodic reminder flagged "soon" within 7 days', () => ev(`buildReminders().some(r => r.kind === 'periodic' && r.soon && !r.overdue)`));
+
+    await ev(`api('/services', { method: 'POST', body: { projectId: ${JSON.stringify(pidT)}, technician: 'QA', serviceType: 'repair', problem: 'x', diagnosis: 'y', workDone: 'z', partsReplaced: '-', finalStatus: 'followup', followUpDate: Date.now() + 3 * 86400000 } })`);
+    await ev(`state.services = null; loadAll(true);`);
+    await T('followup reminder derived from service followUpDate', () => ev(`buildReminders().some(r => r.kind === 'followup' && r.soon && !r.overdue)`));
+    await ev(`api('/services', { method: 'POST', body: { projectId: ${JSON.stringify(pidH)}, technician: 'QA', serviceType: 'maintenance', problem: 'x', diagnosis: 'y', workDone: 'z', partsReplaced: '-', finalStatus: 'followup', followUpDate: Date.now() - 2 * 86400000 } })`);
+    await ev(`state.services = null; loadAll(true);`);
+    await T('overdue followup reminder flagged', () => ev(`buildReminders().some(r => r.kind === 'followup' && r.overdue)`));
+    await T('reminders sorted ascending by due date', () => ev(`(() => { const r = buildReminders(); for (let i = 1; i < r.length; i++) if (r[i].due < r[i-1].due) return false; return true; })()`));
+
+    const rmA = await ev(`api('/reminders', { method: 'POST', body: { title: 'یادآوری تست کالندر', due: Date.now() + 5 * 86400000, kind: 'custom' } })`);
+    await T('custom reminder created', !!(rmA && rmA.reminder && rmA.reminder.id));
+    await ev(`state.reminders = null; loadAll(true);`);
+    await T('custom reminder appears in active list', () => ev(`buildReminders().some(r => r.reminderId === ${JSON.stringify(rmA.reminder.id)})`));
+    const rmUpd = await ev(`api('/reminders/${rmA.reminder.id}', { method: 'PUT', body: { title: 'یادآوری ویرایش‌شده' } })`);
+    await T('reminder title edited', rmUpd.reminder.title === 'یادآوری ویرایش‌شده');
+    const rmB = await ev(`api('/reminders', { method: 'POST', body: { title: 'حذف‌شود', due: Date.now() + 9 * 86400000, kind: 'custom' } })`);
+    await ev(`api('/reminders/${rmB.reminder.id}', { method: 'DELETE' })`);
+    await ev(`state.reminders = null; loadAll(true);`);
+    await T('reminder deleted', () => ev(`!(state.reminders || []).some(r => r.id === ${JSON.stringify(rmB.reminder.id)})`));
+    const rmC = await ev(`api('/reminders', { method: 'POST', body: { title: 'انجام‌شود', due: Date.now() + 6 * 86400000, kind: 'custom' } })`);
+    await ev(`api('/reminders/${rmC.reminder.id}', { method: 'PUT', body: { done: true } })`);
+    await ev(`state.reminders = null; loadAll(true);`);
+    await T('done reminder removed from active list', () => ev(`!buildReminders().some(r => r.reminderId === ${JSON.stringify(rmC.reminder.id)})`));
+    const rmBad = await ev(`api('/reminders', { method: 'POST', body: { title: '   ' } }).then(() => 'ok').catch(e => e.code)`);
+    await T('empty reminder title rejected', rmBad === 'name_required', String(rmBad));
+
+    await ev(`navigate('/calendar')`); await waitLoaded();
+    await T('reminder list renders custom reminder', () => ev(`document.querySelector('#reminderList').innerHTML.includes('یادآوری ویرایش‌شده')`));
+    const todayJ = await ev(`tsToJalali(Date.now())`);
+    await ev(`api('/services', { method: 'POST', body: { projectId: ${JSON.stringify(pidT)}, technician: 'QA', serviceType: 'maintenance', date: jalaliToTs(${todayJ.jy}, ${todayJ.jm}, ${todayJ.jd}), problem: 'x', diagnosis: 'y', workDone: 'z', partsReplaced: '-', finalStatus: 'ok' } })`);
+    await ev(`state.services = null; loadAll(true);`);
+    await ev(`calState = { jy: ${todayJ.jy}, jm: ${todayJ.jm} }; navigate('/calendar')`); await waitLoaded();
+    await ev(`calPickDay(${todayJ.jd})`);
+    await T('calendar day pick shows services', () => ev(`document.querySelector('#calDayDetail [data-cal="services"]') !== null`));
+    await T('calendar day pick shows no-events for empty day', () => ev(`(() => { const j = tsToJalali(Date.now()); calState = { jy: j.jy, jm: j.jm }; drawCalendar(); const used = new Set(); (state.services||[]).forEach(s => { const jj = tsToJalali(s.date); if (jj.jy===j.jy && jj.jm===j.jm) used.add(jj.jd); }); buildReminders().forEach(r => { const jj = tsToJalali(r.due); if (jj.jy===j.jy && jj.jm===j.jm) used.add(jj.jd); }); let d = 1; while (used.has(d) && d < 31) d++; calPickDay(d); return !used.has(d) && document.querySelector('#calDayDetail [data-cal="noevents"]') !== null; })()`));
+    const calH1 = await ev(`(() => { const j = tsToJalali(Date.now()); calState = { jy: j.jy, jm: j.jm }; drawCalendar(); return document.querySelector('#calHeader').textContent; })()`);
+    await ev(`calShift(1);`);
+    const calH2 = await ev(`document.querySelector('#calHeader').textContent`);
+    await T('calendar month shift changes header', calH1 !== calH2);
+    await ev(`calShift(-1);`);
+    const calH3 = await ev(`document.querySelector('#calHeader').textContent`);
+    await T('calendar month shift back restores header', calH3 === calH1);
+    await ev(`calToday();`);
+    const calH4 = await ev(`document.querySelector('#calHeader').textContent`);
+    await T('calToday returns to current month', calH4 === calH1);
+    await T('calendar shows count badge on service day', () => ev(`(() => { const j = tsToJalali(Date.now()); calState = { jy: j.jy, jm: j.jm }; drawCalendar(); return [...document.querySelectorAll('.cal-day')].some(b => b.querySelector('.cal-dot')); })()`));
+
+    const bk = await ev(`api('/backup')`);
+    await T('backup includes reminders collection', Array.isArray(bk.backup.reminders));
+    await T('reminders data integrity: unique ids & required fields', () => ev(`(() => { const rs = state.reminders || []; const seen = new Set(); for (const r of rs) { if (seen.has(r.id)) return false; seen.add(r.id); if (!r.id || !r.title || !r.due) return false; } return true; })()`));
+
+    await ev(`LANG = 'en'; applyLang(); navigate('/calendar');`); await waitLoaded();
+    await T('calendar page works in English', () => ev(`document.querySelector('#pageTitle').textContent === 'Service calendar'`));
+    await ev(`LANG = 'fa'; applyLang(); navigate('/dashboard');`); await waitLoaded();
 
     /* ---------- legacy regressions ---------- */
     await ev(`navigate('/checklists/traction-install')`); await waitLoaded();
