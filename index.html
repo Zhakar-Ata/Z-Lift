@@ -572,6 +572,18 @@ mark { background: color-mix(in srgb, var(--warn) 35%, transparent); color: inhe
 .due-item strong { font-size: 13.5px; display: block; }
 .due-item .d-sub { font-size: 11.8px; color: var(--text-2); }
 
+/* ============ service parts (stock linkage) ============ */
+.spart { display: flex; align-items: center; gap: 8px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 11px; margin-bottom: 7px; background: var(--bg-soft); }
+.spart .grow { flex: 1; min-width: 0; line-height: 1.4; }
+.spart strong { font-size: 13px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.spart .meta { font-size: 11.5px; color: var(--text-3); }
+.spart .qty { width: 64px; flex: 0 0 auto; }
+.spart .tag { font-size: 10.5px; padding: 2px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-2); white-space: nowrap; }
+.spart .tag.free { background: var(--warn-soft); color: var(--warn); }
+.spart .tag.low { background: var(--danger-soft); color: var(--danger); }
+.spart-add { display: flex; gap: 8px; flex-wrap: wrap; }
+@media print { .spart-add, .spart .icon-btn { display: none !important; } }
+
 /* ============ parts table ============ */
 .parts-table { width: 100%; border-collapse: collapse; }
 .parts-table th { text-align: start; font-size: 12px; color: var(--text-3); font-weight: 700; padding: 8px 12px; border-bottom: 2px solid var(--border); }
@@ -941,6 +953,9 @@ const I18N = {
     svcProject: 'پروژه / دستگاه', svcDate: 'تاریخ', svcTechnician: 'تکنسین', svcType: 'نوع سرویس',
     svcProblem: 'شرح مشکل / درخواست', svcDiagnosis: 'تشخیص عیب', svcWork: 'اقدامات انجام‌شده',
     svcParts: 'قطعات تعویض‌شده', svcFinal: 'وضعیت نهایی',
+    svcAddPart: 'افزودن قطعه', svcPickStock: 'انتخاب از انبار', svcCustomPart: 'قطعه آزاد (بدون کسر انبار)',
+    svcPartName: 'نام قطعه', svcPartQty: 'تعداد', svcRemovePart: 'حذف', svcNoParts: 'قطعه‌ای ثبت نشده',
+    svcStockHint: 'موجودی', svcConsumedNote: 'سرویس #',
     typeMaintenance: 'سرویس دوره‌ای', typeRepair: 'تعمیر', typeEmergency: 'خرابی اضطراری', typeInspection: 'بازرسی',
     finalOk: 'سالم / آماده کار', finalFollowup: 'نیاز به پیگیری', finalOut: 'خارج از سرویس',
     searchServices: 'جستجو در گزارش‌ها...',
@@ -1030,6 +1045,28 @@ const I18N = {
     confirmDeletePhotoMsg: 'این عکس حذف می‌شود. مطمئن هستید؟', photoTooLarge: 'حجم عکس زیاد است (حداکثر ~۱.۵ مگابایت)',
     measures: 'اندازه‌گیری‌ها', measAdd: 'ثبت اندازه‌گیری', measValue: 'مقدار', measCheck: 'ارزیابی',
     measBalanced: 'تقارن ولتاژ قابل قبول به نظر می‌رسد (اختلاف {p}٪)', measUnbalanced: 'عدم تقارن ولتاژ (اختلاف {p}٪) — اتصالات و شبکه را بررسی کنید',
+    measHistory: 'تاریخچهٔ اندازه‌گیری', measNew: 'ثبت اندازه‌گیری جدید', measType: 'نوع اندازه‌گیری', measPoint: 'نقطهٔ اندازه‌گیری',
+    measCat_elec: 'الکتریکال', measCat_control: 'کنترل/فرمان', measCat_safety: 'ایمنی', measCat_drive: 'موتور/درایو', measCat_mech: 'مکانیکال',
+    measStatusNormal: 'نرمال', measStatusAttention: 'نیاز به بررسی', measStatusCritical: 'بحرانی', measStatusUnknown: 'نامشخص',
+    measStatus: 'وضعیت اندازه‌گیری',
+    measRedFlag: 'پرچم قرمز', measReason: 'علت', measNextCheck: 'بررسی بعدی', measSafetyWarn: 'هشدار ایمنی',
+    measRefType: 'مرجع مقایسه', measRefManual: 'منوال سازنده', measRefStandard: 'استاندارد', measRefTech: 'تجربهٔ تکنسین',
+    measComp: 'قطعه/مورد', measCondition: 'شر تست', measInvalid: 'مقدار نامعتبر است', measPersianHint: 'اعداد فارسی/عربی پذیرفته می‌شوند',
+    measNoHistory: 'اندازه‌گیری‌ای برای این دستگاه ثبت نشده', measSaved: 'اندازه‌گیری ثبت شد',
+    measTrend: 'روند تغییرات', measValueAt: 'مقدار در',
+    /* safety confirmation */
+    safetyTitle: 'هشدار ایمنی', safetyAck: 'شرایط ایمنی را مطالعه و رعایت می‌کنم', safetyContinue: 'ادامه', safetyCancel: 'انصراف',
+    safetyCritical: 'این یک فرآیند حساس ایمنی است', safetyLog: 'تأیید ایمنی ثبت شد',
+    /* invoice legal */
+    invTax: 'مالیات/عوارض ارزش افزوده', invTaxRate: 'نرخ مالیات (٪)', invNumber: 'شماره قانونی فاکتور', invNumberAuto: 'خودکار',
+    invBusinessInfo: 'مشخصات واحد صنفی', invEconomicCode: 'کد/شناسه ملی', invNationalId: 'شناسه/کد ملی مشتری', invRegId: 'شماره اقتصادی',
+    taxInclusive: 'با احتساب مالیات', invTaxExempt: 'معاف از مالیات',
+    /* backup */
+    backupUpToDate: 'پشتیبان به‌روز است', backupRecommended: 'پیشنهاد می‌شود پشتیبان بگیرید', backupNone: 'هنوز پشتیبان نگرفته‌اید',
+    backupVerify: 'اعتبارسنجی فایل پشتیبان', backupInvalid: 'فایل پشتیبان خراب یا ناسازگار است', backupVersionMismatch: 'این فایل متعلق به نسخهٔ دیگری است',
+    backupAuto: 'پشتیبان خودکار (محلی)', backupAutoOn: 'هر روز یک نسخهٔ پشتیبان محلی ساخته شود',
+    backupTelegramFuture: 'ارسال خودکار به تلگرام نیاز به سرور دارد — به‌زودی',
+    backupStatus: 'وضعیت پشتیبان',
     measNote: 'حدود قابل قبول به سازنده، مدل و طراحی سیستم بستگی دارد — با پلاک و منوال تطبیق دهید.',
     diagSave: 'ذخیره نتیجه عیب‌یابی', diagSaved: 'نتیجه عیب‌یابی ذخیره شد', diagToService: 'انتقال به گزارش سرویس',
     diagSessions: 'سوابق عیب‌یابی', diagPath: 'مسیر طی‌شده', diagFinal: 'جمع‌بندی / تشخیص نهایی',
@@ -1074,7 +1111,7 @@ const I18N = {
     faultStats: 'الگوی خرابی این آسانسور', faultStatsSub: 'بر اساس گزارش‌های سرویس ثبت‌شده',
     kbReadMore: 'مطالعه در دانش فنی', today: 'امروز',
     storageFull: '⛔ حافظه دستگاه پر است! ذخیره انجام نشد — چند عکس قدیمی را حذف کنید و فوراً بکاپ بگیرید',
-    settings: 'تنظیمات شرکت', settingsSub: 'نام و مشخصات روی گزارش‌ها و فاکتورهای چاپی', 
+    companySettings: 'تنظیمات شرکت', settingsSub: 'نام و مشخصات روی گزارش‌ها و فاکتورهای چاپی',
     setCompany: 'نام شرکت / مجموعه', setPhone: 'تلفن', setAddress: 'آدرس',
     storageUsage: 'فضای مصرفی داده‌ها', storagePhotos: 'عکس', srContracts: 'قراردادها',
     profInvoices: 'فاکتورهای این آسانسور', profContract: 'قرارداد سرویس این ساختمان',
@@ -1206,6 +1243,9 @@ const I18N = {
     svcProject: 'Project / unit', svcDate: 'Date', svcTechnician: 'Technician', svcType: 'Service type',
     svcProblem: 'Problem / request', svcDiagnosis: 'Diagnosis', svcWork: 'Work performed',
     svcParts: 'Parts replaced', svcFinal: 'Final status',
+    svcAddPart: 'Add part', svcPickStock: 'Pick from stock', svcCustomPart: 'Free-text part (no stock change)',
+    svcPartName: 'Part name', svcPartQty: 'Qty', svcRemovePart: 'Remove', svcNoParts: 'No parts recorded',
+    svcStockHint: 'In stock', svcConsumedNote: 'Service #',
     typeMaintenance: 'Preventive', typeRepair: 'Repair', typeEmergency: 'Emergency', typeInspection: 'Inspection',
     finalOk: 'OK / in service', finalFollowup: 'Needs follow-up', finalOut: 'Out of service',
     searchServices: 'Search reports...',
@@ -1274,6 +1314,25 @@ const I18N = {
     confirmDeletePhotoMsg: 'This photo will be deleted. Are you sure?', photoTooLarge: 'Photo too large (max ~1.5 MB)',
     measures: 'Measurements', measAdd: 'Log measurement', measValue: 'Value', measCheck: 'Assessment',
     measBalanced: 'Voltage balance appears acceptable ({p}% deviation)', measUnbalanced: 'Voltage imbalance ({p}%) — check connections and supply',
+    measHistory: 'Measurement history', measNew: 'Log measurement', measType: 'Measurement type', measPoint: 'Measured point',
+    measCat_elec: 'Electrical', measCat_control: 'Control', measCat_safety: 'Safety', measCat_drive: 'Motor/Drive', measCat_mech: 'Mechanical',
+    measStatusNormal: 'Normal', measStatusAttention: 'Needs attention', measStatusCritical: 'Critical', measStatusUnknown: 'Unknown',
+    measStatus: 'Measurement status',
+    measRedFlag: 'Red flag', measReason: 'Reason', measNextCheck: 'Next check', measSafetyWarn: 'Safety warning',
+    measRefType: 'Reference', measRefManual: 'Manufacturer manual', measRefStandard: 'Standard', measRefTech: 'Technician reference',
+    measComp: 'Component', measCondition: 'Test condition', measInvalid: 'Invalid value', measPersianHint: 'Persian/Arabic numerals accepted',
+    measNoHistory: 'No measurements for this elevator', measSaved: 'Measurement logged',
+    measTrend: 'Trend', measValueAt: 'Value at',
+    safetyTitle: 'Safety warning', safetyAck: 'I have read and will follow the safety requirements', safetyContinue: 'Continue', safetyCancel: 'Cancel',
+    safetyCritical: 'This is a safety-critical procedure', safetyLog: 'Safety acknowledgement logged',
+    invTax: 'VAT/Tax', invTaxRate: 'Tax rate (%)', invNumber: 'Legal invoice number', invNumberAuto: 'Auto',
+    invBusinessInfo: 'Business information', invEconomicCode: 'Economic/National code', invNationalId: 'Customer national/ID code', invRegId: 'Economic code',
+    taxInclusive: 'Tax included', invTaxExempt: 'Tax exempt',
+    backupUpToDate: 'Backup is up to date', backupRecommended: 'Backup recommended', backupNone: 'No backup yet',
+    backupVerify: 'Verifying backup', backupInvalid: 'Backup file is corrupt or incompatible', backupVersionMismatch: 'This file belongs to a different version',
+    backupAuto: 'Automatic local backup', backupAutoOn: 'Create a local backup every day',
+    backupTelegramFuture: 'Automatic Telegram upload needs a backend — coming soon',
+    backupStatus: 'Backup status',
     measNote: 'Acceptable limits depend on manufacturer, model and system design — match nameplate and manual.',
     diagSave: 'Save diagnostic result', diagSaved: 'Diagnostic saved', diagToService: 'Send to service report',
     diagSessions: 'Diagnostic history', diagPath: 'Path taken', diagFinal: 'Final diagnosis',
@@ -1316,7 +1375,7 @@ const I18N = {
     faultStats: 'Fault pattern of this elevator', faultStatsSub: 'Based on logged service reports',
     kbReadMore: 'Read in knowledge base', today: 'Today',
     storageFull: '⛔ Device storage full! Save failed — delete old photos and back up now',
-    settings: 'Company settings', settingsSub: 'Shown on printed reports and invoices',
+    companySettings: 'Company settings', settingsSub: 'Shown on printed reports and invoices',
     setCompany: 'Company name', setPhone: 'Phone', setAddress: 'Address',
     storageUsage: 'Data storage used', storagePhotos: 'photos', srContracts: 'Contracts',
     profInvoices: 'Invoices for this elevator', profContract: 'Service contract of this building',
@@ -1521,6 +1580,7 @@ const CHECKLIST_TEMPLATES = [
     id: 'traction-install',
     type: 'traction',
     kind: 'install',
+    riskLevel: 'caution',
     title: { fa: 'چک‌لیست نصب آسانسور کششی', en: 'Traction Elevator Installation Checklist' },
     desc: { fa: 'مراحل نصب از شفت تا تحویل، بر اساس رویه‌های رایج و الزامات EN 81-20 / استاندارد ۶۳۰۳-۲۰', en: 'Installation steps from shaft to handover, per common practice and EN 81-20 / ISIRI 6303-20' },
     groups: [
@@ -1590,6 +1650,7 @@ const CHECKLIST_TEMPLATES = [
     id: 'hydraulic-install',
     type: 'hydraulic',
     kind: 'install',
+    riskLevel: 'caution',
     title: { fa: 'چک‌لیست نصب آسانسور هیدرولیک', en: 'Hydraulic Elevator Installation Checklist' },
     desc: { fa: 'نصب جک، پاوریونیت و راه‌اندازی مطابق رویه‌های رایج و EN 81-20', en: 'Jack, power unit installation and commissioning per EN 81-20' },
     groups: [
@@ -1648,6 +1709,7 @@ const CHECKLIST_TEMPLATES = [
     id: 'traction-maint',
     type: 'traction',
     kind: 'maintenance',
+    riskLevel: 'caution',
     title: { fa: 'چک‌لیست سرویس دوره‌ای — کششی', en: 'Preventive Maintenance — Traction' },
     desc: { fa: 'بازدید دوره‌ای کامل بر اساس اجزای سیستم؛ هر مورد را قبول/مردود/غیرمرتبط علامت بزنید', en: 'Component-based periodic visit; mark each item pass/fail/N.A.' },
     groups: [
@@ -1736,6 +1798,7 @@ const CHECKLIST_TEMPLATES = [
     id: 'hydraulic-maint',
     type: 'hydraulic',
     kind: 'maintenance',
+    riskLevel: 'caution',
     title: { fa: 'چک‌لیست سرویس دوره‌ای — هیدرولیک', en: 'Preventive Maintenance — Hydraulic' },
     desc: { fa: 'بازدید دوره‌ای کامل پاوریونیت، جک و ادوات ایمنی؛ قبول/مردود/غیرمرتبط', en: 'Full periodic visit: power unit, jack, safety devices; pass/fail/N.A.' },
     groups: [
@@ -1815,6 +1878,7 @@ const CHECKLIST_TEMPLATES = [
     id: 'en81-safety-audit',
     type: 'both',
     kind: 'maintenance',
+    riskLevel: 'critical',
     title: { fa: 'بازرسی ایمنی EN 81-20 (دوره‌ای)', en: 'EN 81-20 Safety Audit (periodic)' },
     desc: { fa: 'ممیزی الزامات ایمنی کلیدی EN 81-20 / ۶۳۰۳-۲۰ برای هر دو نوع آسانسور — موارد هیدرولیک را می‌توانید «غیرمرتبط» بزنید', en: 'Audit of key EN 81-20 / ISIRI 6303-20 safety requirements for both lift types — mark hydraulic items N.A. where not applicable' },
     groups: [
@@ -3504,22 +3568,122 @@ CALCULATORS.push(
 );
 
 /* ================= MEASUREMENT FIELDS (diagnostics) ================= */
+/* Measurement field catalogue.
+   Each field has a stable id, bilingual label, unit and category.
+   `eval` returns {status, reason, next} based purely on a numeric value plus
+   the project/elevator context. Status is one of normal/attention/critical/
+   unknown. A field WITHOUT an eval is always 'unknown' — we never guess a
+   limit that has no verified basis. */
 const MEASURE_FIELDS = [
-  { id: 'v_rs', fa: 'ولتاژ R-S', unit: 'V', group: 'elec' },
-  { id: 'v_st', fa: 'ولتاژ S-T', unit: 'V', group: 'elec' },
-  { id: 'v_rt', fa: 'ولتاژ R-T', unit: 'V', group: 'elec' },
-  { id: 'i_motor', fa: 'جریان موتور', unit: 'A', group: 'elec' },
-  { id: 'v_dcbus', fa: 'ولتاژ باس DC درایو', unit: 'V', group: 'elec' },
-  { id: 'p_hyd', fa: 'فشار هیدرولیک', unit: 'bar', group: 'hyd' },
-  { id: 'temp', fa: 'دما (موتور/روغن)', unit: '°C', group: 'both' },
-  { id: 'lvl_err', fa: 'خطای همسطحی', unit: 'mm', group: 'both' },
-  { id: 't_travel', fa: 'زمان سفر', unit: 's', group: 'both' },
-  { id: 'v_rated', fa: 'سرعت نامی کابین', unit: 'm/s', group: 'std' },
-  { id: 'v_gov', fa: 'سرعت تریپ گاورنر', unit: 'm/s', group: 'std' },
-  { id: 'door_force', fa: 'نیروی بستن درب', unit: 'N', group: 'std' },
-  { id: 'door_gap', fa: 'فاصله لته‌های درب', unit: 'mm', group: 'std' },
-  { id: 'lock_eng', fa: 'درگیری قفل درب طبقه', unit: 'mm', group: 'std' }
+  // electrical
+  { id: 'v_rs', fa: 'ولتاژ R-S', en: 'Voltage R-S', unit: 'V', cat: 'elec', decimals: 0, min: 0,
+    eval: (v) => v > 0 && v < 50 ? { status: 'critical', reason: { fa: 'ولتاژ به‌شدت پایین است', en: 'Voltage far below nominal' }, next: { fa: 'منبع ولتاژ و کلید اصلی را بررسی کنید', en: 'Check supply and main switch' } }
+      : v >= 340 && v <= 420 ? { status: 'normal' }
+      : v > 420 && v <= 460 ? { status: 'attention', reason: { fa: 'ولتاژ بالاتر از محدودهٔ نامی ۳۸۰V', en: 'Voltage above 380 V nominal range' } }
+      : v >= 180 && v < 340 ? { status: 'attention', reason: { fa: 'ولتاژ پایین‌تر از محدودهٔ نامی', en: 'Voltage below nominal range' } }
+      : v > 460 ? { status: 'critical', reason: { fa: 'اضافه‌ولتاژ خطرناک', en: 'Dangerous over-voltage' } } : { status: 'unknown' } },
+  { id: 'v_st', fa: 'ولتاژ S-T', en: 'Voltage S-T', unit: 'V', cat: 'elec', decimals: 0, min: 0, eval: (v) => (MEASURE_FIELDS.find(f => f.id === 'v_rs').eval(v)) },
+  { id: 'v_rt', fa: 'ولتاژ R-T', en: 'Voltage R-T', unit: 'V', cat: 'elec', decimals: 0, min: 0, eval: (v) => (MEASURE_FIELDS.find(f => f.id === 'v_rs').eval(v)) },
+  { id: 'v_control', fa: 'ولتاژ کنترل/فرمان', en: 'Control supply voltage', unit: 'V', cat: 'control', decimals: 0, min: 0, placeholder: 'مثلاً ۱۱۰ / ۶۰ / ۲۴' },
+  { id: 'i_motor', fa: 'جریان موتور', en: 'Motor current', unit: 'A', cat: 'drive', decimals: 1, min: 0 },
+  { id: 'v_dcbus', fa: 'ولتاژ باس DC درایو', en: 'Drive DC bus voltage', unit: 'V', cat: 'drive', decimals: 0, min: 0,
+    eval: (v, ctx) => {
+      /* nominal DC bus ≈ √2 × line voltage. We infer 380 V vs 220 V from the
+         measured line value if present; otherwise evaluate against 530-560/300-320. */
+      const line = ctx && ctx.line;
+      if (line && line > 300) {
+        const exp = line * Math.SQRT2;
+        if (v > exp * 1.15) return { status: 'critical', reason: { fa: 'اضافه‌ولتاژ باس DC', en: 'DC bus over-voltage' }, next: { fa: 'مقاومت ترمز و رمپ توقف را بررسی کنید', en: 'Check brake resistor and decel ramp' } };
+        if (v < exp * 0.8) return { status: 'critical', reason: { fa: 'افت ولتاژ باس DC', en: 'DC bus under-voltage' }, next: { fa: 'برق ورودی و یکسوساز را بررسی کنید', en: 'Check mains input and rectifier' } };
+        return { status: 'normal' };
+      }
+      if (v >= 530 && v <= 580) return { status: 'normal', reason: { fa: 'محدودهٔ نرمال برای شبکه ۳۸۰V (≈۵۳۷V)', en: 'Normal for 380 V mains (~537 V)' } };
+      if (v >= 290 && v <= 330) return { status: 'normal', reason: { fa: 'محدودهٔ نرمال برای شبکه ۲۲۰V تک‌فاز', en: 'Normal for 220 V single-phase' } };
+      return { status: 'attention', reason: { fa: 'ولتاژ باس با محدوده‌های رایع هم‌خوانی ندارد؛ با منوال تطبیق دهید', en: 'Bus voltage outside common ranges — verify against manual' } };
+    } },
+  { id: 'i_brake', fa: 'جریان/ولتاژ بوبین ترمز', en: 'Brake coil voltage/current', unit: 'V', cat: 'drive', decimals: 0, min: 0 },
+  { id: 'r_insulation', fa: 'مقاومت عایقی (میگر)', en: 'Insulation resistance', unit: 'MΩ', cat: 'elec', decimals: 1, min: 0,
+    eval: (v) => v >= 1 ? { status: 'normal' } : v > 0 && v < 1 ? { status: 'critical', reason: { fa: 'مقاومت عایقی زیر ۱ مگااهم — غیرمجاز', en: 'Insulation below 1 MΩ — unacceptable' } } : { status: 'unknown' } },
+  { id: 'p_hyd', fa: 'فشار هیدرولیک', en: 'Hydraulic pressure', unit: 'bar', cat: 'mech', decimals: 1, min: 0 },
+  { id: 'temp', fa: 'دما (موتور/روغن)', en: 'Temperature (motor/oil)', unit: '°C', cat: 'mech', decimals: 0,
+    eval: (v) => v < 70 ? { status: 'normal' } : v < 85 ? { status: 'attention', reason: { fa: 'دما بالا است؛ خنک‌کاری و بار را بررسی کنید', en: 'Temperature high — check cooling and load' } } : { status: 'critical', reason: { fa: 'دما بسیار بالا — خطر آسیب', en: 'Excessive temperature — damage risk' } } },
+  { id: 'lvl_err', fa: 'خطای همسطحی', en: 'Leveling error', unit: 'mm', cat: 'mech', decimals: 0, signed: true,
+    eval: (v) => Math.abs(v) <= 10 ? { status: 'normal' } : Math.abs(v) <= 20 ? { status: 'attention', reason: { fa: 'خارج از دقت توقف ±۱۰ میلی‌متر (EN 81-20)', en: 'Outside ±10 mm stopping accuracy (EN 81-20)' } } : { status: 'critical', reason: { fa: 'همسطحی بسیار نامناسب', en: 'Severe leveling error' } } },
+  { id: 't_travel', fa: 'زمان سفر', en: 'Travel time', unit: 's', cat: 'mech', decimals: 1, min: 0 },
+  { id: 'vib', fa: 'لرزش (توصیفی)', en: 'Vibration (descriptive)', unit: '', cat: 'mech', text: true },
+  // EN 81 verified checks
+  { id: 'v_rated', fa: 'سرعت نامی کابین', en: 'Rated car speed', unit: 'm/s', cat: 'safety', decimals: 2, min: 0 },
+  { id: 'v_gov', fa: 'سرعت تریپ گاورنر', en: 'Governor tripping speed', unit: 'm/s', cat: 'safety', decimals: 2, min: 0,
+    eval: (v, ctx) => {
+      const vr = ctx && +ctx.v_rated;
+      if (!vr || vr <= 0) return { status: 'unknown', reason: { fa: 'برای ارزیابی، سرعت نامی هم لازم است', en: 'Rated speed needed to evaluate' } };
+      const min = 1.15 * vr;
+      const max = vr > 1 ? (1.25 * vr + 0.25 / vr) : 1.5;
+      if (v < min) return { status: 'critical', reason: { fa: 'کمتر از حداقل ۱۱۵٪ سرعت نامی', en: 'Below the 115 % minimum' } };
+      if (v >= max) return { status: 'critical', reason: { fa: 'بیش از سقف مجاز برای این سرعت', en: 'Above the allowed ceiling for this speed' } };
+      return { status: 'normal' };
+    } },
+  { id: 'door_force', fa: 'نیروی بستن درب', en: 'Door closing force', unit: 'N', cat: 'safety', decimals: 0, min: 0,
+    eval: (v) => v <= 150 ? { status: 'normal' } : { status: 'critical', reason: { fa: 'بیش از حد مجاز ۱۵۰ نیوتن (EN 81-20)', en: 'Above 150 N limit (EN 81-20)' } } },
+  { id: 'door_gap', fa: 'فاصله لته‌های درب', en: 'Door panel gap', unit: 'mm', cat: 'safety', decimals: 0, min: 0,
+    eval: (v) => v <= 6 ? { status: 'normal' } : v <= 10 ? { status: 'attention', reason: { fa: 'بالای ۶ میلی‌متر؛ فقط با سایش تا ۱۰ قابل قبول', en: 'Above 6 mm; only acceptable up to 10 from wear' } } : { status: 'critical', reason: { fa: 'بیش از ۱۰ میلی‌متر؛ مردود (EN 81-20)', en: 'Over 10 mm; fail (EN 81-20)' } } },
+  { id: 'lock_eng', fa: 'درگیری قفل درب طبقه', en: 'Landing lock engagement', unit: 'mm', cat: 'safety', decimals: 0, min: 0,
+    eval: (v) => v >= 7 ? { status: 'normal' } : { status: 'critical', reason: { fa: 'کمتر از ۷ میلی‌متر؛ مردود (EN 81-20)', en: 'Below 7 mm; fail (EN 81-20)' } } },
+  // safety state observations (boolean)
+  { id: 'safety_chain', fa: 'وضعیت زنجیرهٔ ایمنی', en: 'Safety chain state', unit: '', cat: 'safety', state: ['closed', 'open'],
+    eval: (v) => v === 'closed' ? { status: 'normal' } : v === 'open' ? { status: 'critical', reason: { fa: 'زنجیرهٔ ایمنی باز است', en: 'Safety chain is open' }, next: { fa: 'از اولین کنتاکت، نقطهٔ قطع را پیدا کنید', en: 'Trace from the first contact to find the open point' } } : { status: 'unknown' } },
+  { id: 'door_lock', fa: 'قفل درب طبقه', en: 'Landing door lock', unit: '', cat: 'safety', state: ['locked', 'unlocked'],
+    eval: (v) => v === 'locked' ? { status: 'normal' } : v === 'unlocked' ? { status: 'critical', reason: { fa: 'قفل درب درگیر نیست', en: 'Door lock not engaged' } } : { status: 'unknown' } },
+  { id: 'estop', fa: 'کلید توقف اضطراری', en: 'Emergency stop', unit: '', cat: 'safety', state: ['released', 'pressed'],
+    eval: (v) => v === 'released' ? { status: 'normal' } : v === 'pressed' ? { status: 'critical', reason: { fa: 'استپ اضطراری فعال است', en: 'Emergency stop is active' } } : { status: 'unknown' } }
 ];
+const MEASURE_FIELDS_BY_ID = MEASURE_FIELDS.reduce((m, f) => { m[f.id] = f; return m; }, {});
+const MEASURE_CATS = [
+  { id: 'elec', key: 'measCat_elec', icon: '⚡' },
+  { id: 'control', key: 'measCat_control', icon: '🎛️' },
+  { id: 'safety', key: 'measCat_safety', icon: '🛡️' },
+  { id: 'drive', key: 'measCat_drive', icon: '⚙️' },
+  { id: 'mech', key: 'measCat_mech', icon: '🔧' }
+];
+const MEAS_STATUS_META = {
+  normal:   { icon: '🟢', key: 'measStatusNormal',   cls: 'b-green' },
+  attention:{ icon: '🟡', key: 'measStatusAttention', cls: 'b-amber' },
+  critical: { icon: '🔴', key: 'measStatusCritical', cls: 'b-red' },
+  unknown:  { icon: '⚪', key: 'measStatusUnknown', cls: 'b-gray' }
+};
+/* parse Persian/Arabic/European numerals and thousands separators into a Number.
+   Returns null when empty/invalid. */
+function parseNum(s) {
+  if (s == null) return null;
+  if (typeof s === 'number') return isFinite(s) ? s : null;
+  let str = String(s).trim();
+  if (!str) return null;
+  str = str.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
+           .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+  // accept both 1,234.5 and 1٫234٫5 (Arabic decimal)
+  if (str.indexOf(',') !== -1 || str.indexOf('٬') !== -1) {
+    const lastDot = Math.max(str.lastIndexOf('.'), str.lastIndexOf('٫'));
+    const lastComma = Math.max(str.lastIndexOf(','), str.lastIndexOf('٬'));
+    if (lastComma > lastDot) str = str.replace(/[.,٬]/g, m => (m === ',' || m === '٬') ? '.' : '');
+    else str = str.replace(/,/g, '');
+  }
+  str = str.replace(/٫/g, '.').replace(/[^\d.\-]/g, '');
+  if (str === '' || str === '-' || str === '.') return null;
+  const n = Number(str);
+  return isFinite(n) ? n : null;
+}
+/* evaluate one numeric/state measurement against its field definition */
+function evalMeasurement(m) {
+  const f = MEASURE_FIELDS_BY_ID[m.typeId];
+  if (!f) return { status: 'unknown' };
+  const ctx = m.context || {};
+  if (f.state) return f.eval ? (f.eval(m.value, ctx) || { status: 'unknown' }) : { status: 'unknown' };
+  if (f.text) return { status: 'unknown' };
+  const n = parseNum(m.value);
+  if (n == null || isNaN(n)) return { status: 'unknown' };
+  if (!f.eval) return { status: 'unknown' };
+  try { return f.eval(n, ctx) || { status: 'unknown' }; } catch (e) { return { status: 'unknown' }; }
+}
 
 /* ================= VVVF FAULT DATABASE =================
    ⚠️ کدها الگوهای متداولِ مستندشده برای هر خانواده درایو هستند؛ معنی دقیق هر کد
@@ -3622,7 +3786,7 @@ const state = {
   checklists: null,
   parts: null,
   settings: null,
-  diagSessions: null, calcSaves: null, issues: null, tools: null, photos: null, invoices: null, contracts: null, reminders: null,
+  diagSessions: null, calcSaves: null, issues: null, tools: null, photos: null, invoices: null, contracts: null, reminders: null, measurements: null, safetyLogs: null,
   route: location.hash.slice(1) || '/dashboard'
 };
 
@@ -3792,6 +3956,7 @@ const IC = {
   calc: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="8" y2="11.01"/><line x1="12" y1="11" x2="12" y2="11.01"/><line x1="16" y1="11" x2="16" y2="11.01"/><line x1="8" y1="15" x2="8" y2="15.01"/><line x1="12" y1="15" x2="12" y2="15.01"/><line x1="16" y1="15" x2="16" y2="15.01"/><line x1="8" y1="19" x2="8" y2="19.01"/><line x1="12" y1="19" x2="12" y2="19.01"/><line x1="16" y1="19" x2="16" y2="19.01"/></svg>',
   diag: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
   kb: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+  ruler: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 8.7 8.7 21.3c-1 1-2.5 1-3.4 0l-2.6-2.6c-1-1-1-2.5 0-3.4L15.3 2.7c1-1 2.5-1 3.4 0l2.6 2.6c1 1 1 2.5 0 3.4Z"/><path d="m7.5 10.5 2 2"/><path d="m10.5 7.5 2 2"/><path d="m13.5 4.5 2 2"/><path d="m4.5 13.5 2 2"/></svg>',
   note: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
   plus: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
   search: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
@@ -4045,10 +4210,10 @@ function faultTally(services, icons) {
 /* ---------- data loading ---------- */
 async function loadAll(force) {
   if (state.projects && !force) return;
-  const [p, s, n, c, pa, st, ds, cs, is_, tl, ph, inv, ct, rm] = await Promise.all([
+  const [p, s, n, c, pa, st, ds, cs, is_, tl, ph, inv, ct, rm, me, sl] = await Promise.all([
     api('/projects'), api('/services'), api('/notes'), api('/checklists'), api('/parts'), api('/settings'),
     api('/diagSessions'), api('/calcSaves'), api('/issues'), api('/tools'), api('/photos'), api('/invoices'), api('/contracts'),
-    api('/reminders')
+    api('/reminders'), api('/measurements'), api('/safetyLogs')
   ]);
   state.projects = p.projects;
   state.services = s.services;
@@ -4064,6 +4229,8 @@ async function loadAll(force) {
   state.invoices = inv.items;
   state.contracts = ct.items;
   state.reminders = rm.reminders;
+  state.measurements = me.items;
+  state.safetyLogs = sl.items;
 }
 
 /* service-due calculation */
@@ -4085,6 +4252,13 @@ function svcTargetSub(s) {
   if (s.projectId) return '';
   return s.elevatorInfo && s.customer ? s.elevatorInfo : '';
 }
+/* human-readable parts list: structured partsUsed if present, else legacy free text */
+function svcPartsTextOf(s) {
+  if (Array.isArray(s.partsUsed) && s.partsUsed.length) {
+    return s.partsUsed.map(p => `${p.name} ×${faNum(p.qty)}`).join('، ');
+  }
+  return s.partsReplaced || '';
+}
 
 /* ================= AUTH ================= */
 let authMode = 'login';
@@ -4096,7 +4270,7 @@ function doLocalLogout() {
   flushUiLayers();
   state.token = null; state.user = null;
   ['projects', 'services', 'notes', 'checklists', 'parts', 'settings', 'diagSessions',
-   'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders']
+   'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders', 'measurements', 'safetyLogs']
     .forEach(k => { state[k] = null; });
   invDraft = null; diagSession = null;
   localStorage.removeItem('zlift_token');
@@ -4164,6 +4338,8 @@ function enterApp() {
   navigate(state.route || '/dashboard');
   /* surface overdue services as a native notification shortly after entering */
   setTimeout(checkRemindersNotify, 1500);
+  /* create a rotating local snapshot once a day (no network, no third party) */
+  setTimeout(autoBackupIfDue, 2500);
 }
 const NAV = [
   { section: 'navMain' },
@@ -4184,6 +4360,7 @@ const NAV = [
   { route: '/standards', key: 'standards', icon: 'std' },
   { section: 'navKnowledge' },
   { route: '/knowledge', key: 'knowledge', icon: 'kb' },
+  { route: '/measurements', key: 'measures', icon: 'ruler' },
   { route: '/tools', key: 'tools', icon: 'wrench' },
   { route: '/notes', key: 'notes', icon: 'note' },
   { route: '/settings', key: 'settings', icon: 'gear' }
@@ -4261,7 +4438,7 @@ async function render() {
     '/dashboard': 'dashboard', '/projects': 'projects', '/services': 'services',
     '/parts': 'parts', '/checklists': 'checklists', '/calculations': 'calculations',
     '/diagnostics': 'diagnostics', '/knowledge': 'knowledge', '/notes': 'notes',
-    '/vvvf': 'vvvf', '/issues': 'issues', '/tools': 'tools', '/invoices': 'invoices', '/contracts': 'contracts', '/report': 'monthlyReport', '/standards': 'standards', '/calendar': 'calendar', '/analytics': 'analytics', '/settings': 'settings'
+    '/vvvf': 'vvvf', '/issues': 'issues', '/tools': 'tools', '/invoices': 'invoices', '/contracts': 'contracts', '/report': 'monthlyReport', '/standards': 'standards', '/calendar': 'calendar', '/analytics': 'analytics', '/measurements': 'measures', '/settings': 'settings'
   };
   const baseRoute = '/' + r.split('/')[1];
   $('#pageTitle').textContent = t(titles[baseRoute] || 'dashboard');
@@ -4293,6 +4470,7 @@ async function render() {
     else if (r === '/standards') renderStandards();
     else if (r === '/notes') renderNotes();
     else if (r === '/calendar') renderCalendar();
+    else if (r === '/measurements') renderMeasurements();
     else renderDashboard();
     const y = _pendingScroll; _pendingScroll = 0;
     if (typeof window.scrollTo === 'function') { try { window.scrollTo(0, y); } catch (e2) {} }
@@ -4955,7 +5133,7 @@ function drawSvcList() {
   let list = state.services;
   if (svcFilter.projectId) list = list.filter(s => s.projectId === svcFilter.projectId);
   if (svcFilter.type !== 'all') list = list.filter(s => s.serviceType === svcFilter.type);
-  if (q) list = list.filter(s => hay(svcTarget(s), s.customer, s.elevatorInfo, s.technician, s.problem, s.complaint, s.diagnosis, s.workDone, s.partsReplaced, s.recommendations).includes(q));
+  if (q) list = list.filter(s => hay(svcTarget(s), s.customer, s.elevatorInfo, s.technician, s.problem, s.complaint, s.diagnosis, s.workDone, s.partsReplaced, (s.partsUsed||[]).map(p=>p.name).join(' '), s.recommendations).includes(q));
   const el = $('#svcList');
   if (!state.services.length) {
     el.innerHTML = `<div class="empty"><div class="e-icon">🔧</div><strong>${t('noServices')}</strong><p>${t('noServicesSub')}</p><button class="btn btn-primary" onclick="openServiceForm()">${IC.plus} ${t('newServiceRec')}</button></div>`;
@@ -4972,7 +5150,7 @@ function exportServicesCsv() {
   const rows = state.services.map(s => [
     new Date(s.date).toISOString().slice(0, 10),
     s.customer || '', s.projectId ? projName(s.projectId) : '', s.technician,
-    t(svcMeta(s.serviceType).key), s.problem, s.diagnosis, s.workDone, s.partsReplaced,
+    t(svcMeta(s.serviceType).key), s.problem, s.diagnosis, s.workDone, svcPartsTextOf(s),
     t(finalMeta(s.finalStatus).key)
   ]);
   downloadCsv('zlift-services-' + new Date().toISOString().slice(0, 10) + '.csv', head, rows);
@@ -5009,7 +5187,7 @@ function openServiceView(id) {
     [t('svcDiagnosis'), s.diagnosis],
     [t('svcMeasurements'), s.measurements],
     [t('svcWork'), s.workDone],
-    [t('svcParts'), s.partsReplaced],
+    [t('svcParts'), svcPartsTextOf(s)],
     [t('svcRecommend'), s.recommendations],
     [t('svcFollowUp'), s.followUpDate ? fmtDate(s.followUpDate) : '']
   ].filter(x => x[1]);
@@ -5032,7 +5210,7 @@ function openServiceView(id) {
 /* ================= DIGITAL SIGNATURE ================= */
 function _sigInk() { return document.documentElement.getAttribute('data-theme') === 'dark' ? '#e5e7eb' : '#0b1220'; }
 function sigPadMarkup(prefix, label, existing) {
-  const prev = existing ? `<img class="sig-preview" src="${existing}" alt="${esc(t('signCustomer') || '')}" style="max-height:64px;margin:6px 0 0;border:1px solid var(--border);border-radius:8px" />` : '';
+  const prev = existing ? `<img class="sig-preview" src="${existing}" alt="${esc(label || '')}" style="max-height:64px;margin:6px 0 0;border:1px solid var(--border);border-radius:8px" />` : '';
   return `
     <div class="field span2" style="margin-bottom:10px">
       <label>🖊️ ${esc(label)}</label>
@@ -5101,8 +5279,135 @@ function readSignature(prefix) {
   try { return cv.toDataURL('image/png'); } catch (e) { return ''; }
 }
 
+/* ---- service → stock linkage ----
+   While a service form is open, svcPartsDraft holds the parts being recorded:
+     { partId?, name, qty }  — partId present = deduct from stock on save.
+   On save we only ever consume NEW stock (edits compare against the saved
+   record), and a failed consumption never blocks saving the report. */
+let svcPartsDraft = [];
+let svcPartsOrig = [];        // parts as they were when editing (for diff)
+let svcPartsEditingId = null;
+function svcPartStock(partId) {
+  const p = (state.parts || []).find(x => x.id === partId);
+  return p ? +p.qty || 0 : 0;
+}
+function svcPartsHTML() {
+  if (!svcPartsDraft.length) return `<p class="hint" style="margin:4px 0 2px">${t('svcNoParts')}</p>`;
+  return svcPartsDraft.map((p, i) => {
+    const stock = p.partId ? svcPartStock(p.partId) : null;
+    const low = p.partId && (+p.qty || 0) > stock;
+    const tag = p.partId
+      ? `<span class="tag ${low ? 'low' : ''}">${t('svcStockHint')}: ${faNum(stock)} ${low ? '⚠️' : ''}</span>`
+      : `<span class="tag free">${t('svcCustomPart')}</span>`;
+    return `<div class="spart">
+      <div class="grow"><strong>${esc(p.name)}</strong><span class="meta">${tag}</span></div>
+      <input class="qty" type="number" min="1" value="${faNum(p.qty)}" data-spi="${i}" aria-label="${esc(t('svcPartQty'))}" />
+      <button type="button" class="icon-btn" style="width:32px;height:32px" data-spdel="${i}" title="${esc(t('svcRemovePart'))}">✕</button>
+    </div>`;
+  }).join('');
+}
+function svcRefreshParts() {
+  const box = $('#svcPartsBox');
+  if (box) box.innerHTML = svcPartsHTML();
+}
+function svcBindPartsBox() {
+  const box = $('#svcPartsBox');
+  if (!box) return;
+  box.addEventListener('input', e => {
+    const i = e.target.getAttribute && e.target.getAttribute('data-spi');
+    if (i != null) { const q = Math.max(1, Math.round(+e.target.value || 1)); svcPartsDraft[+i].qty = q; svcRefreshParts(); }
+  });
+  box.addEventListener('click', e => {
+    const d = e.target.getAttribute && e.target.getAttribute('data-spdel');
+    if (d != null) { svcPartsDraft.splice(+d, 1); svcRefreshParts(); }
+  });
+  const search = $('#svcPickSearch');
+  if (search) search.addEventListener('input', () => svcTogglePicker(true));
+}
+/* Inline stock picker — rendered inside the service form so picking a part
+   never closes the form and loses what the technician typed. */
+function svcTogglePicker(show) {
+  const panel = $('#svcPickPanel');
+  if (!panel) return;
+  const on = show == null ? panel.classList.contains('hidden') : !!show;
+  panel.classList.toggle('hidden', !on);
+  if (on) {
+    const q = ($('#svcPickSearch') || {}).value || '';
+    const nq = norm(q);
+    const list = (state.parts || []).slice().sort((a, b) => a.name.localeCompare(b.name, 'fa'))
+      .filter(p => !nq || norm(p.name, p.code, p.category).includes(nq));
+    const box = $('#svcPickList');
+    if (box) box.innerHTML = list.length ? list.map(p => {
+      const low = +p.qty <= +p.minQty;
+      return `<div class="row-item" style="margin-bottom:6px;${low ? 'border-color:var(--danger-soft)' : ''}">
+        <div class="row-body" onclick="svcAddStockPart('${p.id}')"><strong style="font-size:13.5px">${esc(p.name)}</strong>
+        <span class="sub">${t('svcStockHint')}: <b style="color:${low ? 'var(--danger)' : 'inherit'}">${faNum(p.qty)}</b> ${esc(p.unit)}${p.code ? ' · ' + esc(p.code) : ''}</span></div>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="svcAddStockPart('${p.id}')">${IC.plus}</button>
+      </div>`;
+    }).join('') : `<p style="color:var(--text-3);font-size:12.5px">${t('noResults')}</p>`;
+  }
+}
+function svcAddStockPart(partId) {
+  const p = (state.parts || []).find(x => x.id === partId);
+  if (!p) return;
+  const ex = svcPartsDraft.find(x => x.partId === partId);
+  if (ex) ex.qty = Math.max(1, (+ex.qty || 0) + 1);
+  else svcPartsDraft.push({ partId, name: p.name, qty: 1 });
+  svcRefreshParts();
+  if (+p.qty <= (+p.minQty)) toast(t('stockAlert'), 'err');
+}
+/* Inline free-text part row — no nested modal, so it never wipes the form. */
+function svcCustomAdd() {
+  const row = $('#svcCustomRow');
+  if (row) { row.classList.remove('hidden'); const i = $('#svcCustomName'); if (i) { i.value = ''; i.focus(); } return; }
+}
+function svcCustomCommit() {
+  const nm = ($('#svcCustomName') || {}).value || '';
+  if (!nm.trim()) { fieldError('#svcCustomName', 'requiredTitle'); return; }
+  svcPartsDraft.push({ name: nm.trim(), qty: Math.max(1, Math.round(+$('#svcCustomQty').value || 1)) });
+  $('#svcCustomName').value = '';
+  $('#svcCustomRow').classList.add('hidden');
+  svcRefreshParts();
+}
+/* consume the newly-added stock parts for a saved/created service.
+   Returns { consumed:[], released:[] } for the caller to update local state. */
+async function svcApplyStock(serviceId, projectId) {
+  const consumed = [], released = [];
+  const origByPart = {};
+  (svcPartsOrig || []).forEach(p => { if (p.partId) origByPart[p.partId] = (origByPart[p.partId] || 0) + (+p.qty || 0); });
+  const newByPart = {};
+  svcPartsDraft.forEach(p => { if (p.partId) newByPart[p.partId] = (newByPart[p.partId] || 0) + (+p.qty || 0); });
+  const note = t('svcConsumedNote') + (svcPartsEditingId || serviceId || '').slice(0, 6).toUpperCase();
+  for (const partId of Object.keys(newByPart)) {
+    const delta = newByPart[partId] - (origByPart[partId] || 0);
+    if (delta > 0) {
+      try {
+        const d = await api('/parts-consume', { method: 'POST', body: { partId, qty: delta, projectId: projectId || '', serviceId, note } });
+        consumed.push(d.part);
+      } catch (e) { /* stock can't move on — report saved anyway */ }
+    } else if (delta < 0) {
+      const local = (state.parts || []).find(x => x.id === partId);
+      if (local) {
+        try {
+          const d = await api('/parts/' + partId, { method: 'PUT', body: { qty: (+local.qty || 0) - delta } });
+          released.push(d.part);
+        } catch (e) {}
+      }
+    }
+  }
+  return { consumed, released };
+}
+/* free-text summary built from structured parts (kept for legacy field/print) */
+function svcPartsText() {
+  return svcPartsDraft.map(p => `${p.name} ×${faNum(p.qty)}`).join('، ');
+}
 function openServiceForm(id, presetProject) {
   const s = id ? state.services.find(x => x.id === id) : null;
+  svcPartsEditingId = s ? s.id : null;
+  svcPartsOrig = s && Array.isArray(s.partsUsed) ? JSON.parse(JSON.stringify(s.partsUsed)) : [];
+  svcPartsDraft = s && Array.isArray(s.partsUsed)
+    ? JSON.parse(JSON.stringify(s.partsUsed))
+    : (s && s.partsReplaced ? s.partsReplaced.split(/[،,]/).map(x => x.trim()).filter(Boolean).map(x => ({ name: x.replace(/\s*[×x*]\s*\d+\s*$/, ''), qty: parseInt((x.match(/(\d+)\s*$/) || [0, 1])[1], 10) || 1 })) : []);
   const v = s || { projectId: presetProject || '', customer: '', elevatorInfo: '', date: Date.now(), technician: (state.settings && state.settings.defaultTech) || state.user.name, serviceType: 'maintenance', complaint: '', problem: '', diagnosis: '', measurements: '', workDone: '', partsReplaced: '', recommendations: '', followUpDate: 0, finalStatus: 'ok' };
   const projOpts = `<option value="">— ${t('svcNoProject')} —</option>` +
     state.projects.map(p => `<option value="${p.id}" ${v.projectId === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
@@ -5129,7 +5434,26 @@ function openServiceForm(id, presetProject) {
       <!-- 3) what was done and how it ended -->
       <div class="form-sep span2">${t('secWork')}</div>
       <div class="field span2"><label>${t('svcWork')}</label><textarea id="s_work" style="min-height:64px">${esc(v.workDone)}</textarea></div>
-      <div class="field span2"><label>${t('svcParts')}</label><input id="s_parts" value="${esc(v.partsReplaced)}" /></div>
+      <div class="field span2" data-svcparts>
+        <label>${t('svcParts')}</label>
+        <div id="svcPartsBox">${svcPartsHTML()}</div>
+        <div class="spart-add" style="margin-top:8px">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="svcTogglePicker(true)">📦 ${t('svcPickStock')}</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="svcCustomAdd()">✏️ ${t('svcCustomPart')}</button>
+        </div>
+        <div id="svcCustomRow" class="hidden" style="display:flex;gap:8px;margin-top:9px;align-items:flex-end">
+          <div class="field" style="flex:1;margin:0"><label>${t('svcPartName')}</label><input id="svcCustomName" /></div>
+          <div class="field" style="width:90px;margin:0"><label>${t('svcPartQty')}</label><input id="svcCustomQty" type="number" min="1" value="1" /></div>
+          <button type="button" class="btn btn-primary btn-sm" onclick="svcCustomCommit()">${IC.plus}</button>
+        </div>
+        <div id="svcPickPanel" class="hidden" style="margin-top:9px;border:1px solid var(--border);border-radius:12px;padding:10px;background:var(--bg-card)">
+          <div class="search" style="margin-bottom:8px">${IC.search}<input id="svcPickSearch" placeholder="${esc(t('searchParts'))}" /></div>
+          <div id="svcPickList" style="max-height:240px;overflow:auto"></div>
+          <div style="display:flex;justify-content:flex-end;margin-top:8px">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="svcTogglePicker(false)">${t('close')}</button>
+          </div>
+        </div>
+      </div>
       <div class="field span2"><label>${t('svcRecommend')}</label><textarea id="s_recommend" style="min-height:52px">${esc(v.recommendations || '')}</textarea></div>
       <div class="field"><label>${t('svcFinal')}</label><select id="s_final">
         ${Object.keys(FINAL_META).map(k => `<option value="${k}" ${v.finalStatus === k ? 'selected' : ''}>${t(FINAL_META[k].key)}</option>`).join('')}
@@ -5144,30 +5468,43 @@ function openServiceForm(id, presetProject) {
     </div>`, { size: 'lg' });
   wireSignaturePad('sig_tech', s && s.signTech);
   wireSignaturePad('sig_cust', s && s.signCustomer);
+  svcBindPartsBox();
   $('#svcSave').onclick = async () => {
     const projectId = $('#s_project').value;
     const customer = $('#s_customer').value.trim();
     if (!projectId && !customer) { fieldError('#s_customer', 'requiredCustomer'); return; }
+    const partsUsed = svcPartsDraft
+      .map(p => ({ partId: p.partId || '', name: String(p.name || ''), qty: Math.max(1, Math.round(+p.qty || 1)) }))
+      .filter(p => p.name);
     const body = {
       projectId, customer, elevatorInfo: $('#s_elevator').value,
       date: jdateVal('s_date') || Date.now(),
       technician: $('#s_tech').value, serviceType: $('#s_type').value, finalStatus: $('#s_final').value,
       complaint: $('#s_complaint').value, problem: $('#s_problem').value, diagnosis: $('#s_diag').value,
-      measurements: $('#s_meas').value, workDone: $('#s_work').value, partsReplaced: $('#s_parts').value,
+      measurements: $('#s_meas').value, workDone: $('#s_work').value,
+      partsUsed, partsReplaced: svcPartsText() || (s && s.partsReplaced) || '',
       recommendations: $('#s_recommend').value, followUpDate: jdateVal('s_followup'),
       signTech: readSignature('sig_tech'), signCustomer: readSignature('sig_cust')
     };
     const btn = $('#svcSave'); btn.disabled = true;
     try {
+      let saved;
       if (s) {
         const d = await api('/services/' + s.id, { method: 'PUT', body });
         Object.assign(s, d.service);
+        saved = s;
         toast(t('saved'));
       } else {
         const d = await api('/services', { method: 'POST', body });
         state.services.unshift(d.service);
+        saved = d.service;
         toast(t('created'));
       }
+      // apply the stock delta for this report (failures never block the save)
+      const { consumed, released } = await svcApplyStock(saved.id, projectId);
+      consumed.forEach(pt => { const lp = state.parts.find(x => x.id === pt.id); if (lp) Object.assign(lp, pt); });
+      released.forEach(pt => { const lp = state.parts.find(x => x.id === pt.id); if (lp) Object.assign(lp, pt); });
+      svcPartsDraft = []; svcPartsOrig = []; svcPartsEditingId = null;
       state.services.sort((a, b) => b.date - a.date);
       closeModal(); render();
     } catch (e) { toast(errMsg(e), 'err'); btn.disabled = false; }
@@ -5190,7 +5527,7 @@ function printServiceReport(id) {
     [t('svcDiagnosis'), s.diagnosis],
     [t('svcMeasurements'), s.measurements],
     [t('svcWork'), s.workDone],
-    [t('svcParts'), s.partsReplaced],
+    [t('svcParts'), svcPartsTextOf(s)],
     [t('svcRecommend'), s.recommendations],
     [t('svcFinal'), t(finalMeta(s.finalStatus).key)],
     [t('svcFollowUp'), s.followUpDate ? fmtDate(s.followUpDate) : '']
@@ -5602,6 +5939,57 @@ function renderChecklists() {
     </div>
     <p class="calc-note" style="margin-top:18px">📖 ${t('standardRef')}</p>`;
 }
+/* Critical-checklist safety gate: an explicit, recorded acknowledgement
+   before safety-sensitive work. Dismissal returns to the checklist list.
+   The ack is stored in sessionStorage (per browser session) and an entry
+   is added to the offline safety log. */
+function renderSafetyGate(tp, selectedProject, ackKey) {
+  setTimeout(() => {
+    const cb = document.getElementById('safetyAck');
+    const btn = document.getElementById('safetyContinue');
+    if (!cb || !btn) return;
+    const sync = () => { btn.disabled = !cb.checked; };
+    cb.addEventListener('change', sync); sync();
+    btn.onclick = async () => {
+      if (!cb.checked) return;
+      try {
+        const entry = {
+          id: _lsUid(), checklistId: tp.id, projectId: selectedProject || '',
+          ts: Date.now(), technician: (state.user && state.user.name) || '',
+          appVersion: '27'
+        };
+        await api('/safetyLogs', { method: 'POST', body: entry });
+        if (!Array.isArray(state.safetyLogs)) state.safetyLogs = [];
+        state.safetyLogs.unshift(entry);
+      } catch (e) { /* never block the technician on a log failure */ }
+      try { sessionStorage.setItem(ackKey, '1'); } catch (e) {}
+      navigate('/checklists/' + tp.id + (selectedProject ? '?project=' + selectedProject : ''));
+    };
+  }, 0);
+  return `
+    <button class="btn btn-ghost btn-sm" onclick="navigate('/checklists')" style="margin-bottom:14px">${IC.back} ${t('checklists')}</button>
+    <div class="card" style="border:2px solid var(--danger);max-width:560px;margin:0 auto">
+      <div class="card-title" style="color:var(--danger)">⚠️ ${t('safetyTitle')} — ${esc(tp.title[LANG] || tp.title.fa)}</div>
+      <div class="note-block" style="background:var(--danger-soft);border-color:var(--danger);margin-bottom:14px">
+        <strong>${t('safetyCritical')}.</strong><br>
+        ${esc(tp.desc[LANG] || tp.desc.fa)}
+      </div>
+      <ul style="font-size:13.5px;line-height:1.9;padding-inline-start:20px;margin:0 0 14px">
+        <li>${LANG === 'fa' ? 'همیشه قبل از کار، برق اصلی را قطع، قفل و برچسب‌گذاری کنید (LOTO) و بی‌برقی را تأیید کنید.' : 'Always isolate, lock out and tag out (LOTO) the main supply before work and verify zero energy.'}</li>
+        <li>${LANG === 'fa' ? 'هیچ مدار ایمنی یا وسیلهٔ حفاظتی را پل/بای‌پس نکنید — مگر با روش‌های تأییدشده و موقت.' : 'Never bypass or disable safety circuits or protective devices except by approved temporary procedures.'}</li>
+        <li>${LANG === 'fa' ? 'از دستورالعمل سازنده و مقررات محلی پیروی کنید؛ این اپ جای قضاوت تخصصی شما نیست.' : 'Follow manufacturer instructions and local regulations; this app does not replace professional judgment.'}</li>
+      </ul>
+      <label style="display:flex;gap:10px;align-items:flex-start;font-size:13.5px;cursor:pointer;margin-bottom:14px">
+        <input type="checkbox" id="safetyAck" style="width:20px;height:20px;margin-top:2px" />
+        <span>${t('safetyAck')}</span>
+      </label>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="navigate('/checklists')">${t('safetyCancel')}</button>
+        <button class="btn btn-danger" id="safetyContinue" disabled>${t('safetyContinue')}</button>
+      </div>
+    </div>`;
+}
+
 function renderChecklistDetail(idWithQuery) {
   const [tid, query] = idWithQuery.split('?');
   const params = new URLSearchParams(query || '');
@@ -5612,6 +6000,14 @@ function renderChecklistDetail(idWithQuery) {
     c.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p>
       <button class="btn btn-primary" onclick="navigate('/checklists')">${t('checklists')}</button></div>`;
     return;
+  }
+  // Critical checklists require an explicit safety acknowledgement once per session
+  if (tp.riskLevel === 'critical') {
+    const ackKey = 'zlift_safety_ack_' + tp.id;
+    if (!sessionStorage.getItem(ackKey)) {
+      c.innerHTML = renderSafetyGate(tp, selectedProject, ackKey);
+      return;
+    }
   }
   const eligible = state.projects.filter(p => p.elevatorType === tp.type || tp.type === 'both');
   if (selectedProject && !eligible.find(p => p.id === selectedProject)) selectedProject = '';
@@ -7294,11 +7690,17 @@ let invDraft = null; // items being edited in the open form
 
 function money(n) { return faNum((Math.round(+n || 0)).toLocaleString('en-US')); }
 function invTotals(inv) {
-  /* integer-safe: rials have no fractions; round every term to avoid FP drift */
+  /* integer-safe: rials have no fractions; round every term to avoid FP drift.
+     Tax is computed on the post-discount subtotal (items+labor-discount). */
   const items = (inv.items || []).reduce((a, it) => a + Math.round(+it.qty || 0) * Math.round(+it.price || 0), 0);
-  const grand = Math.max(0, items + Math.round(+inv.labor || 0) - Math.round(+inv.discount || 0));
+  const labor = Math.round(+inv.labor || 0);
+  const discount = Math.round(+inv.discount || 0);
+  const base = Math.max(0, items + labor - discount);
+  const taxRate = inv.taxExempt ? 0 : Math.max(0, Math.min(100, Math.round(+inv.taxRate || 0)));
+  const tax = Math.round(base * taxRate / 100);
+  const grand = base + tax;
   const paid = (inv.payments || []).reduce((a, p) => a + (Math.round(+p.amount) || 0), 0);
-  return { items, grand, paid, balance: Math.max(0, grand - paid) };
+  return { items, labor, discount, base, tax, taxRate, grand, paid, balance: Math.max(0, grand - paid) };
 }
 function invStatusMeta(inv) {
   const tt = invTotals(inv);
@@ -7423,17 +7825,24 @@ function invAddItem(item) {
 }
 function invRefreshTotals() {
   if (!invDraft) return;
-  const items = invDraft.items.reduce((a, it) => a + (+it.qty || 0) * (+it.price || 0), 0);
-  const labor = +($('#inv_labor') && $('#inv_labor').value) || 0;
-  const disc = +($('#inv_discount') && $('#inv_discount').value) || 0;
-  const grand = Math.max(0, items + labor - disc);
-  const paid = (invDraft.payments || []).reduce((a, p) => a + (+p.amount || 0), 0);
+  const items = invDraft.items.reduce((a, it) => a + Math.round((+it.qty || 0) * (+it.price || 0)), 0);
+  const labor = Math.round(+($('#inv_labor') && $('#inv_labor').value) || 0);
+  const disc = Math.round(+($('#inv_discount') && $('#inv_discount').value) || 0);
+  const rate = Math.max(0, Math.min(100, Math.round(+($('#inv_taxrate') && $('#inv_taxrate').value) || 0)));
+  const exempt = ($('#inv_taxexempt') && $('#inv_taxexempt').checked) || invDraft.taxExempt;
+  invDraft.taxRate = rate; invDraft.taxExempt = !!exempt;
+  const base = Math.max(0, items + labor - disc);
+  const tax = exempt ? 0 : Math.round(base * rate / 100);
+  const grand = base + tax;
+  const paid = (invDraft.payments || []).reduce((a, p) => a + Math.round(+p.amount || 0), 0);
+  invDraft.taxAmount = tax;
   const el = $('#invTotalsBox');
   if (el) el.innerHTML = `
     <div class="calc-result">
       <div class="r-row"><span class="r-label">${t('invSubtotal')}</span><span class="r-val" style="font-size:14px">${money(items)} ${t('rial')}</span></div>
       <div class="r-row"><span class="r-label">${t('invLabor')}</span><span class="r-val" style="font-size:14px">${money(labor)} ${t('rial')}</span></div>
       ${disc ? `<div class="r-row"><span class="r-label">${t('invDiscount')}</span><span class="r-val" style="font-size:14px">−${money(disc)} ${t('rial')}</span></div>` : ''}
+      ${tax ? `<div class="r-row"><span class="r-label">${t('invTax')} (${faNum(rate)}٪)</span><span class="r-val" style="font-size:14px">${money(tax)} ${t('rial')}</span></div>` : ''}
       <div class="r-row"><span class="r-label"><b>${t('invGrand')}</b></span><span class="r-val">${money(grand)} ${t('rial')}</span></div>
       ${paid ? `<div class="r-row"><span class="r-label">${t('invPaid')}</span><span class="r-val" style="font-size:14px;color:var(--ok)">${money(paid)} ${t('rial')}</span></div>
       <div class="r-row"><span class="r-label"><b>${t('invBalance')}</b></span><span class="r-val" style="color:${grand - paid > 0 ? 'var(--danger)' : 'var(--ok)'}">${money(Math.max(0, grand - paid))} ${t('rial')}</span></div>` : ''}
@@ -7474,6 +7883,8 @@ function invSyncDraftFromForm() {
   if (g('inv_note')) invDraft.noteOverride = g('inv_note').value;
   if (g('inv_labor')) invDraft.laborOverride = Math.max(0, Math.round(+g('inv_labor').value || 0));
   if (g('inv_discount')) invDraft.discountOverride = Math.max(0, Math.round(+g('inv_discount').value || 0));
+  if (g('inv_taxrate')) invDraft.taxRate = Math.max(0, Math.min(100, Math.round(+g('inv_taxrate').value || 0)));
+  if (g('inv_taxexempt')) invDraft.taxExempt = !!g('inv_taxexempt').checked;
   const dt = jdateVal('inv_date');
   if (dt) invDraft.dateOverride = dt;
 }
@@ -7494,6 +7905,9 @@ function openInvoiceForm(id, presetProject, keepDraft) {
   const discountVal = invDraft.discountOverride !== undefined ? invDraft.discountOverride : (v.discount || 0);
   const noteVal = invDraft.noteOverride !== undefined ? invDraft.noteOverride : (v.note || '');
   const serviceOverride = invDraft.serviceOverride !== undefined ? invDraft.serviceOverride : v.serviceId;
+  const defTax = (state.settings && state.settings.taxRate != null) ? +state.settings.taxRate : 0;
+  const taxRateVal = invDraft.taxRate != null ? invDraft.taxRate : (v.taxRate != null ? +v.taxRate : defTax);
+  const taxExemptVal = invDraft.taxExempt != null ? invDraft.taxExempt : !!(v.taxExempt);
   const svcOpts = state.services.slice(0, 40).map(s => `<option value="${s.id}" ${serviceOverride === s.id ? 'selected' : ''}>${esc(svcTarget(s))} — ${fmtDate(s.date)}</option>`).join('');
   openModal(`
     <div class="modal-head"><h3>${inv ? '✏️ ' + t('editInvoice') : '🧾 ' + t('newInvoice')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
@@ -7519,6 +7933,8 @@ function openInvoiceForm(id, presetProject, keepDraft) {
       <div class="form-grid">
         <div class="field"><label>${t('invLabor')}</label><input id="inv_labor" type="number" min="0" value="${laborVal}" /></div>
         <div class="field"><label>${t('invDiscount')}</label><input id="inv_discount" type="number" min="0" value="${discountVal}" /></div>
+        <div class="field"><label>${t('invTaxRate')}</label><input id="inv_taxrate" type="number" min="0" max="100" step="1" value="${faNum(taxRateVal)}" ${taxExemptVal ? 'disabled' : ''} /></div>
+        <div class="field" style="align-self:end"><label style="display:flex;gap:8px;align-items:center;font-weight:500;cursor:pointer"><input type="checkbox" id="inv_taxexempt" ${taxExemptVal ? 'checked' : ''} style="width:18px;height:18px" /> ${t('invTaxExempt')}</label></div>
         <div class="field span2"><label>${t('invNote2')}</label><input id="inv_note" value="${esc(noteVal)}" /></div>
       </div>
       <div id="invTotalsBox"></div>
@@ -7544,6 +7960,11 @@ function openInvoiceForm(id, presetProject, keepDraft) {
   invRefreshTotals();
   $('#inv_labor').oninput = () => { invDraft.laborOverride = +$('#inv_labor').value || 0; invRefreshTotals(); };
   $('#inv_discount').oninput = () => { invDraft.discountOverride = +$('#inv_discount').value || 0; invRefreshTotals(); };
+  $('#inv_taxrate').oninput = () => invRefreshTotals();
+  $('#inv_taxexempt').onchange = e => {
+    $('#inv_taxrate').disabled = e.target.checked;
+    invRefreshTotals();
+  };
   $('#inv_note').oninput = () => { invDraft.noteOverride = $('#inv_note').value; };
   $('#inv_service').onchange = () => { invDraft.serviceOverride = $('#inv_service').value; };
   // keep field values across part-picker roundtrip
@@ -7605,6 +8026,8 @@ function openInvoiceForm(id, presetProject, keepDraft) {
       })),
       labor: Math.max(0, Math.round(+$('#inv_labor').value || 0)),
       discount: Math.max(0, Math.round(+$('#inv_discount').value || 0)),
+      taxRate: Math.max(0, Math.min(100, Math.round(+$('#inv_taxrate').value || 0))),
+      taxExempt: !!$('#inv_taxexempt').checked,
       note: $('#inv_note').value,
       payments: invDraft.payments
     };
@@ -7668,7 +8091,7 @@ function printInvoice(id) {
   printDoc(`
     ${printHeader(t('invoice'))}
     <table>
-      <tr><th>${t('invNo')}</th><td>${esc(inv.id.slice(0, 8).toUpperCase())}</td></tr>
+      <tr><th>${t('invNumber') || t('invNo')}</th><td>${esc(inv.number || inv.id.slice(0, 8).toUpperCase())}</td></tr>
       <tr><th>${t('invDate')}</th><td>${fmtDate(inv.date || inv.createdAt)}</td></tr>
       <tr><th>${t('invCustomer')}</th><td>${esc(inv.customer)}</td></tr>
       ${inv.projectId ? `<tr><th>${t('profile')}</th><td>${esc(projName(inv.projectId))}</td></tr>` : ''}
@@ -7678,6 +8101,7 @@ function printInvoice(id) {
       ${(inv.items || []).map(it => `<tr><td>${esc(it.desc)}</td><td>${faNum(it.qty)}</td><td>${money(it.price)}</td><td>${money((+it.qty || 0) * (+it.price || 0))}</td></tr>`).join('')}
       ${inv.labor ? `<tr><td colspan="3">${t('invLabor')}</td><td>${money(inv.labor)}</td></tr>` : ''}
       ${inv.discount ? `<tr><td colspan="3">${t('invDiscount')}</td><td>−${money(inv.discount)}</td></tr>` : ''}
+      ${tt.tax ? `<tr><td colspan="3">${t('invTax')}${tt.taxRate ? ' (' + faNum(tt.taxRate) + '٪)' : ''}</td><td>${money(tt.tax)}</td></tr>` : ''}
       <tr><td colspan="3"><b>${t('invGrand')}</b></td><td><b>${money(tt.grand)} ${t('rial')}</b></td></tr>
       ${tt.paid ? `<tr><td colspan="3">${t('invPaid')}</td><td>${money(tt.paid)}</td></tr>
       <tr><td colspan="3"><b>${t('invBalance')}</b></td><td><b>${money(tt.balance)} ${t('rial')}</b></td></tr>` : ''}
@@ -7752,6 +8176,9 @@ function drawGlobalSearch(qRaw) {
   grp(t('srCalc'), CALCULATORS
     .filter(c2 => hay(c2.title.fa, c2.title.en, c2.desc.fa, c2.formula).includes(q))
     .slice(0, 5).map(c2 => gsRow('🧮', esc(c2.title.fa), esc(c2.desc.fa), `closeModal();calcFilter={cat:'all',q:'${jsAttr(qRaw)}'};navigate('/calculations')`)));
+  grp(t('measures'), (state.measurements || [])
+    .filter(m => { const f = MEASURE_FIELDS_BY_ID[m.typeId]; return hay(f && f.fa, f && f.en, m.point, m.component, m.note, m.value).includes(q); })
+    .slice(0, 5).map(m => { const f = MEASURE_FIELDS_BY_ID[m.typeId]; return gsRow(MEAS_STATUS_META[m.status] ? MEAS_STATUS_META[m.status].icon : '📐', esc((f && (f[LANG] || f.fa)) || m.typeId), esc((m.point || '') + ' ' + (m.component || '') + ' · ' + fmtDate(m.ts)), `closeModal();navigate('/measurements')`); }));
 
   out.innerHTML = S.length ? S.join('') : `<div class="empty"><div class="e-icon">🔍</div><strong>${t('noResults')}</strong></div>`;
 }
@@ -8223,6 +8650,196 @@ function exportAnalyticsCsv() {
   toast(t('saved'));
 }
 
+/* ================= MEASUREMENTS (structured) ================= */
+let measFilter = { projectId: '', cat: 'all', q: '' };
+function measFieldLabel(f) { return (f && f[LANG]) || (f && f.fa) || '—'; }
+function measStatusHtml(status) {
+  const m = MEAS_STATUS_META[status] || MEAS_STATUS_META.unknown;
+  return `<span class="badge ${m.cls}">${m.icon} ${t(m.key)}</span>`;
+}
+function measFormatVal(m) {
+  if (m.kind === 'state') return esc(m.stateLabel || m.value || '—');
+  if (m.kind === 'text') return esc(m.text || '—');
+  const f = MEASURE_FIELDS_BY_ID[m.typeId];
+  const n = parseNum(m.value);
+  if (n == null) return esc(m.value || '—');
+  const d = (f && typeof f.decimals === 'number') ? f.decimals : 1;
+  return esc(faNum(n.toFixed(d)) + (f && f.unit ? ' ' + f.unit : ''));
+}
+function redFlagHtml(res) {
+  if (!res || res.status === 'normal' || res.status === 'unknown') return '';
+  const reason = (res.reason && (res.reason[LANG] || res.reason.fa)) || '';
+  const next = (res.next && (res.next[LANG] || res.next.fa)) || '';
+  const isCrit = res.status === 'critical';
+  return `<div class="redflag ${isCrit ? 'crit' : 'warn'}" style="margin-top:8px;padding:9px 11px;border-radius:11px;border:1px solid ${isCrit ? 'var(--danger)' : 'var(--warn)'};background:${isCrit ? 'var(--danger-soft)' : 'var(--warn-soft)'}">
+    <div style="font-weight:800;font-size:12.5px;color:${isCrit ? 'var(--danger)' : 'var(--warn)'};margin-bottom:4px">🚩 ${t('measRedFlag')} — ${measStatusHtml(res.status)}</div>
+    ${reason ? `<div style="font-size:12.5px;margin-bottom:3px"><b>${t('measReason')}:</b> ${esc(reason)}</div>` : ''}
+    ${next ? `<div style="font-size:12.5px"><b>${t('measNextCheck')}:</b> ${esc(next)}</div>` : ''}
+    ${isCrit ? `<div style="font-size:11.5px;margin-top:5px;color:var(--danger)">⚠️ ${t('measSafetyWarn')}</div>` : ''}
+  </div>`;
+}
+function renderMeasurements() {
+  const c = $('#content');
+  let list = (state.measurements || []).slice().sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  if (measFilter.projectId) list = list.filter(m => m.projectId === measFilter.projectId);
+  if (measFilter.cat !== 'all') list = list.filter(m => { const f = MEASURE_FIELDS_BY_ID[m.typeId]; return f && f.cat === measFilter.cat; });
+  const q = norm(measFilter.q);
+  if (q) list = list.filter(m => {
+    const f = MEASURE_FIELDS_BY_ID[m.typeId];
+    return hay(f && f.fa, f && f.en, m.point, m.component, m.note, m.value, m.technician).includes(q);
+  });
+  const projectOpts = `<option value="">${t('all')}</option>` +
+    state.projects.map(p => `<option value="${p.id}" ${measFilter.projectId === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
+  const catChips = [{ id: 'all', label: t('all') }].concat(MEASURE_CATS.map(x => ({ id: x.id, label: x.icon + ' ' + t(x.key) })));
+  const counts = { crit: 0, attn: 0 };
+  (state.measurements || []).forEach(m => { if (m.status === 'critical') counts.crit++; else if (m.status === 'attention') counts.attn++; });
+  c.innerHTML = `
+    <div class="grid-3" style="margin-bottom:14px">
+      <div class="stat-card"><div class="stat-icon" style="background:var(--accent-soft)">📐</div><div class="stat-body"><div class="stat-value">${faNum(list.length)}</div><div class="stat-label">${t('measHistory')}</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:var(--warn-soft)">🟡</div><div class="stat-body"><div class="stat-value">${faNum(counts.attn)}</div><div class="stat-label">${t('measStatusAttention')}</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:var(--danger-soft)">🔴</div><div class="stat-body"><div class="stat-value">${faNum(counts.crit)}</div><div class="stat-label">${t('measStatusCritical')}</div></div></div>
+    </div>
+    <div class="toolbar">
+      <div class="search">${IC.search}<input id="measSearch" placeholder="${esc(t('measures'))}…" value="${esc(measFilter.q)}" /></div>
+      <button class="btn btn-primary" onclick="openMeasForm()">${IC.plus} ${t('measAdd')}</button>
+    </div>
+    <div class="chip-row" style="margin:10px 0">
+      ${catChips.map(x => `<button class="chip ${measFilter.cat === x.id ? 'active' : ''}" data-mcat="${x.id}">${x.label}</button>`).join('')}
+    </div>
+    <div class="field" style="max-width:320px;margin-bottom:12px"><select id="measProject">${projectOpts}</select></div>
+    <div id="measList"></div>`;
+  const box = $('#measList');
+  if (!list.length) {
+    box.innerHTML = `<div class="empty"><div class="e-icon">📐</div><strong>${t('measNoHistory')}</strong><button class="btn btn-primary" onclick="openMeasForm()">${IC.plus} ${t('measAdd')}</button></div>`;
+  } else {
+    box.innerHTML = list.map(m => {
+      const f = MEASURE_FIELDS_BY_ID[m.typeId];
+      const proj = m.projectId ? projName(m.projectId) : '';
+      const cat = MEASURE_CATS.find(x => x.id === (f && f.cat));
+      return `<div class="card kb-card" onclick="openMeasForm('${m.id}')">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+          <div style="min-width:0"><h4 style="margin:0">${cat ? cat.icon + ' ' : ''}${esc(measFieldLabel(f))}${m.point ? ' <span style="color:var(--text-3);font-weight:500">· ' + esc(m.point) + '</span>' : ''}</h4>
+          <p style="margin:4px 0 0;font-size:13px"><b style="font-size:15px">${measFormatVal(m)}</b>
+            ${m.component ? ' · ' + esc(m.component) : ''}${proj ? ' · 🏗️ ' + esc(proj) : ''}</p></div>
+          ${measStatusHtml(m.status)}
+        </div>
+        ${redFlagHtml(m._res || null)}
+        <div class="kb-tags" style="margin-top:8px"><span class="badge b-gray">${fmtDateTime(m.ts)}</span>${m.technician ? `<span class="badge b-gray">${esc(m.technician)}</span>` : ''}${m.note ? `<span class="badge b-gray">${esc(m.note)}</span>` : ''}</div>
+      </div>`;
+    }).join('');
+  }
+  $('#measSearch').oninput = debounce(e => { measFilter.q = e.target.value; renderMeasurements(); }, 200);
+  $('#measProject').onchange = e => { measFilter.projectId = e.target.value; renderMeasurements(); };
+  $$('#content [data-mcat]').forEach(ch => ch.onclick = () => { measFilter.cat = ch.dataset.mcat; renderMeasurements(); });
+}
+function openMeasForm(id) {
+  const m = id ? (state.measurements || []).find(x => x.id === id) : null;
+  const v = m || { typeId: 'v_rs', kind: 'numeric', value: '', point: '', component: '', projectId: measFilter.projectId || '', condition: '', note: '', refType: 'manual' };
+  const fieldOpts = MEASURE_CATS.map(cat => {
+    const fs = MEASURE_FIELDS.filter(f => f.cat === cat.id);
+    return `<optgroup label="${cat.icon} ${t(cat.key)}">` + fs.map(f => `<option value="${f.id}" ${v.typeId === f.id ? 'selected' : ''}>${esc(f[LANG] || f.fa)}${f.unit ? ' (' + f.unit + ')' : ''}</option>`).join('') + '</optgroup>';
+  }).join('');
+  const projectOpts = `<option value="">—</option>` + state.projects.map(p => `<option value="${p.id}" ${v.projectId === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
+  openModal(`
+    <div class="modal-head"><h3>${m ? '✏️ ' + t('measAdd') : '📐 ' + t('measAdd')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="modal-body"><form class="form-grid" onsubmit="return false">
+      <div class="field span2"><label>${t('measType')}</label><select id="m_type">${fieldOpts}</select></div>
+      <div class="field"><label>${t('svcDate')}</label>${jdateInput('m_date', v.ts || Date.now())}</div>
+      <div class="field"><label>${t('svcProject')}</label><select id="m_project">${projectOpts}</select></div>
+      <div class="field span2"><label>${t('measPoint')}</label><input id="m_point" value="${esc(v.point || '')}" placeholder="${esc(t('measPoint'))}" /></div>
+      <div class="field" id="m_valueWrap"><label>${t('measValue')}</label><input id="m_value" inputmode="decimal" value="${esc(v.value != null ? v.value : '')}" /><span style="font-size:11px;color:var(--text-3)">${t('measPersianHint')}</span></div>
+      <div class="field"><label>${t('measComp')}</label><input id="m_comp" value="${esc(v.component || '')}" /></div>
+      <div class="field span2" id="m_stateWrap" style="display:none"><label>${t('measValue')}</label><select id="m_state"></select></div>
+      <div class="field span2"><label>${t('measCondition')}</label><input id="m_cond" value="${esc(v.condition || '')}" placeholder="${esc(t('measCondition'))}" /></div>
+      <div class="field span2"><label>${t('measRefType')}</label>
+        <select id="m_ref"><option value="tech" ${v.refType==='tech'?'selected':''}>${t('measRefTech')}</option>
+        <option value="standard" ${v.refType==='standard'?'selected':''}>${t('measRefStandard')}</option>
+        <option value="manual" ${v.refType==='manual'?'selected':''}>${t('measRefManual')}</option></select>
+      </div>
+      <div class="field span2"><label>${t('noteTitle')}</label><input id="m_note" value="${esc(v.note || '')}" /></div>
+      <div class="span2" id="m_preview"></div>
+    </form></div>
+    <div class="modal-foot">
+      ${m ? `<button class="btn btn-soft-danger" id="m_del">${IC.trash}</button>` : ''}
+      <button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button>
+      <button class="btn btn-primary" id="m_save">${t('save')}</button>
+    </div>`, { size: 'lg' });
+  const syncField = () => {
+    const f = MEASURE_FIELDS_BY_ID[$('#m_type').value];
+    if (!f) return;
+    const vw = $('#m_valueWrap'), sw = $('#m_stateWrap');
+    if (f.state) {
+      vw.style.display = 'none'; sw.style.display = '';
+      const sel = $('#m_state');
+      sel.innerHTML = f.state.map(s => {
+        const meta = f.eval ? f.eval(s) : null;
+        const lbl = s === f.state[0] ? (LANG === 'fa' ? 'بسته/درگیر/رها — نرمال' : 'closed/engaged/released') : (LANG === 'fa' ? 'باز/درگیر نیست/زده — غیرعادی' : 'open/not-engaged/pressed');
+        return `<option value="${s}" ${v.value === s ? 'selected' : ''}>${esc(lbl)}</option>`;
+      }).join('');
+    } else if (f.text) {
+      vw.style.display = ''; sw.style.display = 'none';
+      $('#m_value').type = 'text';
+    } else {
+      vw.style.display = ''; sw.style.display = 'none';
+      $('#m_value').type = 'number';
+    }
+    measPreview();
+  };
+  const measPreview = () => {
+    const f = MEASURE_FIELDS_BY_ID[$('#m_type').value];
+    if (!f) return;
+    let val, kind = 'numeric';
+    if (f.state) { kind = 'state'; val = $('#m_state').value; }
+    else if (f.text) { kind = 'text'; val = $('#m_value').value; }
+    else { val = parseNum($('#m_value').value); if (val == null) { $('#m_preview').innerHTML = ''; return; } }
+    const tmp = { typeId: f.id, kind, value: val };
+    if (f.id === 'v_gov') { const vr = parseNum($('#m_value').value); tmp.context = { v_rated: (state.projects.find(p=>p.id===$('#m_project').value)||{}).speed || 0 }; }
+    if (f.id === 'v_dcbus') {
+      const line = (MEASURE_FIELDS_BY_ID['v_rs'] || {});
+      // try to infer from field if user already knows line; otherwise generic
+      tmp.context = {};
+    }
+    const res = evalMeasurement(tmp);
+    $('#m_preview').innerHTML = `<div class="kv-cell"><div class="k">${t('measStatus')}</div><div class="v">${measStatusHtml(res.status)}</div></div>` + redFlagHtml(res);
+  };
+  $('#m_type').onchange = syncField;
+  $('#m_value').oninput = measPreview;
+  $('#m_state').onchange = measPreview;
+  syncField();
+  if (m) $('#m_del').onclick = () => confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteMsg'), async () => {
+    state.measurements = state.measurements.filter(x => x.id !== m.id);
+    closeModal(); renderMeasurements();
+    try { await api('/measurements/' + m.id, { method: 'DELETE' }); toast(t('deleted')); } catch (e) { toast(errMsg(e), 'err'); }
+  });
+  $('#m_save').onclick = guard('#m_save', async () => {
+    const f = MEASURE_FIELDS_BY_ID[$('#m_type').value];
+    let value, kind = 'numeric';
+    if (f.state) { kind = 'state'; value = $('#m_state').value; }
+    else if (f.text) { kind = 'text'; value = $('#m_value').value.trim(); if (!value) { fieldError('#m_value', 'requiredTitle'); return; } }
+    else {
+      value = parseNum($('#m_value').value);
+      if (value == null) { fieldError('#m_value', 'measInvalid'); return; }
+      if (f.min != null && value < f.min) { fieldError('#m_value', 'measInvalid'); return; }
+    }
+    const ctx = {};
+    if (f.id === 'v_gov') { const p = state.projects.find(x => x.id === $('#m_project').value); if (p && p.speed) ctx.v_rated = +p.speed; }
+    const rec = {
+      typeId: f.id, kind, value,
+      projectId: $('#m_project').value, point: $('#m_point').value.trim(), component: $('#m_comp').value.trim(),
+      condition: $('#m_cond').value.trim(), note: $('#m_note').value.trim(), refType: $('#m_ref').value || 'manual',
+      ts: jdateVal('m_date') || Date.now(), technician: (state.user && state.user.name) || '', status: 'unknown'
+    };
+    const res = evalMeasurement(Object.assign({}, rec, { context: ctx }));
+    rec.status = res.status;
+    rec._res = res;
+    if (m) { Object.assign(m, rec); delete m._res; await api('/measurements/' + m.id, { method: 'PUT', body: m }); Object.assign(m, rec); }
+    else { const d = await api('/measurements', { method: 'POST', body: rec }); state.measurements.unshift(d.item); }
+    closeModal(); toast(t('measSaved'));
+    if (res.status === 'critical') toast((res.reason && (res.reason[LANG] || res.reason.fa)) || t('measStatusCritical'), 'err');
+    renderMeasurements();
+  });
+}
+
 /* ================= SETTINGS HUB (v26) ================= */
 function renderSettings() {
   const c = $('#content');
@@ -8256,7 +8873,8 @@ function renderSettings() {
         <div class="card-title">🔧 ${t('setSvcDefaults')}</div>
         <div class="field"><label>${t('setDefaultTech')}</label><input id="st_defaulttech" value="${esc(s.defaultTech || '')}" placeholder="${esc((state.user && state.user.name) || '')}" /></div>
         <p class="hint">${t('setDefaultTechHint')}</p>
-        <button class="btn btn-primary btn-sm" id="stSaveSvc">💾 ${t('save')}</button>
+        <div class="field" style="max-width:160px;margin-top:6px"><label>${t('invTaxRate')}</label><input id="st_taxrate" type="number" min="0" max="100" step="1" value="${faNum(s.taxRate != null ? s.taxRate : 0)}" /></div>
+        <button class="btn btn-primary btn-sm" id="stSaveSvc" style="margin-top:8px">💾 ${t('save')}</button>
       </div>
     </div>
     <div class="grid-2" style="margin-top:16px">
@@ -8289,7 +8907,12 @@ function renderSettings() {
     </div>
     <div class="card" style="margin-top:16px">
       <div class="card-title">💾 ${t('setData')}</div>
-      <div class="kv-cell" style="margin-bottom:12px"><div class="k">📊 ${t('storageUsage')}</div><div class="v">${usage}</div></div>
+      <div class="kv-cell" style="margin-bottom:12px"><div class="k">📊 ${t('storageUsage')}</div><div class="v">${usage}</div>
+        <div class="k" style="margin-top:6px">🕓 ${t('backupStatus')}: ${backupStatusBadge()}</div></div>
+      <label style="display:flex;gap:10px;align-items:center;font-size:13px;margin-bottom:12px;cursor:pointer">
+        <input type="checkbox" id="st_autobackup" ${(s.autoBackup !== false) ? 'checked' : ''} style="width:20px;height:20px" />
+        <span>${t('backupAutoOn')}</span>
+      </label>
       <div style="display:flex;gap:9px;flex-wrap:wrap">
         <button class="btn btn-primary" onclick="openBackupModal()">💾 ${t('backup')}</button>
         <button class="btn btn-soft-danger" onclick="clearAllData()">${IC.trash} ${t('setClearAll')}</button>
@@ -8298,7 +8921,7 @@ function renderSettings() {
     <div class="card" style="margin-top:16px;text-align:center">
       <div style="font-size:32px;margin-bottom:4px">🛗</div>
       <strong style="font-size:17px">Z Lift</strong>
-      <div style="color:var(--text-3);font-size:12.5px;margin-top:4px">v26 · ${t('tagline')}</div>
+      <div style="color:var(--text-3);font-size:12.5px;margin-top:4px">v27 · ${t('tagline')}</div>
       <button class="btn btn-ghost btn-sm" style="margin-top:12px;color:#2AABEE" onclick="openTgChannel()">${IC.telegram} ${t('tgChannel')}</button>
     </div>`;
   $('#stSaveCompany').onclick = guard('#stSaveCompany', async () => {
@@ -8306,9 +8929,14 @@ function renderSettings() {
     catch (e) { toast(errMsg(e), 'err'); }
   });
   $('#stSaveSvc').onclick = guard('#stSaveSvc', async () => {
-    try { const d = await api('/settings', { method: 'PUT', body: { defaultTech: $('#st_defaulttech').value } }); state.settings = d.settings; toast(t('saved')); }
+    try { const d = await api('/settings', { method: 'PUT', body: { defaultTech: $('#st_defaulttech').value, taxRate: Math.max(0, Math.min(100, Math.round(+$('#st_taxrate').value || 0))) } }); state.settings = d.settings; toast(t('saved')); }
     catch (e) { toast(errMsg(e), 'err'); }
   });
+  const ab = document.getElementById('st_autobackup');
+  if (ab) ab.onchange = async () => {
+    try { const d = await api('/settings', { method: 'PUT', body: { autoBackup: ab.checked } }); state.settings = d.settings; if (ab.checked) runAutoBackup(); toast(t('saved')); }
+    catch (e) { toast(errMsg(e), 'err'); }
+  };
 }
 
 /* ================= SHARE (Telegram / system) ================= */
@@ -8361,7 +8989,8 @@ function buildServiceText(s) {
   if (s.problem) L.push('❗ ' + t('svcProblem') + ': ' + s.problem);
   if (s.diagnosis) L.push('🔎 ' + t('svcDiagnosis') + ': ' + s.diagnosis);
   if (s.workDone) L.push('✅ ' + t('svcWork') + ': ' + s.workDone);
-  if (s.partsReplaced && s.partsReplaced !== '—') L.push('📦 ' + t('svcParts') + ': ' + s.partsReplaced);
+  const _partsTxt = svcPartsTextOf(s);
+  if (_partsTxt) L.push('📦 ' + t('svcParts') + ': ' + _partsTxt);
   if (s.recommendations) L.push('💡 ' + t('svcRecommend') + ': ' + s.recommendations);
   L.push('🏁 ' + t('svcFinal') + ': ' + t(finalMeta(s.finalStatus).key));
   L.push('👨‍🔧 ' + s.technician);
@@ -8377,7 +9006,8 @@ function buildInvoiceText(inv) {
   L.push('');
   (inv.items || []).forEach(it => L.push('• ' + it.desc + ' ×' + faNum(it.qty) + ' — ' + money((+it.qty || 0) * (+it.price || 0)) + ' ' + t('rial')));
   if (inv.labor) L.push('• ' + t('invLabor') + ' — ' + money(inv.labor) + ' ' + t('rial'));
-  if (inv.discount) L.push('• ' + t('invDiscount') + ' — ' + money(inv.discount) + '- ' + t('rial'));
+  if (inv.discount) L.push('• ' + t('invDiscount') + ' — −' + money(inv.discount) + ' ' + t('rial'));
+  if (tt.tax) L.push('• ' + t('invTax') + (tt.taxRate ? ' (' + faNum(tt.taxRate) + '%)' : '') + ' — ' + money(tt.tax) + ' ' + t('rial'));
   L.push('');
   L.push('💰 ' + t('invGrand') + ': ' + money(tt.grand) + ' ' + t('rial'));
   if (tt.paid) { L.push('✅ ' + t('invPaid') + ': ' + money(tt.paid) + ' ' + t('rial')); L.push('⏳ ' + t('invBalance') + ': ' + money(tt.balance) + ' ' + t('rial')); }
@@ -10858,7 +11488,7 @@ function validateBackup(bk) {
   if (bk.app !== 'zlift') return { ok: false, why: 'app' };
   if (!Array.isArray(bk.projects)) return { ok: false, why: 'projects' };
   // structural checks on core collections (old backups may miss newer ones — fine)
-  for (const k of ['projects', 'services', 'invoices', 'contracts', 'parts', 'notes', 'checklists']) {
+  for (const k of ['projects', 'services', 'invoices', 'contracts', 'parts', 'notes', 'checklists', 'measurements', 'safetyLogs', 'reminders', 'photos', 'diagSessions', 'calcSaves', 'issues', 'tools']) {
     if (bk[k] !== undefined && !Array.isArray(bk[k])) return { ok: false, why: k };
   }
   // id sanity: every project/service must have a string id
@@ -10869,6 +11499,55 @@ function validateBackup(bk) {
   if (poison) return { ok: false, why: 'unsafe keys' };
   return { ok: true };
 }
+/* automatic local backup: keeps a rotating set of dated snapshots in
+   localStorage (no network, no third party). Recovers from accidental
+   deletes/corruption. Telegram upload is explicitly NOT done client-side
+   because it would require exposing a bot token in the frontend — that is a
+   backend feature and is intentionally left for the future. */
+const AUTO_BACKUP_KEY = 'zlift_autobackup';
+const AUTO_BACKUP_DAYS = 1;
+function backupStatusBadge() {
+  const last = +(localStorage.getItem('zlift_last_backup') || 0);
+  if (!last) return '🔴 ' + t('backupNone');
+  const days = Math.floor((Date.now() - last) / 86400000);
+  if (days <= 7) return '🟢 ' + t('backupUpToDate');
+  if (days <= 30) return '🟡 ' + t('backupRecommended') + ' (' + faNum(days) + ' ' + t('daysAgo') + ')';
+  return '🔴 ' + faNum(days) + ' ' + t('daysAgo');
+}
+function autoBackupIfDue() {
+  try {
+    if (state.settings && state.settings.autoBackup === false) return;
+    const last = +(localStorage.getItem('zlift_last_backup') || 0);
+    if (Date.now() - last < AUTO_BACKUP_DAYS * 86400000) return;
+    runAutoBackup();
+  } catch (e) { /* storage full / private mode — never block the app */ }
+}
+function runAutoBackup() {
+  try {
+    const raw = localStorage.getItem('zlift_db');
+    if (!raw) return;
+    let db;
+    try { db = JSON.parse(raw); } catch (e) { return; }
+    if (!db || !Array.isArray(db.projects)) return;
+    const snap = { app: 'zlift-auto', version: 1, createdAt: Date.now(), data: db };
+    let store = [];
+    try { store = JSON.parse(localStorage.getItem(AUTO_BACKUP_KEY) || '[]'); if (!Array.isArray(store)) store = []; } catch (e) { store = []; }
+    store.unshift(snap);
+    store = store.slice(0, 5);                 // keep 5 most recent snapshots
+    localStorage.setItem(AUTO_BACKUP_KEY, JSON.stringify(store));
+    localStorage.setItem('zlift_last_backup', String(Date.now()));
+  } catch (e) { /* quota — silently skip */ }
+}
+function listAutoBackups() {
+  try { return JSON.parse(localStorage.getItem(AUTO_BACKUP_KEY) || '[]'); } catch (e) { return []; }
+}
+function restoreAutoBackup(idx) {
+  const store = listAutoBackups();
+  const snap = store[idx];
+  if (!snap || !snap.data) throw new Error('bad');
+  localStorage.setItem('zlift_db', JSON.stringify(snap.data));
+}
+
 function openBackupModal() {
   openModal(`
     <div class="modal-head"><h3>💾 ${t('backup')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
@@ -10895,7 +11574,7 @@ function openBackupModal() {
         <button class="btn btn-ghost" id="bkImport">⬆️ ${t('backupImport')}</button>
         <input type="file" id="bkFile" accept=".json,application/json" class="hidden" />
       </div>
-      <div class="section-title" style="margin:0 0 8px"><h3 style="font-size:14px">🏢 ${t('settings')}</h3></div>
+      <div class="section-title" style="margin:0 0 8px"><h3 style="font-size:14px">🏢 ${t('companySettings')}</h3></div>
       <p style="font-size:11.8px;color:var(--text-3);margin-bottom:9px">${t('settingsSub')}</p>
       <div class="field"><label>${t('setCompany')}</label><input id="set_company" value="${esc((state.settings || {}).company || '')}" /></div>
       <div class="form-grid">
@@ -11177,6 +11856,7 @@ function _lsSeed() {
       mkPart('روانکار ریل (اسپری)', 'مصرفی', 'عدد', 12, 6, 950000, 'قفسه D1')
     ],
     diagSessions: [], calcSaves: [], issues: [], tools: [], photos: [], invoices: [], contracts: [],
+    measurements: [], safetyLogs: [],
     reminders: [],
     settings: { company: 'خدمات فنی آسانسور زد لیفت', phone: '021-88000000', address: 'تهران' }
   };
@@ -11199,7 +11879,7 @@ function _lsLoad() {
   if (!_lsDB || !_lsDB.users) { _lsDB = _lsSeed(); _lsSave(); }
   if (!_lsDB.parts) _lsDB.parts = _lsSeed().parts;
   if (!_lsDB.settings) _lsDB.settings = { company: 'Z Lift', phone: '', address: '' };
-  ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders'].forEach(k => { if (!Array.isArray(_lsDB[k])) _lsDB[k] = []; });
+  ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders', 'measurements', 'safetyLogs'].forEach(k => { if (!Array.isArray(_lsDB[k])) _lsDB[k] = []; });
   if (!_lsDB.schemaVersion) _lsDB.schemaVersion = 1;
   if (!_lsDB.sessions || typeof _lsDB.sessions !== 'object') _lsDB.sessions = {};
   _lsPruneSessions();
@@ -11285,6 +11965,14 @@ function _lsUsage() {
     const raw = localStorage.getItem('zlift_db') || '';
     return { bytes: raw.length * 2, photos: (_lsDB && _lsDB.photos ? _lsDB.photos.length : 0) };
   } catch (e) { return { bytes: 0, photos: 0 }; }
+}
+function normSvcParts(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr.slice(0, 50).map(p => ({
+    partId: p && p.partId ? String(p.partId) : '',
+    name: p && p.name ? String(p.name).slice(0, 120) : '',
+    qty: Math.max(1, Math.round(+(p && p.qty) || 1))
+  })).filter(p => p.name);
 }
 function _lsErr(code, status) { const e = new Error(code); e.code = code; e.status = status || 400; return e; }
 
@@ -11388,6 +12076,7 @@ async function api(path, opts = {}) {
       serviceType: ['maintenance', 'repair', 'emergency', 'inspection'].includes(b.serviceType) ? b.serviceType : 'maintenance',
       complaint: String(b.complaint || ''), problem: String(b.problem || ''), diagnosis: String(b.diagnosis || ''),
       measurements: String(b.measurements || ''), workDone: String(b.workDone || ''), partsReplaced: String(b.partsReplaced || ''),
+      partsUsed: normSvcParts(b.partsUsed),
       recommendations: String(b.recommendations || ''), followUpDate: +b.followUpDate || 0,
       finalStatus: ['ok', 'followup', 'outoforder'].includes(b.finalStatus) ? b.finalStatus : 'ok',
       signTech: String(b.signTech || ''), signCustomer: String(b.signCustomer || ''),
@@ -11408,6 +12097,7 @@ async function api(path, opts = {}) {
       if (b.finalStatus && ['ok', 'followup', 'outoforder'].includes(b.finalStatus)) s.finalStatus = b.finalStatus;
       if (b.signTech !== undefined) s.signTech = String(b.signTech || '');
       if (b.signCustomer !== undefined) s.signCustomer = String(b.signCustomer || '');
+      if (Array.isArray(b.partsUsed)) s.partsUsed = normSvcParts(b.partsUsed);
       _lsSave();
       return { service: s };
     }
@@ -11474,8 +12164,83 @@ async function api(path, opts = {}) {
 
 
 
+  /* invoices — custom route for a persistent legal number + VAT handling */
+  if (path === '/invoices' && method === 'GET') return { items: [...db.invoices].sort((a, c) => (c.createdAt || 0) - (a.createdAt || 0)) };
+  if (path === '/invoices' && method === 'POST') {
+    db.settings = db.settings || {};
+    const seq = Math.max(1, (+db.settings.invoiceSeq || 0) + 1);
+    db.settings.invoiceSeq = seq;
+    const item = Object.assign({}, b, {
+      id: _lsUid(),
+      number: b.number ? String(b.number) : String(seq),
+      taxRate: b.taxExempt ? 0 : Math.max(0, Math.min(100, Math.round(+b.taxRate || +(db.settings.taxRate) || 0))),
+      taxExempt: !!b.taxExempt,
+      createdAt: Date.now(), updatedAt: Date.now()
+    });
+    db.invoices.unshift(item); _lsSave();
+    return { item };
+  }
+  if (parts[0] === 'invoices' && parts[1]) {
+    const item = db.invoices.find(x => x.id === parts[1]);
+    if (!item) throw _lsErr('not_found', 404);
+    if (method === 'GET') return { item };
+    if (method === 'PUT') {
+      Object.keys(b).forEach(k => { if (k !== 'id' && k !== 'createdAt' && k !== 'number') item[k] = b[k]; });
+      if (b.taxExempt !== undefined) item.taxExempt = !!b.taxExempt;
+      if (!item.number) { db.settings.invoiceSeq = Math.max(1, (+db.settings.invoiceSeq || 0) + 1); item.number = String(db.settings.invoiceSeq); }
+      if (b.taxRate !== undefined) item.taxRate = item.taxExempt ? 0 : Math.max(0, Math.min(100, Math.round(+b.taxRate || 0)));
+      item.updatedAt = Date.now(); _lsSave();
+      return { item };
+    }
+    if (method === 'DELETE') { db.invoices = db.invoices.filter(x => x.id !== item.id); _lsSave(); return { ok: true }; }
+  }
+
+  /* measurements — normalise Persian/Arabic numerals and compute status */
+  if (parts[0] === 'measurements') {
+    if (!parts[1] && method === 'GET') return { items: [...db.measurements].sort((a, c) => (c.ts || c.createdAt || 0) - (a.ts || a.createdAt || 0)) };
+    if (!parts[1] && method === 'POST') {
+      const typeId = String(b.typeId || '');
+      const field = (typeof MEASURE_FIELDS_BY_ID !== 'undefined') ? MEASURE_FIELDS_BY_ID[typeId] : null;
+      let value = b.value;
+      if (field && !field.state && !field.text) { const n = parseNum(b.value); value = n == null ? 0 : n; }
+      const item = {
+        id: _lsUid(), typeId, kind: b.kind === 'state' ? 'state' : (field && field.text ? 'text' : 'numeric'),
+        value, point: String(b.point || '').slice(0, 120), component: String(b.component || '').slice(0, 120),
+        condition: String(b.condition || '').slice(0, 200), note: String(b.note || '').slice(0, 200),
+        refType: ['tech', 'standard', 'manual'].includes(b.refType) ? b.refType : 'tech',
+        projectId: b.projectId && db.projects.find(x => x.id === b.projectId) ? b.projectId : '',
+        diagSessionId: b.diagSessionId ? String(b.diagSessionId) : '',
+        technician: String(b.technician || (me && me.name) || ''),
+        ts: +b.ts || Date.now(), status: 'unknown', createdAt: Date.now(), updatedAt: Date.now()
+      };
+      try { item.status = (evalMeasurement(item) || {}).status || 'unknown'; } catch (e) {}
+      db.measurements.push(item); _lsSave();
+      return { item };
+    }
+    if (parts[1]) {
+      const item = db.measurements.find(x => x.id === parts[1]);
+      if (!item) throw _lsErr('not_found', 404);
+      if (method === 'GET') return { item };
+      if (method === 'PUT') {
+        if (b.typeId !== undefined) item.typeId = String(b.typeId);
+        const field = (typeof MEASURE_FIELDS_BY_ID !== 'undefined') ? MEASURE_FIELDS_BY_ID[item.typeId] : null;
+        if (b.value !== undefined) {
+          if (field && !field.state && !field.text) { const n = parseNum(b.value); item.value = n == null ? item.value : n; }
+          else item.value = b.value;
+        }
+        ['point', 'component', 'condition', 'note'].forEach(k => { if (b[k] !== undefined) item[k] = String(b[k]); });
+        if (b.projectId !== undefined) item.projectId = b.projectId && db.projects.find(x => x.id === b.projectId) ? b.projectId : '';
+        if (b.ts !== undefined) item.ts = +b.ts || item.ts;
+        try { item.status = (evalMeasurement(item) || {}).status || 'unknown'; } catch (e) {}
+        item.updatedAt = Date.now(); _lsSave();
+        return { item };
+      }
+      if (method === 'DELETE') { db.measurements = db.measurements.filter(x => x.id !== item.id); _lsSave(); return { ok: true }; }
+    }
+  }
+
   /* generic collections */
-  const GENERIC = ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts'];
+  const GENERIC = ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'contracts', 'safetyLogs'];
   if (parts[0] && GENERIC.includes(parts[0])) {
     const coll = db[parts[0]];
     if (!parts[1] && method === 'GET') return { items: [...coll].sort((a, c) => (c.createdAt || 0) - (a.createdAt || 0)) };
@@ -11541,10 +12306,11 @@ async function api(path, opts = {}) {
 
   /* backup / restore */
   if (path === '/backup' && method === 'GET') {
-    return { backup: { app: 'zlift', version: 4, exportedAt: Date.now(),
+    return { backup: { app: 'zlift', version: 5, appVersion: '27', exportedAt: Date.now(),
       projects: db.projects, services: db.services, notes: db.notes,
       checklists: db.checklists, parts: db.parts, settings: db.settings,
-      diagSessions: db.diagSessions, calcSaves: db.calcSaves, issues: db.issues, tools: db.tools, photos: db.photos, invoices: db.invoices, contracts: db.contracts, reminders: db.reminders } };
+      diagSessions: db.diagSessions, calcSaves: db.calcSaves, issues: db.issues, tools: db.tools, photos: db.photos, invoices: db.invoices, contracts: db.contracts, reminders: db.reminders,
+      measurements: db.measurements || [], safetyLogs: db.safetyLogs || [] } };
   }
   if (path === '/backup' && method === 'PUT') {
     const bk = b.backup || b;
@@ -11555,7 +12321,7 @@ async function api(path, opts = {}) {
     db.checklists = Array.isArray(bk.checklists) ? bk.checklists : [];
     db.parts = Array.isArray(bk.parts) ? bk.parts : [];
     if (bk.settings && typeof bk.settings === 'object') db.settings = bk.settings;
-    ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders'].forEach(k => { db[k] = Array.isArray(bk[k]) ? bk[k] : []; });
+    ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders', 'measurements', 'safetyLogs'].forEach(k => { db[k] = Array.isArray(bk[k]) ? bk[k] : []; });
     _lsSave();
     return { ok: true };
   }
@@ -11564,6 +12330,8 @@ async function api(path, opts = {}) {
   if (path === '/settings' && method === 'GET') return { settings: db.settings };
   if (path === '/settings' && method === 'PUT') {
     ['company', 'phone', 'address', 'defaultTech'].forEach(f => { if (b[f] !== undefined) db.settings[f] = String(b[f]); });
+    if (b.taxRate !== undefined) db.settings.taxRate = Math.max(0, Math.min(100, Math.round(+b.taxRate || 0)));
+    if (b.autoBackup !== undefined) db.settings.autoBackup = b.autoBackup !== false;
     if (b.notify !== undefined) db.settings.notify = !!b.notify;
     _lsSave();
     return { settings: db.settings };
