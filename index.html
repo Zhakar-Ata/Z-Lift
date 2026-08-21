@@ -738,6 +738,36 @@ html, body { overflow-x: hidden; max-width: 100%; }
 .cal-num { font-weight: 600; }
 .cal-dot { position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; font-size: 9.5px; font-weight: 700; min-width: 15px; height: 15px; line-height: 15px; border-radius: 8px; padding: 0 4px; }
 .sub-title { font-size: 12.5px; font-weight: 700; color: var(--text-2); margin: 4px 0 6px; }
+
+/* ============ v24: Services hub (reports + calendar) ============ */
+/* segmented tab control */
+.seg {
+  display: flex; background: var(--bg-soft); border: 1px solid var(--border);
+  border-radius: 13px; padding: 4px; gap: 4px;
+}
+.seg-btn {
+  flex: 1; border: 0; background: transparent; color: var(--text-2);
+  padding: 10px 8px; border-radius: 10px; font-size: 14px; font-weight: 700;
+  font-family: inherit; transition: all .15s; cursor: pointer; white-space: nowrap;
+}
+.seg-btn:hover { color: var(--text); }
+.seg-btn.active { background: var(--bg-card); color: var(--accent-2); box-shadow: var(--shadow); }
+/* clickable KPI cards on the services hub */
+.svc-kpi {
+  cursor: pointer; transition: transform .12s, border-color .12s, box-shadow .12s;
+}
+.svc-kpi:hover { transform: translateY(-2px); border-color: var(--accent-2); box-shadow: var(--shadow-lg); }
+.svc-kpi .stat-value { font-size: 19px; }
+@media (hover: none) { .svc-kpi:hover { transform: none; } }
+/* compact calendar legend */
+.cal-legend {
+  display: flex; gap: 16px; flex-wrap: wrap; align-items: center;
+  font-size: 11.5px; color: var(--text-3); margin-top: 12px;
+  padding-top: 11px; border-top: 1px dashed var(--border);
+}
+.cal-legend .lg { display: inline-flex; align-items: center; gap: 6px; }
+.cal-legend .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.cal-legend .sq { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -1081,7 +1111,15 @@ const I18N = {
     // v23 — signatures, standards library, inventory value
     signHint: 'با انگشت یا ماوس اینجا امضا کنید', signClear: 'پاک کردن امضا', noSignature: 'امضا ثبت نشده',
     partSupplier: 'تأمین‌کننده', partCode: 'کد فنی / شماره فابریک',
-    stockValue: 'ارزش کل موجودی', stockItems: 'اقلام', stInvValue: 'ارزش انبار'
+    stockValue: 'ارزش کل موجودی', stockItems: 'اقلام', stInvValue: 'ارزش انبار',
+    // v24 — services hub (calendar moved into services)
+    svcTabReports: 'گزارش‌های سرویس', svcTabCalendar: 'تقویم سرویس',
+    svcKpiToday: 'سرویس امروز', svcKpiMonth: 'سرویس این ماه',
+    svcKpiFollowup: 'نیاز به پیگیری', svcKpiOverdue: 'یادآوری سررسید گذشته',
+    svcCalHint: 'تقویم، سررسید قراردادها و یادآوری‌های سرویس — همه در یک نگاه',
+    calLegendEvents: 'رویداد هر روز (سرویس + یادآوری)',
+    calLegendToday: 'امروز', calLegendOverdue: 'سررسید گذشته', calLegendSoon: 'نزدیک موعد',
+    svcNoReminder: 'یادآوری فعالی نیست', svcOpenCalendar: 'باز کردن تقویم سرویس'
   },
   en: {
     dir: 'ltr',
@@ -1292,7 +1330,15 @@ const I18N = {
     reminderTitleReq: 'Reminder title is required', reminderDays: 'Days to due', reminderInDays: 'days',
     signHint: 'Sign here with finger or mouse', signClear: 'Clear signature', noSignature: 'No signature recorded',
     partSupplier: 'Supplier', partCode: 'Part no. / code',
-    stockValue: 'Total stock value', stockItems: 'Items', stInvValue: 'Stock value'
+    stockValue: 'Total stock value', stockItems: 'Items', stInvValue: 'Stock value',
+    // v24 — services hub (calendar moved into services)
+    svcTabReports: 'Service reports', svcTabCalendar: 'Service calendar',
+    svcKpiToday: 'Services today', svcKpiMonth: 'Services this month',
+    svcKpiFollowup: 'Need follow-up', svcKpiOverdue: 'Overdue reminders',
+    svcCalHint: 'Calendar, contract due dates and service reminders — all in one glance',
+    calLegendEvents: 'Events per day (service + reminder)',
+    calLegendToday: 'Today', calLegendOverdue: 'Overdue', calLegendSoon: 'Due soon',
+    svcNoReminder: 'No active reminders', svcOpenCalendar: 'Open service calendar'
   }
 };
 
@@ -4072,7 +4118,6 @@ const NAV = [
   { route: '/invoices', key: 'invoices', icon: 'bill' },
   { route: '/contracts', key: 'contracts', icon: 'doc' },
   { route: '/report', key: 'monthlyReport', icon: 'chart' },
-  { route: '/calendar', key: 'calendar', icon: 'cal' },
   { route: '/parts', key: 'parts', icon: 'box' },
   { section: 'navTools' },
   { route: '/checklists', key: 'checklists', icon: 'check' },
@@ -4303,7 +4348,7 @@ function renderDashboard() {
     </div>`;
     }).join('') +
     remDue.map(r => `
-    <div class="due-item ${r.overdue ? 'overdue' : 'soon'}" onclick="navigate('/calendar')" style="cursor:pointer">
+    <div class="due-item ${r.overdue ? 'overdue' : 'soon'}" onclick="svcTab='calendar';navigate('/services')" style="cursor:pointer">
       <span style="font-size:19px">${remMeta(r.kind).icon}</span>
       <div class="grow">
         <strong>${esc(r.title)}</strong>
@@ -4749,20 +4794,86 @@ function renderProjectDetail(id) {
 }
 
 /* ================= SERVICES (independent module) ================= */
+/* v24: the Services page is now a hub with two tabs —
+   'list' (service reports) and 'calendar' (service calendar + reminders).
+   The calendar that used to live at its own nav entry is integrated here. */
 let svcFilter = { q: '', type: 'all', projectId: '' };
+let svcTab = 'list'; // 'list' | 'calendar'
 function viewProjectServices(projectId) {
   svcFilter = { q: '', type: 'all', projectId };
+  svcTab = 'list';
   navigate('/services');
+}
+function switchSvcTab(tab) {
+  svcTab = tab;
+  // only re-render the panel + tabs, keeping the KPI strip intact (no flicker)
+  const seg = $('#svcTabs');
+  if (seg) {
+    [...seg.querySelectorAll('.seg-btn')].forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    drawSvcPanel();
+  } else {
+    renderServices();
+  }
+}
+function svcKpiHTML(icon, bg, val, label, onclick) {
+  return `<div class="card stat-card svc-kpi" onclick="${onclick}">
+    <div class="stat-icon" style="background:${bg};font-size:20px">${icon}</div>
+    <div class="stat-body"><div class="stat-value">${val}</div><div class="stat-label">${label}</div></div></div>`;
 }
 function renderServices() {
   const c = $('#content');
   const filteredProj = svcFilter.projectId ? state.projects.find(p => p.id === svcFilter.projectId) : null;
+
+  /* ---- KPI strip (today / this month / follow-ups / overdue reminders) ---- */
+  const todayJ = tsToJalali(Date.now());
+  const { from: tStart, to: tEnd } = jalDayRange(todayJ.jy, todayJ.jm, todayJ.jd);
+  const todayCount = state.services.filter(s => s.date >= tStart && s.date < tEnd).length;
+  const monthCount = state.services.filter(s => { const j = tsToJalali(s.date); return j.jy === todayJ.jy && j.jm === todayJ.jm; }).length;
+  const followups = state.services.filter(s => s.finalStatus === 'followup').length;
+  const rems = buildReminders();
+  const overdueRems = rems.filter(r => r.overdue).length;
+
   c.innerHTML = `
     ${filteredProj ? `
     <div class="note-block" style="margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <span>🔎 ${t('svcOfProject')} <b>${esc(filteredProj.name)}</b></span>
       <button class="btn btn-ghost btn-sm" onclick="svcFilter.projectId='';renderServices()">✕ ${t('clearFilter')}</button>
     </div>` : ''}
+    <div class="grid-4" style="margin-bottom:16px">
+      ${svcKpiHTML('📅', 'var(--accent-soft)', faNum(todayCount), t('svcKpiToday'), "switchSvcTab('list')")}
+      ${svcKpiHTML('🗓️', 'var(--teal-soft)', faNum(monthCount), t('svcKpiMonth'), "switchSvcTab('list')")}
+      ${svcKpiHTML('📌', 'var(--warn-soft)', faNum(followups), t('svcKpiFollowup'), "svcFilter.type='all';switchSvcTab('list')")}
+      ${svcKpiHTML(overdueRems ? '🔴' : '🔔', overdueRems ? 'var(--danger-soft)' : 'var(--ok-soft)', faNum(overdueRems), t('svcKpiOverdue'), "switchSvcTab('calendar')")}
+    </div>
+    <div id="svcTabs" class="seg" role="tablist" style="margin-bottom:16px">
+      <button class="seg-btn ${svcTab === 'list' ? 'active' : ''}" data-tab="list" role="tab" aria-selected="${svcTab === 'list'}">📋 ${t('svcTabReports')}</button>
+      <button class="seg-btn ${svcTab === 'calendar' ? 'active' : ''}" data-tab="calendar" role="tab" aria-selected="${svcTab === 'calendar'}">📅 ${t('svcTabCalendar')}</button>
+    </div>
+    <div id="svcPanel"></div>`;
+  $$('#svcTabs .seg-btn').forEach(b => b.onclick = () => switchSvcTab(b.dataset.tab));
+  drawSvcPanel();
+}
+/* renders the active tab (reports list or calendar) into #svcPanel */
+function drawSvcPanel() {
+  const panel = $('#svcPanel');
+  if (!panel) return;
+  if (svcTab === 'calendar') {
+    if (!calState.jy) { const j = tsToJalali(Date.now()); calState = { jy: j.jy, jm: j.jm }; }
+    calSelDay = 0;
+    panel.innerHTML = `
+      <div class="toolbar" style="margin-bottom:14px">
+        <button class="btn btn-primary" onclick="openReminderForm()">${IC.plus} ${t('newReminder')}</button>
+        <button class="btn btn-ghost" onclick="openServiceForm()">${IC.plus} ${t('newServiceRec')}</button>
+        <div style="flex:1"></div>
+        <button class="btn btn-ghost btn-sm" onclick="calToday()">${t('today')}</button>
+      </div>
+      ${calendarSectionHTML()}`;
+    drawCalendar();
+    drawReminderList(buildReminders());
+    return;
+  }
+  /* reports list tab */
+  panel.innerHTML = `
     <div class="toolbar">
       <div class="search">${IC.search}<input id="svcSearch" placeholder="${t('searchServices')}" value="${esc(svcFilter.q)}" /></div>
       <div class="chip-row">
@@ -4774,7 +4885,7 @@ function renderServices() {
     </div>
     <div id="svcList"></div>`;
   $('#svcSearch').oninput = debounce(e => { svcFilter.q = e.target.value; drawSvcList(); }, 200);
-  $$('#content .toolbar .chip[data-t]').forEach(ch => ch.onclick = () => { svcFilter.type = ch.dataset.t; renderServices(); });
+  $$('#svcPanel .chip[data-t]').forEach(ch => ch.onclick = () => { svcFilter.type = ch.dataset.t; drawSvcPanel(); });
   drawSvcList();
 }
 function drawSvcList() {
@@ -5100,6 +5211,18 @@ function buildReminders() {
   return out.sort((a, b) => a.due - b.due);
 }
 
+/* shared calendar markup — used both by the standalone /calendar route
+   and by the in-Services calendar tab (v24). The IDs (#calWrap, #reminderList,
+   #calGrid, #calDayDetail) are unique on screen at any one time because each
+   render() replaces #content. */
+function calendarSectionHTML() {
+  return `
+    <div id="calWrap" class="card" style="padding:16px"></div>
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">🔔 ${t('calReminderList')}</div>
+      <div id="reminderList"></div>
+    </div>`;
+}
 function renderCalendar() {
   const c = $('#content');
   if (!calState.jy) { const j = tsToJalali(Date.now()); calState = { jy: j.jy, jm: j.jm }; }
@@ -5110,11 +5233,7 @@ function renderCalendar() {
       <h2 style="margin:0;font-size:17px">📅 ${t('calendar')}</h2>
       <button class="btn btn-primary" onclick="openReminderForm()">${IC.plus} ${t('newReminder')}</button>
     </div>
-    <div id="calWrap" class="card" style="padding:16px"></div>
-    <div class="card" style="margin-top:16px">
-      <div class="card-title">🔔 ${t('calReminderList')}</div>
-      <div id="reminderList"></div>
-    </div>`;
+    ${calendarSectionHTML()}`;
   drawCalendar();
   drawReminderList(reminders);
 }
@@ -5178,6 +5297,12 @@ function drawCalendar() {
     </div>
     <div class="cal-week">${['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'].map(w => `<span>${w}</span>`).join('')}</div>
     <div id="calGrid" class="cal-grid">${cells}</div>
+    <div class="cal-legend">
+      <span class="lg"><span class="dot"></span>${t('calLegendEvents')}</span>
+      <span class="lg"><span class="sq" style="background:var(--accent-soft);border:1px solid var(--accent)"></span>${t('calLegendToday')}</span>
+      <span class="lg">🔴 ${t('calLegendOverdue')}</span>
+      <span class="lg">🟡 ${t('calLegendSoon')}</span>
+    </div>
     <div id="calDayDetail"></div>`;
 }
 function calPickDay(d) {
