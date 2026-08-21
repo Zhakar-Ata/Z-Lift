@@ -171,6 +171,11 @@ a:hover { text-decoration: underline; }
 .field textarea { resize: vertical; min-height: 84px; }
 .field .hint { font-size: 12px; color: var(--text-3); margin-top: 4px; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+.form-sep {
+  font-size: 12px; font-weight: 800; color: var(--text-3); letter-spacing: .4px;
+  margin: 4px 0 12px; padding-bottom: 6px; border-bottom: 1px dashed var(--border);
+}
+.form-sep:first-child { margin-top: 0; }
 .form-grid .span2 { grid-column: span 2; }
 @media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } .form-grid .span2 { grid-column: span 1; } }
 
@@ -857,6 +862,8 @@ const I18N = {
     phFullName: 'مثلاً رضا محمدی', phCustomer: 'مثلاً آقای احمدی — ساختمان نگین', phElevator: 'مثلاً کششی ۶ نفره، سعادت‌آباد',
     phMeasure: 'مثلاً: V=382/379/381 · I=13.8A · P=34bar',
     backupLast: 'آخرین پشتیبان‌گیری', backupNever: 'تا کنون پشتیبان نگرفته‌اید', daysAgo: 'روز پیش',
+    secJob: 'مشخصات کار', secFindings: 'شرح مشکل و بررسی', secWork: 'اقدامات و نتیجه',
+    secProject: 'مشخصات پروژه', secSpecs: 'مشخصات فنی آسانسور', secEquip: 'تجهیزات', secStatus: 'وضعیت و سرویس',
     errSaveFailed: 'ذخیره نشد؛ دوباره تلاش کنید', errOffline: 'برای این کار به اینترنت نیاز است',
     // nav
     navMain: 'اصلی', navTools: 'ابزار فنی', navKnowledge: 'دانش فنی',
@@ -886,12 +893,12 @@ const I18N = {
     prType: 'نوع آسانسور', prCapacity: 'ظرفیت (kg)', prPersons: 'ظرفیت (نفر)', prFloors: 'تعداد طبقات',
     prStops: 'تعداد توقف', prSpeed: 'سرعت (m/s)', prController: 'تابلو فرمان', prMotor: 'موتور / پاوریونیت',
     prStatus: 'وضعیت پروژه', prProgress: 'درصد پیشرفت', prNotes: 'یادداشت / توضیحات',
-    save: 'ذخیره', cancel: 'انصراف', create: 'ایجاد', edit: 'ویرایش', delete: 'حذف', close: 'بستن',
-    confirmDeleteTitle: 'حذف پروژه', confirmDeleteMsg: 'این پروژه به همراه تمام سرویس‌ها و چک‌لیست‌های آن حذف می‌شود. مطمئن هستید؟',
+    save: 'ذخیره', cancel: 'انصراف', create: 'ثبت', edit: 'ویرایش', delete: 'حذف', close: 'بستن',
+    confirmDeleteTitle: 'تأیید حذف', confirmDeleteMsg: 'این پروژه و چک‌لیست‌هایش حذف می‌شود. گزارش‌های سرویس حذف نمی‌شوند و مستقل باقی می‌مانند.',
     confirmDeleteSvcMsg: 'این گزارش سرویس حذف می‌شود. مطمئن هستید؟',
     confirmDeleteNoteMsg: 'این یادداشت حذف می‌شود. مطمئن هستید؟',
-    yesDelete: 'بله، حذف کن',
-    saved: 'ذخیره شد', deleted: 'حذف شد', created: 'ایجاد شد',
+    yesDelete: 'بله، حذف شود',
+    saved: 'ذخیره شد', deleted: 'حذف شد', created: 'ثبت شد',
     statusContract: 'عقد قرارداد', statusInstalling: 'در حال نصب', statusTesting: 'تست و راه‌اندازی',
     statusInspection: 'در انتظار بازرسی', statusDelivered: 'تحویل شده', statusMaintenance: 'قرارداد سرویس',
     floorsUnit: 'طبقه', personsUnit: 'نفر', lastUpdate: 'آخرین بروزرسانی',
@@ -900,7 +907,7 @@ const I18N = {
     noServices: 'سرویسی ثبت نشده', noServicesSub: 'اولین گزارش سرویس را ثبت کنید',
     notFound: 'موردی یافت نشد', notFoundSub: 'عبارت جستجو یا فیلتر را تغییر دهید',
     // services
-    newServiceRec: 'گزارش سرویس جدید', editService: 'ویرایش گزارش',
+    newServiceRec: 'ثبت سرویس', editService: 'ویرایش گزارش سرویس',
     svcProject: 'پروژه / دستگاه', svcDate: 'تاریخ', svcTechnician: 'تکنسین', svcType: 'نوع سرویس',
     svcProblem: 'شرح مشکل / درخواست', svcDiagnosis: 'تشخیص عیب', svcWork: 'اقدامات انجام‌شده',
     svcParts: 'قطعات تعویض‌شده', svcFinal: 'وضعیت نهایی',
@@ -911,7 +918,7 @@ const I18N = {
     chSelectProject: 'اتصال به پروژه (اختیاری — برای ذخیره پیشرفت)', chNoProject: 'بدون پروژه (فقط مشاهده)',
     chProgress: 'پیشرفت چک‌لیست', chReset: 'شروع مجدد', itemsDone: 'مورد تکمیل شده',
     // calc
-    calcIntro: 'ابزارهای محاسباتی پرکاربرد برای تکنسین آسانسور — نتایج جنبه راهنمایی دارند و جایگزین طراحی مهندسی نیستند.',
+    calcIntro: 'محاسبات پرکاربرد تکنسین آسانسور — نتایج راهنماست و جایگزین طراحی مهندسی نیست.',
     calculate: 'محاسبه',
     // diag
     diagIntro: 'علائم خرابی را انتخاب کنید تا علت‌های محتمل و مراحل بررسی را ببینید.',
@@ -970,7 +977,7 @@ const I18N = {
     backup: 'پشتیبان‌گیری', backupExport: 'دانلود فایل پشتیبان', backupImport: 'بازیابی از فایل',
     backupHint: 'داده‌ها فقط روی همین دستگاه ذخیره می‌شوند — مرتب پشتیبان بگیرید.',
     backupDone: 'فایل پشتیبان آماده شد', restoreDone: 'بازیابی انجام شد', restoreBad: 'فایل پشتیبان نامعتبر است',
-    restoreConfirmTitle: 'بازیابی پشتیبان', restoreConfirmMsg: 'داده‌های فعلی با محتوای فایل جایگزین می‌شود. ادامه می‌دهید؟', yesRestore: 'بله، بازیابی کن',
+    restoreConfirmTitle: 'بازیابی پشتیبان', restoreConfirmMsg: 'داده‌های فعلی با محتوای فایل جایگزین می‌شود. ادامه می‌دهید؟', yesRestore: 'بله، بازیابی شود',
     // auth note
     authLocalNote: 'ورود آزمایشی/محلی — داده‌ها فقط روی همین دستگاه ذخیره می‌شود',
     svcCustomer: 'نام مشتری', svcElevator: 'اطلاعات آسانسور (آدرس، نوع، ظرفیت...)',
@@ -982,9 +989,9 @@ const I18N = {
     vvvf: 'کدهای خطای درایو', vvvfPick: 'برند و مدل درایو را انتخاب کنید', vvvfSearch: 'جستجوی کد خطا...',
     vvvfWarn: 'کدها الگوهای متداول هر خانواده درایو هستند؛ معنی دقیق به مدل و نسخه بستگی دارد — همیشه با منوال همان مدل تطبیق دهید.',
     vvvfMeaning: 'معنی', vvvfCauses: 'علل محتمل', vvvfChecks: 'بررسی‌ها', vvvfMeas: 'اندازه‌گیری مرتبط',
-    issues: 'مسائل باز', newIssue: 'مسئله جدید', issueOpen: 'مشکل باز', issueFollow: 'نیاز به پیگیری', issueRecommend: 'توصیه',
-    issueTitle: 'شرح مسئله', issueDone: 'انجام شد', issueReopen: 'بازگشایی', noIssues: 'مسئله بازی ثبت نشده ✅',
-    confirmDeleteIssueMsg: 'این مسئله حذف می‌شود. مطمئن هستید؟', issueStatus: 'نوع', issueClosed: 'بسته شده',
+    issues: 'موارد باز', newIssue: 'ثبت مورد باز', issueOpen: 'باز', issueFollow: 'نیاز به پیگیری', issueRecommend: 'توصیه',
+    issueTitle: 'شرح مورد', issueDone: 'انجام شد', issueReopen: 'بازگشایی', noIssues: 'موردی باز نمانده ✅',
+    confirmDeleteIssueMsg: 'این مورد حذف می‌شود. مطمئن هستید؟', issueStatus: 'نوع', issueClosed: 'بسته‌شده',
     tools: 'ابزار من', newTool: 'افزودن ابزار', toolName: 'نام ابزار', toolNote: 'توضیح (مدل، وضعیت...)',
     toolSuggest: 'پیشنهادها', noTools: 'ابزاری ثبت نشده', confirmDeleteToolMsg: 'این ابزار حذف می‌شود. مطمئن هستید؟',
     photos: 'تصاویر', addPhoto: 'افزودن عکس', photoCat: 'دسته', noPhotos: 'عکسی ثبت نشده',
@@ -1008,31 +1015,31 @@ const I18N = {
     invQty: 'تعداد', invUnitPrice: 'قیمت واحد (ریال)', invRowTotal: 'جمع ردیف',
     invLabor: 'دستمزد / اجرت', invDiscount: 'تخفیف (ریال)', invSubtotal: 'جمع اقلام',
     invGrand: 'جمع کل', invPaid: 'دریافت‌شده', invBalance: 'مانده',
-    invStatus: 'وضعیت', invUnpaid: 'پرداخت‌نشده', invPartial: 'پرداخت ناقص', invPaidFull: 'تسویه شده',
+    invStatus: 'وضعیت', invUnpaid: 'پرداخت‌نشده', invPartial: 'پرداخت ناقص', invPaidFull: 'تسویه‌شده',
     invAddPay: 'ثبت دریافت', invPayAmount: 'مبلغ دریافتی (ریال)', invPayNote: 'بابت / روش (نقد، کارت...)',
     invPayments: 'دریافت‌ها', invPrint: 'چاپ فاکتور', invNo: 'شماره فاکتور',
     noInvoices: 'فاکتوری ثبت نشده', noInvoicesSub: 'اولین فاکتور سرویس یا نصب را صادر کنید',
     confirmDeleteInvMsg: 'این فاکتور حذف می‌شود. مطمئن هستید؟', searchInvoices: 'جستجوی فاکتور، مشتری...',
     invFromService: 'اتصال به گزارش سرویس (اختیاری)', invTotalsMonth: 'درآمد این ماه', invOpenBalance: 'مانده وصول‌نشده',
-    rial: 'ریال', invNote2: 'توضیحات فاکتور', invConsumeHint: 'با افزودن قطعه از انبار، موجودی هم به‌صورت خودکار کم می‌شود',
+    rial: 'ریال', invNote2: 'توضیحات فاکتور', invConsumeHint: 'افزودن قطعه از انبار، موجودی را هم کم می‌کند',
     // v10 polish
     globalSearch: 'جستجوی سراسری...', searchEverywhere: 'جستجو در همه بخش‌ها',
     srProjects: 'پروژه‌ها', srServices: 'سرویس‌ها', srParts: 'قطعات', srNotes: 'یادداشت‌ها',
     srKb: 'دانش فنی', srDiag: 'عیب‌یابی', srInv: 'فاکتورها', srCalc: 'محاسبات', noResults: 'نتیجه‌ای یافت نشد',
     dupService: 'کپی به سرویس جدید', sortBy: 'مرتب‌سازی', sortNewest: 'جدیدترین', sortName: 'نام', sortProgress: 'پیشرفت',
     statusFilter: 'وضعیت', summaryToday: 'خلاصه امروز', quickNewService: 'ثبت سریع سرویس',
-    exportCsv: 'خروجی CSV', kbRelClick: 'برای مطالعه کلیک کنید',
+    exportCsv: 'خروجی CSV', kbRelClick: 'برای مطالعه بزنید',
     // v11
     contracts: 'قراردادها', newContract: 'قرارداد جدید', editContract: 'ویرایش قرارداد',
-    ctBuilding: 'نام ساختمان / مشتری *', ctAmount: 'مبلغ ماهانه (ریال)', ctStart: 'تاریخ شروع',
-    ctMonths: 'مدت (ماه)', ctPayTable: 'جدول پرداخت ماه‌ها', ctPaid: 'پرداخت شد', ctUnpaid: 'پرداخت نشده',
+    ctBuilding: 'نام ساختمان / مشتری', ctAmount: 'مبلغ ماهانه (ریال)', ctStart: 'تاریخ شروع',
+    ctMonths: 'مدت (ماه)', ctPayTable: 'جدول پرداخت ماه‌ها', ctPaid: 'پرداخت‌شده', ctUnpaid: 'پرداخت‌نشده',
     ctOverdueMonths: 'ماه عقب‌افتاده', ctActive: 'فعال', ctExpired: 'پایان‌یافته',
     ctExpectMonth: 'درآمد قراردادی ماه', ctCollected: 'وصول‌شده', noContracts: 'قراردادی ثبت نشده',
     noContractsSub: 'قرارداد سرویس ماهانه ساختمان‌ها را اینجا مدیریت کنید',
     confirmDeleteCtMsg: 'این قرارداد حذف می‌شود. مطمئن هستید؟', ctLinkProject: 'اتصال به آسانسور (اختیاری)',
     ctNote: 'توضیحات', ctTapMonth: 'روی هر ماه بزنید تا وضعیت پرداخت تغییر کند',
     backupNagTitle: 'یادآوری پشتیبان‌گیری', backupNagMsg: 'روز از آخرین پشتیبان‌گیری گذشته است. داده‌ها فقط روی همین دستگاه هستند!',
-    backupNagBtn: 'همین حالا بکاپ بگیر', backupNagLater: 'بعداً',
+    backupNagBtn: 'همین حالا پشتیبان بگیرید', backupNagLater: 'بعداً',
     faultStats: 'الگوی خرابی این آسانسور', faultStatsSub: 'بر اساس گزارش‌های سرویس ثبت‌شده',
     kbReadMore: 'مطالعه در دانش فنی', today: 'امروز',
     storageFull: '⛔ حافظه دستگاه پر است! ذخیره انجام نشد — چند عکس قدیمی را حذف کنید و فوراً بکاپ بگیرید',
@@ -1044,16 +1051,16 @@ const I18N = {
     monthlyReport: 'گزارش ماهانه', mrPick: 'انتخاب ماه', mrServices: 'سرویس‌های انجام‌شده',
     mrByType: 'به تفکیک نوع', mrTopFaults: 'پرتکرارترین خرابی‌ها', mrIncome: 'دریافتی فاکتورها',
     mrContracts: 'وصولی قراردادها', mrOpenBalance: 'مانده وصول‌نشده', mrPartsUsed: 'قطعات مصرف‌شده',
-    mrNewProjects: 'پروژه جدید', mrOpenIssues: 'مسائل باز مانده', mrPrint: 'چاپ گزارش ماهانه',
+    mrNewProjects: 'پروژه‌های جدید', mrOpenIssues: 'موارد باز', mrPrint: 'چاپ گزارش ماهانه',
     mrEmpty: 'در این ماه فعالیتی ثبت نشده', mrTitle: 'گزارش عملکرد ماهانه',
     share: 'اشتراک', shareTelegram: 'ارسال در تلگرام', shareSystem: 'اشتراک...',
     shareCopied: 'متن کپی شد — در تلگرام Paste کنید',
-    qrCode: 'کد QR آسانسور', qrHint: 'این کد را چاپ کنید و داخل کابین یا موتورخانه بچسبانید؛ با اسکن آن مستقیم به پروفایل همین آسانسور می‌رسید',
+    qrCode: 'کد QR آسانسور', qrHint: 'چاپ کنید و داخل کابین یا موتورخانه بچسبانید؛ اسکن، پروفایل همین آسانسور را باز می‌کند',
     qrPrint: 'چاپ برچسب QR', qrScanHint: 'اسکن = باز شدن پروفایل این آسانسور در Z Lift',
     tgChannel: 'کانال تلگرام Z Lift', tgChannelSub: 'اخبار، آموزش و نکات فنی',
     errUnexpected: 'خطای غیرمنتظره‌ای رخ داد — دوباره تلاش کنید',
     payOverConfirm: '⚠️ مبلغ از مانده بیشتر است! برای تأیید اضافه‌پرداخت دوباره بزنید',
-    chFailToIssue: 'ثبت موارد مردود به‌عنوان مسئله',
+    chFailToIssue: 'ثبت موارد مردود در فهرست موارد باز',
     mirrorFound: 'یک نسخه امن داخلی از داده‌های قبلی شما پیدا شد (حافظه اصلی خالی بود). بازیابی شود؟',
     mirrorRestore: 'بازیابی داده‌ها', adjustLabel: 'اصلاح دستی موجودی',
     restoreOf: 'محتوای فایل',
@@ -1074,11 +1081,11 @@ const I18N = {
   },
   en: {
     dir: 'ltr',
-    tagline: 'Professional Elevator Technician Assistant',
-    taglineShort: 'Elevator Tech Assistant',
+    tagline: 'Professional elevator technician assistant',
+    taglineShort: 'Elevator tech assistant',
     login: 'Login', register: 'Register', loginBtn: 'Sign in', registerBtn: 'Create account',
     username: 'Username', password: 'Password', fullName: 'Full name',
-    demoHint: 'Demo account:', roleTech: 'Elevator Technician', logout: 'Logout',
+    demoHint: 'Demo account:', roleTech: 'Elevator technician', logout: 'Logout',
     errInvalidCred: 'Invalid username or password', errUserTaken: 'Username already taken',
     errWeakPass: 'Password must be at least 6 characters', errBadUser: 'Username must be at least 3 characters', errGeneric: 'Something went wrong; try again',
     errNotFound: 'Not found — it may already have been deleted', errSessionExpired: 'Your session expired; please sign in again',
@@ -1086,26 +1093,28 @@ const I18N = {
     phFullName: 'e.g. Reza Mohammadi', phCustomer: 'e.g. Mr. Ahmadi — Negin building', phElevator: 'e.g. traction, 6 persons, Saadatabad',
     phMeasure: 'e.g. V=382/379/381 · I=13.8A · P=34bar',
     backupLast: 'Last backup', backupNever: 'No backup taken yet', daysAgo: 'days ago',
+    secJob: 'Job details', secFindings: 'Reported problem & findings', secWork: 'Work done & outcome',
+    secProject: 'Project details', secSpecs: 'Elevator specification', secEquip: 'Equipment', secStatus: 'Status & service',
     errSaveFailed: 'Could not save; please try again', errOffline: 'This action needs an internet connection',
-    navMain: 'Main', navTools: 'Technical Tools', navKnowledge: 'Knowledge',
-    dashboard: 'Dashboard', projects: 'Installation Projects', services: 'Services',
+    navMain: 'Main', navTools: 'Technical tools', navKnowledge: 'Knowledge',
+    dashboard: 'Dashboard', projects: 'Installation projects', services: 'Services',
     checklists: 'Checklists', calculations: 'Calculations', diagnostics: 'Diagnostics',
-    knowledge: 'Knowledge Base', notes: 'Notes',
-    standards: 'EN 81-20 Standard', stdSearch: 'Search requirement, value or clause…',
+    knowledge: 'Knowledge base', notes: 'Notes',
+    standards: 'EN 81-20 standard', stdSearch: 'Search requirement, value or clause…',
     stdBanner: 'Quick reference of key EN 81-20:2020 requirements (mirrored by ISIRI 6303-20). For quick on-site decisions; the approved standard text prevails in official inspection.',
     stdClause: 'Clause', stdExpand: 'Full details', stdNoMatch: 'No requirement found for this term',
     stdDisclaimer: 'Practical summary — not a substitute for the full standard text.',
-    latestProject: 'Latest Project', currentStatus: 'Current status', progress: 'Project progress',
+    latestProject: 'Latest project', currentStatus: 'Current status', progress: 'Project progress',
     viewDetails: 'View details', newService: 'Log service', quickAccess: 'Quick access',
     recentServices: 'Recent services', viewAll: 'View all',
     stTotalProjects: 'Total projects', stActive: 'Active projects', stServices: 'Total services', stMonth: 'Services this month',
     stFollowup: 'Need follow-up', stOut: 'Out of service',
-    tProjects: 'Installation Projects', tServices: 'Services', tChecklists: 'Install & Service Checklists',
-    tCalc: 'Engineering Calcs', tDiag: 'Smart Diagnostics', tKb: 'Components & Knowledge',
+    tProjects: 'Installation projects', tServices: 'Services', tChecklists: 'Install & service checklists',
+    tCalc: 'Engineering calculators', tDiag: 'Smart diagnostics', tKb: 'Components & knowledge',
     tProjectsSub: 'Create & track', tServicesSub: 'Log & report', tChecklistsSub: 'Traction & hydraulic',
     tCalcSub: 'Engineering tools', tDiagSub: 'Troubleshooting', tKbSub: 'Technical reference',
     noProjects: 'No projects yet', noProjectsSub: 'Create your first elevator project',
-    newProject: 'New Project', editProject: 'Edit Project', deleteProject: 'Delete Project',
+    newProject: 'New project', editProject: 'Edit project', deleteProject: 'Delete project',
     searchProjects: 'Search project, customer, location...',
     all: 'All', traction: 'Traction', hydraulic: 'Hydraulic', bothTypes: 'Both types',
     prName: 'Project name', prCustomer: 'Customer', prPhone: 'Phone', prLocation: 'Address / location',
@@ -1113,7 +1122,7 @@ const I18N = {
     prStops: 'Stops', prSpeed: 'Speed (m/s)', prController: 'Controller', prMotor: 'Motor / Power unit',
     prStatus: 'Project status', prProgress: 'Progress %', prNotes: 'Notes',
     save: 'Save', cancel: 'Cancel', create: 'Create', edit: 'Edit', delete: 'Delete', close: 'Close',
-    confirmDeleteTitle: 'Delete project', confirmDeleteMsg: 'This project with all its services and checklists will be deleted. Are you sure?',
+    confirmDeleteTitle: 'Confirm deletion', confirmDeleteMsg: 'This project and its checklists will be deleted. Service reports are kept as standalone records.',
     confirmDeleteSvcMsg: 'This service report will be deleted. Are you sure?',
     confirmDeleteNoteMsg: 'This note will be deleted. Are you sure?',
     yesDelete: 'Yes, delete',
@@ -1125,7 +1134,7 @@ const I18N = {
     serviceHistory: 'Service & repair history', projectChecklists: 'Project checklists',
     noServices: 'No services logged', noServicesSub: 'Log the first service report',
     notFound: 'Nothing found', notFoundSub: 'Change your search or filter',
-    newServiceRec: 'New Service Report', editService: 'Edit Report',
+    newServiceRec: 'Log service', editService: 'Edit service report',
     svcProject: 'Project / unit', svcDate: 'Date', svcTechnician: 'Technician', svcType: 'Service type',
     svcProblem: 'Problem / request', svcDiagnosis: 'Diagnosis', svcWork: 'Work performed',
     svcParts: 'Parts replaced', svcFinal: 'Final status',
@@ -1134,33 +1143,33 @@ const I18N = {
     searchServices: 'Search reports...',
     chSelectProject: 'Attach to project (optional — saves progress)', chNoProject: 'No project (view only)',
     chProgress: 'Checklist progress', chReset: 'Reset', itemsDone: 'items done',
-    calcIntro: 'Practical calculators for elevator technicians — results are guidance only, not a substitute for engineering design.',
+    calcIntro: 'Everyday calculators for elevator technicians — guidance only, not engineering design.',
     calculate: 'Calculate',
     diagIntro: 'Pick a symptom to see probable causes and checking steps.',
     diagSafety: 'Safety first! Before working on the controller or machine room, switch off the main power and tag the panel. Never work on a moving car.',
     probableCauses: 'Probable causes', checkSteps: 'Check & fix steps',
     searchDiag: 'Search symptom...',
     searchKb: 'Search knowledge, components, standards...',
-    newNote: 'New Note', editNote: 'Edit Note', noteTitle: 'Title', noteContent: 'Content',
+    newNote: 'New note', editNote: 'Edit note', noteTitle: 'Title', noteContent: 'Content',
     noteTags: 'Tags (comma separated)', noNotes: 'No notes yet', noNotesSub: 'Save important technical tips here',
     searchNotes: 'Search notes...',
     loadError: 'Failed to load data', retry: 'Retry',
     requiredName: 'Project name is required', requiredTitle: 'Title is required', requiredProject: 'Project is required',
     standardRef: 'Reference: EN 81-20 / Iranian National Standard 6303-20',
-    parts: 'Parts Inventory', newPart: 'New Part', editPart: 'Edit Part',
+    parts: 'Parts inventory', newPart: 'New part', editPart: 'Edit part',
     partName: 'Part name', partCategory: 'Category', partUnit: 'Unit', partQty: 'Quantity',
     partMin: 'Min quantity', partPrice: 'Unit price (IRR)', partLocation: 'Storage location', partNote: 'Notes',
     lowStock: 'Low stock', inStock: 'In stock', searchParts: 'Search parts...',
     confirmDeletePartMsg: 'This part will be removed from inventory. Are you sure?',
     noParts: 'No parts yet', noPartsSub: 'Manage your spare and consumable parts here',
     lowStockOnly: 'Low stock only', stockAlert: 'Stock alert', stockAlertSub: 'part(s) at or below minimum',
-    tParts: 'Parts Inventory', tPartsSub: 'Stock & shortages',
+    tParts: 'Parts inventory', tPartsSub: 'Stock & shortages',
     svcDue: 'Service due', overdue: 'Overdue', dueSoon: 'Due soon',
     daysOverdue: 'days overdue', daysLeft: 'days left', lastService: 'Last service', nextService: 'Next service',
     serviceInterval: 'Service interval (days — 0 means no contract)', noDue: 'No overdue services ✅',
     logService: 'Log service',
     monthlyChart: 'Services in last 6 months', statusChart: 'Project status',
-    printReport: 'Print report', reportTitle: 'Elevator Service & Repair Report',
+    printReport: 'Print report', reportTitle: 'Elevator service & repair report',
     signTech: 'Technician signature', signCustomer: 'Customer signature', reportNo: 'Report No.',
     company: 'Company',
     diagStart: 'Start diagnosis', diagRestart: 'Restart', diagBack: 'Previous step',
@@ -1186,14 +1195,14 @@ const I18N = {
     vvvf: 'Drive fault codes', vvvfPick: 'Pick drive brand & model', vvvfSearch: 'Search fault code...',
     vvvfWarn: 'Codes are common family patterns; exact meaning depends on model & firmware — always match the manual.',
     vvvfMeaning: 'Meaning', vvvfCauses: 'Possible causes', vvvfChecks: 'Checks', vvvfMeas: 'Related measurement',
-    issues: 'Open Issues', newIssue: 'New issue', issueOpen: 'Open problem', issueFollow: 'Follow-up', issueRecommend: 'Recommendation',
+    issues: 'Open issues', newIssue: 'New issue', issueOpen: 'Open', issueFollow: 'Follow-up', issueRecommend: 'Recommendation',
     issueTitle: 'Issue description', issueDone: 'Done', issueReopen: 'Reopen', noIssues: 'No open issues ✅',
-    confirmDeleteIssueMsg: 'This issue will be deleted. Sure?', issueStatus: 'Type', issueClosed: 'Closed',
-    tools: 'My Tools', newTool: 'Add tool', toolName: 'Tool name', toolNote: 'Note (model, condition...)',
-    toolSuggest: 'Suggestions', noTools: 'No tools yet', confirmDeleteToolMsg: 'This tool will be deleted. Sure?',
+    confirmDeleteIssueMsg: 'This issue will be deleted. Are you sure?', issueStatus: 'Type', issueClosed: 'Closed',
+    tools: 'My tools', newTool: 'Add tool', toolName: 'Tool name', toolNote: 'Note (model, condition...)',
+    toolSuggest: 'Suggestions', noTools: 'No tools yet', confirmDeleteToolMsg: 'This tool will be deleted. Are you sure?',
     photos: 'Photos', addPhoto: 'Add photo', photoCat: 'Category', noPhotos: 'No photos yet',
     photoCats: 'Machine room|Controller|Shaft|Car|Doors|Faulty part|Replaced part|Final state|Documents',
-    confirmDeletePhotoMsg: 'This photo will be deleted. Sure?', photoTooLarge: 'Photo too large (max ~1.5 MB)',
+    confirmDeletePhotoMsg: 'This photo will be deleted. Are you sure?', photoTooLarge: 'Photo too large (max ~1.5 MB)',
     measures: 'Measurements', measAdd: 'Log measurement', measValue: 'Value', measCheck: 'Assessment',
     measBalanced: 'Voltage balance appears acceptable ({p}% deviation)', measUnbalanced: 'Voltage imbalance ({p}%) — check connections and supply',
     measNote: 'Acceptable limits depend on manufacturer, model and system design — match nameplate and manual.',
@@ -1206,7 +1215,7 @@ const I18N = {
     profile: 'Elevator profile', profTabs: 'Specs|Services|Diagnostics|Calculations|Photos|Issues',
     prRoping: 'Roping', prEncoder: 'Encoder', prBrake: 'Brake',
     tipTitle: 'Technician tip', linkedFrom: 'From diagnostics',
-    invoices: 'Invoices', newInvoice: 'New Invoice', editInvoice: 'Edit Invoice', invoice: 'Invoice',
+    invoices: 'Invoices', newInvoice: 'New invoice', editInvoice: 'Edit invoice', invoice: 'Invoice',
     invCustomer: 'Customer', invDate: 'Invoice date', invItems: 'Invoice items',
     invAddItem: 'Add row', invAddPart: 'Add part from inventory', invDesc: 'Description',
     invQty: 'Qty', invUnitPrice: 'Unit price (IRR)', invRowTotal: 'Row total',
@@ -1216,45 +1225,45 @@ const I18N = {
     invAddPay: 'Add payment', invPayAmount: 'Amount received (IRR)', invPayNote: 'For / method (cash, card...)',
     invPayments: 'Payments', invPrint: 'Print invoice', invNo: 'Invoice No.',
     noInvoices: 'No invoices yet', noInvoicesSub: 'Issue your first service or installation invoice',
-    confirmDeleteInvMsg: 'This invoice will be deleted. Sure?', searchInvoices: 'Search invoice, customer...',
+    confirmDeleteInvMsg: 'This invoice will be deleted. Are you sure?', searchInvoices: 'Search invoice, customer...',
     invFromService: 'Link to service report (optional)', invTotalsMonth: 'Income this month', invOpenBalance: 'Uncollected balance',
-    rial: 'IRR', invNote2: 'Invoice notes', invConsumeHint: 'Adding a part from inventory also reduces stock automatically',
+    rial: 'IRR', invNote2: 'Invoice notes', invConsumeHint: 'Adding a part from inventory also updates stock',
     globalSearch: 'Global search...', searchEverywhere: 'Search everywhere',
     srProjects: 'Projects', srServices: 'Services', srParts: 'Parts', srNotes: 'Notes',
     srKb: 'Knowledge', srDiag: 'Diagnostics', srInv: 'Invoices', srCalc: 'Calculations', noResults: 'No results',
     dupService: 'Duplicate as new', sortBy: 'Sort', sortNewest: 'Newest', sortName: 'Name', sortProgress: 'Progress',
     statusFilter: 'Status', summaryToday: 'Today summary', quickNewService: 'Quick service log',
-    exportCsv: 'Export CSV', kbRelClick: 'Click to read',
-    contracts: 'Contracts', newContract: 'New Contract', editContract: 'Edit Contract',
-    ctBuilding: 'Building / customer *', ctAmount: 'Monthly amount (IRR)', ctStart: 'Start date',
+    exportCsv: 'Export CSV', kbRelClick: 'Tap to read',
+    contracts: 'Contracts', newContract: 'New contract', editContract: 'Edit contract',
+    ctBuilding: 'Building / customer', ctAmount: 'Monthly amount (IRR)', ctStart: 'Start date',
     ctMonths: 'Duration (months)', ctPayTable: 'Monthly payment table', ctPaid: 'Paid', ctUnpaid: 'Unpaid',
     ctOverdueMonths: 'overdue months', ctActive: 'Active', ctExpired: 'Expired',
     ctExpectMonth: 'Contract income this month', ctCollected: 'Collected', noContracts: 'No contracts yet',
     noContractsSub: 'Manage monthly maintenance contracts here',
-    confirmDeleteCtMsg: 'This contract will be deleted. Sure?', ctLinkProject: 'Link to elevator (optional)',
+    confirmDeleteCtMsg: 'This contract will be deleted. Are you sure?', ctLinkProject: 'Link to elevator (optional)',
     ctNote: 'Notes', ctTapMonth: 'Tap a month to toggle its payment status',
     backupNagTitle: 'Backup reminder', backupNagMsg: 'days since last backup. Data lives only on this device!',
     backupNagBtn: 'Back up now', backupNagLater: 'Later',
     faultStats: 'Fault pattern of this elevator', faultStatsSub: 'Based on logged service reports',
     kbReadMore: 'Read in knowledge base', today: 'Today',
     storageFull: '⛔ Device storage full! Save failed — delete old photos and back up now',
-    settings: 'Company Settings', settingsSub: 'Shown on printed reports and invoices',
+    settings: 'Company settings', settingsSub: 'Shown on printed reports and invoices',
     setCompany: 'Company name', setPhone: 'Phone', setAddress: 'Address',
     storageUsage: 'Data storage used', storagePhotos: 'photos', srContracts: 'Contracts',
     profInvoices: 'Invoices for this elevator', profContract: 'Service contract of this building',
-    monthlyReport: 'Monthly Report', mrPick: 'Pick month', mrServices: 'Services performed',
+    monthlyReport: 'Monthly report', mrPick: 'Pick month', mrServices: 'Services performed',
     mrByType: 'By type', mrTopFaults: 'Most frequent faults', mrIncome: 'Invoice income',
     mrContracts: 'Contract collections', mrOpenBalance: 'Uncollected balance', mrPartsUsed: 'Parts consumed',
-    mrNewProjects: 'New projects', mrOpenIssues: 'Open issues left', mrPrint: 'Print monthly report',
-    mrEmpty: 'No activity logged this month', mrTitle: 'Monthly Performance Report',
+    mrNewProjects: 'New projects', mrOpenIssues: 'Open issues', mrPrint: 'Print monthly report',
+    mrEmpty: 'No activity logged this month', mrTitle: 'Monthly performance report',
     share: 'Share', shareTelegram: 'Send via Telegram', shareSystem: 'Share...',
     shareCopied: 'Text copied — paste it in Telegram',
     qrCode: 'Elevator QR code', qrHint: 'Print this and stick it in the car or machine room; scanning opens this elevator profile directly',
     qrPrint: 'Print QR label', qrScanHint: 'Scan = open this elevator profile in Z Lift',
-    tgChannel: 'Z Lift Telegram Channel', tgChannelSub: 'News, training & technical tips',
+    tgChannel: 'Z Lift Telegram channel', tgChannelSub: 'News, training & technical tips',
     errUnexpected: 'An unexpected error occurred — please try again',
     payOverConfirm: '⚠️ Amount exceeds balance! Tap again to confirm overpayment',
-    chFailToIssue: 'Log failed items as an issue',
+    chFailToIssue: 'Add failed items to open issues',
     mirrorFound: 'An internal safety copy of your previous data was found (main storage was empty). Restore it?',
     mirrorRestore: 'Restore data', adjustLabel: 'Manual stock adjustment',
     restoreOf: 'File contents',
@@ -4452,32 +4461,39 @@ function openProjectForm(id) {
   openModal(`
     <div class="modal-head"><h3>${p ? '✏️ ' + t('editProject') : '🏗️ ' + t('newProject')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body"><form id="projForm" class="form-grid">
+      <div class="form-sep span2">${t('secProject')}</div>
       <div class="field span2"><label>${t('prName')} *</label><input id="f_name" value="${esc(v.name)}" required /></div>
       <div class="field"><label>${t('prCustomer')}</label><input id="f_customer" value="${esc(v.customer)}" /></div>
       <div class="field"><label>${t('prPhone')}</label><input id="f_phone" value="${esc(v.phone)}" /></div>
       <div class="field span2"><label>${t('prLocation')}</label><input id="f_location" value="${esc(v.location)}" /></div>
+
+      <div class="form-sep span2">${t('secSpecs')}</div>
       <div class="field"><label>${t('prType')}</label><select id="f_type">
         <option value="traction" ${v.elevatorType === 'traction' ? 'selected' : ''}>⚙️ ${t('traction')}</option>
         <option value="hydraulic" ${v.elevatorType === 'hydraulic' ? 'selected' : ''}>🛢️ ${t('hydraulic')}</option>
       </select></div>
-      <div class="field"><label>${t('prStatus')}</label><select id="f_status">${statusOpts}</select></div>
+      <div class="field"><label>${t('prSpeed')}</label><input id="f_speed" type="number" step="0.1" value="${v.speed}" /></div>
       <div class="field"><label>${t('prCapacity')}</label><input id="f_cap" type="number" value="${v.capacityKg}" /></div>
       <div class="field"><label>${t('prPersons')}</label><input id="f_persons" type="number" value="${v.persons}" /></div>
       <div class="field"><label>${t('prFloors')}</label><input id="f_floors" type="number" value="${v.floors}" /></div>
       <div class="field"><label>${t('prStops')}</label><input id="f_stops" type="number" value="${v.stops}" /></div>
-      <div class="field"><label>${t('prSpeed')}</label><input id="f_speed" type="number" step="0.1" value="${v.speed}" /></div>
-      <div class="field"><label>${t('prProgress')}</label><input id="f_progress" type="number" min="0" max="100" value="${v.progress}" /></div>
-      <div class="field span2"><label>${t('serviceInterval')}</label><input id="f_interval" type="number" min="0" value="${v.serviceIntervalDays || 0}" /></div>
-      <div class="field span2"><label>${t('prController')}</label><input id="f_controller" value="${esc(v.controller)}" /></div>
-      <div class="field span2"><label>${t('prMotor')}</label><input id="f_motor" value="${esc(v.motor)}" /></div>
-      <div class="field"><label>${t('prDrive')}</label><input id="f_drive" value="${esc(v.drive || '')}" /></div>
-      <div class="field"><label>${t('prDoorOp')}</label><input id="f_doorop" value="${esc(v.doorOperator || '')}" /></div>
       <div class="field"><label>${t('prRoping')}</label><select id="f_roping">
         <option value="1:1" ${v.roping !== '2:1' ? 'selected' : ''}>1:1</option>
         <option value="2:1" ${v.roping === '2:1' ? 'selected' : ''}>2:1</option>
       </select></div>
+
+      <div class="form-sep span2">${t('secEquip')}</div>
+      <div class="field span2"><label>${t('prController')}</label><input id="f_controller" value="${esc(v.controller)}" /></div>
+      <div class="field span2"><label>${t('prMotor')}</label><input id="f_motor" value="${esc(v.motor)}" /></div>
+      <div class="field"><label>${t('prDrive')}</label><input id="f_drive" value="${esc(v.drive || '')}" /></div>
+      <div class="field"><label>${t('prDoorOp')}</label><input id="f_doorop" value="${esc(v.doorOperator || '')}" /></div>
       <div class="field"><label>${t('prEncoder')}</label><input id="f_encoder" value="${esc(v.encoder || '')}" /></div>
-      <div class="field span2"><label>${t('prBrake')}</label><input id="f_brake" value="${esc(v.brake || '')}" /></div>
+      <div class="field"><label>${t('prBrake')}</label><input id="f_brake" value="${esc(v.brake || '')}" /></div>
+
+      <div class="form-sep span2">${t('secStatus')}</div>
+      <div class="field"><label>${t('prStatus')}</label><select id="f_status">${statusOpts}</select></div>
+      <div class="field"><label>${t('prProgress')}</label><input id="f_progress" type="number" min="0" max="100" value="${v.progress}" /></div>
+      <div class="field span2"><label>${t('serviceInterval')}</label><input id="f_interval" type="number" min="0" value="${v.serviceIntervalDays || 0}" /></div>
       <div class="field span2"><label>${t('prNotes')}</label><textarea id="f_notes">${esc(v.notes)}</textarea></div>
     </form></div>
     <div class="modal-foot">
@@ -4831,24 +4847,30 @@ function openServiceForm(id, presetProject) {
   openModal(`
     <div class="modal-head"><h3>${s ? '✏️ ' + t('editService') : '🔧 ' + t('newServiceRec')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body"><form class="form-grid">
+      <!-- 1) where & who: picking a project fills in the identity, so it comes first -->
+      <div class="form-sep span2">${t('secJob')}</div>
+      <div class="field span2"><label>${t('svcLinkProject')}</label><select id="s_project">${projOpts}</select></div>
       <div class="field span2"><label>${t('svcCustomer')} ${v.projectId ? '' : '*'}</label><input id="s_customer" value="${esc(v.customer || '')}" placeholder="${esc(t('phCustomer'))}" /></div>
       <div class="field span2"><label>${t('svcElevator')}</label><input id="s_elevator" value="${esc(v.elevatorInfo || '')}" placeholder="${esc(t('phElevator'))}" /></div>
-      <div class="field span2"><label>${t('svcLinkProject')}</label><select id="s_project">${projOpts}</select></div>
       <div class="field"><label>${t('svcDate')}</label>${jdateInput('s_date', v.date)}</div>
-      <div class="field"><label>${t('svcTechnician')}</label><input id="s_tech" value="${esc(v.technician)}" /></div>
       <div class="field"><label>${t('svcType')}</label><select id="s_type">
         ${Object.keys(SVC_META).map(k => `<option value="${k}" ${v.serviceType === k ? 'selected' : ''}>${t(SVC_META[k].key)}</option>`).join('')}
       </select></div>
-      <div class="field"><label>${t('svcFinal')}</label><select id="s_final">
-        ${Object.keys(FINAL_META).map(k => `<option value="${k}" ${v.finalStatus === k ? 'selected' : ''}>${t(FINAL_META[k].key)}</option>`).join('')}
-      </select></div>
+      <div class="field span2"><label>${t('svcTechnician')}</label><input id="s_tech" value="${esc(v.technician)}" /></div>
+      <!-- 2) what was reported and what was found -->
+      <div class="form-sep span2">${t('secFindings')}</div>
       <div class="field span2"><label>${t('svcComplaint')}</label><textarea id="s_complaint" style="min-height:52px">${esc(v.complaint || '')}</textarea></div>
       <div class="field span2"><label>${t('svcProblem')}</label><textarea id="s_problem" style="min-height:52px">${esc(v.problem)}</textarea></div>
       <div class="field span2"><label>${t('svcDiagnosis')}</label><textarea id="s_diag" style="min-height:52px">${esc(v.diagnosis)}</textarea></div>
       <div class="field span2"><label>${t('svcMeasurements')}</label><textarea id="s_meas" style="min-height:52px" placeholder="${esc(t('phMeasure'))}">${esc(v.measurements || '')}</textarea></div>
+      <!-- 3) what was done and how it ended -->
+      <div class="form-sep span2">${t('secWork')}</div>
       <div class="field span2"><label>${t('svcWork')}</label><textarea id="s_work" style="min-height:64px">${esc(v.workDone)}</textarea></div>
       <div class="field span2"><label>${t('svcParts')}</label><input id="s_parts" value="${esc(v.partsReplaced)}" /></div>
       <div class="field span2"><label>${t('svcRecommend')}</label><textarea id="s_recommend" style="min-height:52px">${esc(v.recommendations || '')}</textarea></div>
+      <div class="field"><label>${t('svcFinal')}</label><select id="s_final">
+        ${Object.keys(FINAL_META).map(k => `<option value="${k}" ${v.finalStatus === k ? 'selected' : ''}>${t(FINAL_META[k].key)}</option>`).join('')}
+      </select></div>
       <div class="field"><label>${t('svcFollowUp')}</label>${jdateInput('s_followup', v.followUpDate || 0, true)}</div>
     </form></div>
     <div class="modal-foot">
@@ -7328,7 +7350,7 @@ function openContractForm(id) {
     <div class="modal-head"><h3>${ct ? '✏️ ' + t('editContract') : '📄 ' + t('newContract')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body">
       <div class="form-grid">
-        <div class="field span2"><label>${t('ctBuilding')}</label><input id="ct_building" value="${esc(v.building)}" /></div>
+        <div class="field span2"><label>${t('ctBuilding')} *</label><input id="ct_building" value="${esc(v.building)}" /></div>
         <div class="field"><label>${t('ctAmount')}</label><input id="ct_amount" type="number" min="0" value="${v.amount || 0}" /></div>
         <div class="field"><label>${t('ctMonths')}</label><input id="ct_months" type="number" min="1" max="36" value="${v.months || 12}" /></div>
         <div class="field"><label>${t('ctStart')}</label>${jdateInput('ct_start', v.startTs)}</div>

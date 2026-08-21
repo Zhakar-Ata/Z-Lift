@@ -589,6 +589,47 @@ async function T(name, cond, info) {
       return dark === '#0b1220' && light === '#2563eb' && document.documentElement.getAttribute('data-theme') === 'light';
     })()`));
 
+    /* ================= v22 wording & form flow ================= */
+    await T('delete confirmation title is generic (not "delete project")', () => ev(`(() => {
+      return !I18N.fa.confirmDeleteTitle.includes('پروژه') && !/project/i.test(I18N.en.confirmDeleteTitle);
+    })()`));
+    await T('project delete message matches what really happens', () => ev(`(() => {
+      return I18N.fa.confirmDeleteMsg.includes('چک‌لیست') && I18N.fa.confirmDeleteMsg.includes('حذف نمی‌شوند') &&
+             /kept/i.test(I18N.en.confirmDeleteMsg);
+    })()`));
+    await T('no informal imperative verbs left in the Persian UI', () => ev(`(() => {
+      const bad = /(?:^|\\s)(?:بگیر|حذف کن|بازیابی کن|بزن|برو|ببین)(?:$|[\\s،.!؟])/;
+      return !Object.keys(I18N.fa).some(k => typeof I18N.fa[k] === 'string' && bad.test(I18N.fa[k]));
+    })()`));
+    await T('English labels use sentence case', () => ev(`(() => {
+      const keys = ['projects','parts','tools','issues','knowledge','standards','monthlyReport','settings',
+                    'newProject','editProject','newPart','editPart','newNote','editNote','newInvoice',
+                    'editInvoice','newContract','editContract','tCalc','tDiag','tKb','tChecklists','latestProject'];
+      const bad = keys.filter(k => {
+        const v = I18N.en[k]; if (!v) return true;
+        return v.split(' ').slice(1).some(w => /^[A-Z][a-z]+$/.test(w.replace(/[()&—,.-]/g, '')));
+      });
+      return bad.length === 0;
+    })()`));
+    await ev(`navigate('/services')`); await waitLoaded();
+    await ev(`openServiceForm()`);
+    await T('service form follows the real job flow', () => ev(`(() => {
+      const ids = [...document.querySelectorAll('#modalRoot .field input, #modalRoot .field select, #modalRoot .field textarea')].map(e => e.id);
+      const want = ['s_project','s_customer','s_elevator','s_date','s_type','s_tech','s_complaint','s_problem',
+                    's_diag','s_meas','s_work','s_parts','s_recommend','s_final','s_followup'];
+      return want.join(',') === ids.join(',') && document.querySelectorAll('#modalRoot .form-sep').length === 3;
+    })()`), await ev(`[...document.querySelectorAll('#modalRoot .field input, #modalRoot .field select, #modalRoot .field textarea')].map(e => e.id).join(',')`));
+    await ev(`closeModal()`);
+    await ev(`navigate('/projects')`); await waitLoaded();
+    await ev(`openProjectForm()`);
+    await T('project form is grouped: details, specs, equipment, status', () => ev(`(() => {
+      const seps = [...document.querySelectorAll('#projForm .form-sep')].map(e => e.textContent);
+      const ids = [...document.querySelectorAll('#projForm .field input, #projForm .field select, #projForm .field textarea')].map(e => e.id);
+      return seps.length === 4 && ids[0] === 'f_name' && ids.indexOf('f_type') < ids.indexOf('f_controller') &&
+             ids.indexOf('f_controller') < ids.indexOf('f_status') && ids[ids.length - 1] === 'f_notes';
+    })()`));
+    await ev(`closeModal()`);
+
     /* ---------- legacy regressions ---------- */
     await ev(`navigate('/checklists/traction-install')`); await waitLoaded();
     await T('traction install checklist still renders (30 items)', () => ev(`document.querySelectorAll('#content .check-item[data-item]').length === 30`));
