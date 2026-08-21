@@ -124,7 +124,7 @@ async function T(name, cond, info) {
     await ev(`navigate('/projects/${pidH}')`); await waitLoaded();
     await T('audit checklist available on hydraulic project (type both)', () => ev(`document.querySelector('#content').innerHTML.includes('en81-safety-audit')`));
 
-    await ev(`navigate('/checklists/en81-safety-audit?project=${pidT}')`); await waitLoaded();
+    await ev(`sessionStorage.setItem('zlift_safety_ack_en81-safety-audit','1'); navigate('/checklists/en81-safety-audit?project=${pidT}')`); await waitLoaded();
     await T('audit checklist detail renders 32 items', () => ev(`document.querySelectorAll('#content .check-item[data-item]').length === 32`));
     await ev(`document.querySelector('#content .check-item[data-item="e1"]').onclick();`);
     await T('item state cycles to pass', () => ev(`document.querySelector('#content .check-item[data-item="e1"]').className.includes('ci-pass')`));
@@ -417,6 +417,31 @@ async function T(name, cond, info) {
     await T('a real overpayment still needs a confirmation tap', () => ev(`invDraft.payments.length === 1`));
     await ev(`closeModal(); invDraft = null;`);
 
+    /* -- service reports can deduct stock parts and free-text parts coexist -- */
+    const svcPartQa = await ev(`api('/parts', { method: 'POST', body: { name: 'قطعه تست سرویس', category: 'QA', unit: 'عدد', qty: 7, minQty: 1, price: 9000 } })`);
+    await ev(`state.parts = null; loadAll(true);`);
+    await ev(`openServiceForm()`);
+    await ev(`(function(){
+      svcPartsDraft = [
+        { partId: ${JSON.stringify(svcPartQa.part.id)}, name: 'قطعه تست سرویس', qty: 2 },
+        { name: 'پیچ تنظیم (مصرفی)', qty: 4 }
+      ];
+      document.querySelector('#s_customer').value = 'مشتری سرویس QA';
+      document.querySelector('#s_tech').value = 'تکنسین QA';
+      document.querySelector('#svcSave').onclick();
+    })()`);
+    await waitUntil(() => ev(`state.services.some(s => s.customer === 'مشتری سرویس QA')`), 8000, 'service saved');
+    const svcQa = await ev(`state.services.find(s => s.customer === 'مشتری سرویس QA')`);
+    await T('service saved with structured parts', !!(svcQa && svcQa.partsUsed && svcQa.partsUsed.length === 2));
+    await T('service stock part deducted inventory (7 → 5)', () => ev(`state.parts.find(p => p.id === ${JSON.stringify(svcPartQa.part.id)}).qty === 5`), await ev(`String(state.parts.find(p => p.id === ${JSON.stringify(svcPartQa.part.id)}).qty)`));
+    await T('service parts text appears in print/share output', () => ev(`buildServiceText(state.services.find(s => s.customer === 'مشتری سرویس QA')).indexOf('قطعه تست سرویس') >= 0`));
+    // editing: reduce qty 2 → 1 returns one unit, increasing consumes more
+    await ev(`openServiceForm(${JSON.stringify(svcQa.id)})`);
+    await T('service form loads existing structured parts', () => ev(`svcPartsDraft.length === 2 && svcPartsDraft[0].qty === 2`));
+    await ev(`(function(){ svcPartsDraft[0].qty = 1; document.querySelector('#svcSave').onclick(); })()`);
+    await wait(300);
+    await T('reducing part qty on edit returns stock (5 → 6)', () => ev(`state.parts.find(p => p.id === ${JSON.stringify(svcPartQa.part.id)}).qty === 6`), await ev(`String(state.parts.find(p => p.id === ${JSON.stringify(svcPartQa.part.id)}).qty)`));
+
     /* -- deleting a project keeps its service history (services are independent) -- */
     const delProj = await ev(`api('/projects', { method: 'POST', body: { name: 'پروژه حذفی QA' } })`);
     await ev(`state.projects = null; loadAll(true);`);
@@ -614,11 +639,14 @@ async function T(name, cond, info) {
     await ev(`navigate('/services')`); await waitLoaded();
     await ev(`openServiceForm()`);
     await T('service form follows the real job flow', () => ev(`(() => {
-      const ids = [...document.querySelectorAll('#modalRoot .field input, #modalRoot .field select, #modalRoot .field textarea')].map(e => e.id);
+      // the structured-parts field is its own panel (picker + custom row) and
+      // is excluded from the ordered list of core job fields
+      const ids = [...document.querySelectorAll('#modalRoot .form-grid > .field:not([data-svcparts]) input, #modalRoot .form-grid > .field:not([data-svcparts]) select, #modalRoot .form-grid > .field:not([data-svcparts]) textarea')].map(e => e.id);
       const want = ['s_project','s_customer','s_elevator','s_date','s_type','s_tech','s_complaint','s_problem',
-                    's_diag','s_meas','s_work','s_parts','s_recommend','s_final','s_followup'];
-      return want.join(',') === ids.join(',') && document.querySelectorAll('#modalRoot .form-sep').length === 3;
-    })()`), await ev(`[...document.querySelectorAll('#modalRoot .field input, #modalRoot .field select, #modalRoot .field textarea')].map(e => e.id).join(',')`));
+                    's_diag','s_meas','s_work','s_recommend','s_final','s_followup'];
+      return want.join(',') === ids.join(',') && document.querySelectorAll('#modalRoot .form-sep').length === 3
+        && !!document.querySelector('#svcPartsBox') && !!document.querySelector('#svcPickPanel') && !!document.querySelector('#svcCustomRow');
+    })()`), await ev(`[...document.querySelectorAll('#modalRoot .form-grid > .field:not([data-svcparts]) input, #modalRoot .form-grid > .field:not([data-svcparts]) select, #modalRoot .form-grid > .field:not([data-svcparts]) textarea')].map(e => e.id).join(',')`));
     await ev(`closeModal()`);
     await ev(`navigate('/projects')`); await waitLoaded();
     await ev(`openProjectForm()`);
@@ -664,6 +692,94 @@ async function T(name, cond, info) {
     /* -- dashboard shows financial KPIs -- */
     await ev(`navigate('/dashboard')`); await waitLoaded();
     await T('dashboard shows financial KPIs (income, balance, stock value)', () => ev(`document.querySelector('#content').innerHTML.includes('درآمد این ماه') && document.querySelector('#content').innerHTML.includes('مانده وصول‌نشده') && document.querySelector('#content').innerHTML.includes('ارزش انبار')`));
+
+    /* ================= PHASE 1: structured measurements ================= */
+    await T('parseNum reads Persian/Arabic numerals', () => ev(
+      `parseNum('۲۲۰')===220 && parseNum('٣٨٠')===380 && parseNum('1,234.5')===1234.5 && parseNum('abc')===null && parseNum('')===null`
+    ));
+    await T('measurement statuses classify correctly', () => ev(`
+      evalMeasurement({typeId:'v_rs',kind:'numeric',value:380}).status==='normal' &&
+      evalMeasurement({typeId:'v_rs',kind:'numeric',value:30}).status==='critical' &&
+      evalMeasurement({typeId:'temp',kind:'numeric',value:90}).status==='critical' &&
+      evalMeasurement({typeId:'lock_eng',kind:'numeric',value:4}).status==='critical' &&
+      evalMeasurement({typeId:'door_gap',kind:'numeric',value:8}).status==='attention' &&
+      evalMeasurement({typeId:'i_motor',kind:'numeric',value:14}).status==='unknown'
+    `));
+    await ev(`state.settings.taxRate=9`);
+    const m1 = await ev(`api('/measurements',{method:'POST',body:{typeId:'v_rs',kind:'numeric',value:'۳۸۰',point:'ورودی تابلو',projectId:'',ts:Date.now()}})`);
+    await ev(`state.measurements=null;loadAll(true);`);
+    await T('persian-digit measurement saved and normalized to 380', m1 && m1.item && m1.item.value === 380, JSON.stringify(m1));
+    await T('saved measurement is in state', () => ev(`state.measurements.some(m=>m.typeId==='v_rs'&&m.value===380)`));
+    await ev(`navigate('/measurements');`); await waitLoaded();
+    await T('measurements page renders list + status badge', () => ev(`document.querySelector('#content').innerHTML.includes('۳۸۰')||document.querySelector('#content').innerHTML.includes('380')`));
+    await T('measurements page shows red-flag for critical value', async () => {
+      await ev(`api('/measurements',{method:'POST',body:{typeId:'temp',kind:'numeric',value:95,point:'موتور',ts:Date.now()}});state.measurements=null;loadAll(true);navigate('/measurements');`);
+      await waitLoaded();
+      return ev(`document.querySelector('#content').innerHTML.includes('پرچم قرمز')||document.querySelector('#content').innerHTML.includes('بحرانی')`);
+    });
+
+    /* ================= PHASE 1: safety confirmation ================= */
+    await ev(`sessionStorage.removeItem('zlift_safety_ack_en81-safety-audit'); navigate('/checklists/en81-safety-audit');`); await waitLoaded();
+    await T('critical checklist shows safety gate before items', () => ev(`!!document.querySelector('#safetyAck') && document.querySelector('#content .check-item')===null`));
+    await T('continue button disabled until acknowledged', () => ev(`document.querySelector('#safetyContinue').disabled===true`));
+    await ev(`(function(){var c=document.querySelector('#safetyAck');c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+    await wait(50);
+    await T('continue enables after checkbox', () => ev(`document.querySelector('#safetyContinue')!==null && document.querySelector('#safetyContinue').disabled===false`));
+    await ev(`document.querySelector('#safetyContinue').click();`); await waitLoaded(); await wait(100);
+    await T('acknowledgement proceeds to the 32 checklist items', () => ev(`document.querySelectorAll('#content .check-item[data-item]').length===32`));
+    await T('safety acknowledgement was logged', () => ev(`state.safetyLogs && state.safetyLogs.some(l=>l.checklistId==='en81-safety-audit')`));
+    // non-critical checklist opens directly
+    await ev(`navigate('/checklists/traction-install');`); await waitLoaded();
+    await T('non-critical checklist opens without safety gate', () => ev(`document.querySelector('#safetyAck')===null && document.querySelectorAll('#content .check-item[data-item]').length===30`));
+
+    /* ================= PHASE 1: invoice VAT + legal number ================= */
+    const invTax = await ev(`(async()=>{
+      const d=await api('/invoices',{method:'POST',body:{customer:'مشتری VAT',items:[{desc:'سرویس',qty:1,price:1000000}],labor:0,discount:0,taxRate:9,taxExempt:false,payments:[]}});
+      return d.item;
+    })()`);
+    await T('invoice gets a sequential legal number', !!(invTax && invTax.number && /^\d+$/.test(invTax.number)), JSON.stringify(invTax));
+    await ev(`state.invoices=null;loadAll(true);`);
+    await T('invoice VAT calculated (9% of 1,000,000 = 90,000; total 1,090,000)', () => {
+      const id = invTax.id;
+      return ev(`(function(){var i=state.invoices.find(x=>x.id===${JSON.stringify(id)});var t=invTotals(i);return t.tax===90000 && t.grand===1090000;})()`);
+    });
+    const invEx = await ev(`(async()=>{const d=await api('/invoices',{method:'POST',body:{customer:'معاف',items:[{desc:'x',qty:1,price:1000000}],taxRate:9,taxExempt:true,payments:[]}});return d.item;})()`);
+    await ev(`state.invoices=null;loadAll(true);`);
+    await T('tax-exempt invoice has zero tax', () => {
+      const id = invEx.id;
+      return ev(`(function(){var i=state.invoices.find(x=>x.id===${JSON.stringify(id)});var t=invTotals(i);return t.tax===0 && t.grand===1000000;})()`);
+    });
+    await ev(`navigate('/invoices');`); await waitLoaded();
+    await T('invoice list still renders with VAT', () => ev(`document.querySelector('#content').innerHTML.includes('مشتری VAT')`));
+
+    /* ================= PHASE 1: backup validation + auto backup ================= */
+    const goodBackup = await ev(`api('/backup')`);
+    await T('backup export includes measurements & safetyLogs & version', () => ev(`
+      (function(){var b=${JSON.stringify(JSON.stringify(goodBackup.backup))};var x=JSON.parse(b);return x.version>=5 && Array.isArray(x.measurements) && Array.isArray(x.safetyLogs);})()
+    `));
+    await T('validateBackup rejects non-zlift object', () => ev(`validateBackup({foo:1}).ok===false`));
+    await T('validateBackup rejects missing projects', () => ev(`validateBackup({app:'zlift',services:[]}).ok===false`));
+    await T('validateBackup rejects corrupt/array field', () => ev(`validateBackup({app:'zlift',projects:[],services:'nope'}).ok===false`));
+    await T('validateBackup accepts a valid backup', () => ev(`validateBackup(${JSON.stringify(goodBackup.backup)}).ok===true`));
+    await ev(`typeof runAutoBackup==='function' && runAutoBackup();`);
+    await T('auto backup created a snapshot', () => ev(`listAutoBackups && listAutoBackups().length>=1`));
+    await T('auto backup snapshot is restorable (round-trips)', () => ev(`(function(){var s=listAutoBackups()[0];return s && s.data && Array.isArray(s.data.projects);})()`));
+
+    /* ================= PHASE 1: search robustness ================= */
+    await T('normalization maps Arabic ي/ك to Persian ی/ک', () => ev(`norm('بريك')===norm('بریک') && norm('DOOR ')==='door'`));
+    // global search must never throw on technician-style queries (incl. Arabic letters)
+    await ev(`closeModal&&closeModal();`); await wait(100);
+    await ev(`openGlobalSearch&&openGlobalSearch();`); await wait(200);
+    await T('global search modal is open', () => ev(`!!document.querySelector('#gsInput')`));
+    for (const q of ['OC','ایمنی','بریک','مدار','ك']) {
+      await ev(`(function(q){var i=document.querySelector('#gsInput');if(i){i.value=q;i.dispatchEvent(new Event('input'));}})(${JSON.stringify(q)})`);
+      await wait(350);
+      await T('global search handles "'+q+'" without errors', () => ev(`(function(){var o=document.querySelector('#gsOut');return o && !/undefined|TypeError|null is not/i.test(o.innerHTML);})()`));
+    }
+    await ev(`closeModal&&closeModal();`);
+    await ev(`(function(){var i=document.querySelector('#gsInput');if(i){i.value='مدار ايمني';i.dispatchEvent(new Event('input'));}})()`); await wait(300);
+    await T('global search handles Arabic ي and نیم‌فاصله without error', () => ev(`!document.querySelector('#gsOut') || (!document.querySelector('#gsOut').innerHTML.includes('undefined') && !document.querySelector('#gsOut').innerHTML.includes('null'))`));
+    await ev(`closeModal();`);
 
     /* ---------- legacy regressions ---------- */
     await ev(`navigate('/checklists/traction-install')`); await waitLoaded();
