@@ -738,6 +738,36 @@ html, body { overflow-x: hidden; max-width: 100%; }
 .cal-num { font-weight: 600; }
 .cal-dot { position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; font-size: 9.5px; font-weight: 700; min-width: 15px; height: 15px; line-height: 15px; border-radius: 8px; padding: 0 4px; }
 .sub-title { font-size: 12.5px; font-weight: 700; color: var(--text-2); margin: 4px 0 6px; }
+
+/* ============ v24: Services hub (reports + calendar) ============ */
+/* segmented tab control */
+.seg {
+  display: flex; background: var(--bg-soft); border: 1px solid var(--border);
+  border-radius: 13px; padding: 4px; gap: 4px;
+}
+.seg-btn {
+  flex: 1; border: 0; background: transparent; color: var(--text-2);
+  padding: 10px 8px; border-radius: 10px; font-size: 14px; font-weight: 700;
+  font-family: inherit; transition: all .15s; cursor: pointer; white-space: nowrap;
+}
+.seg-btn:hover { color: var(--text); }
+.seg-btn.active { background: var(--bg-card); color: var(--accent-2); box-shadow: var(--shadow); }
+/* clickable KPI cards on the services hub */
+.svc-kpi {
+  cursor: pointer; transition: transform .12s, border-color .12s, box-shadow .12s;
+}
+.svc-kpi:hover { transform: translateY(-2px); border-color: var(--accent-2); box-shadow: var(--shadow-lg); }
+.svc-kpi .stat-value { font-size: 19px; }
+@media (hover: none) { .svc-kpi:hover { transform: none; } }
+/* compact calendar legend */
+.cal-legend {
+  display: flex; gap: 16px; flex-wrap: wrap; align-items: center;
+  font-size: 11.5px; color: var(--text-3); margin-top: 12px;
+  padding-top: 11px; border-top: 1px dashed var(--border);
+}
+.cal-legend .lg { display: inline-flex; align-items: center; gap: 6px; }
+.cal-legend .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.cal-legend .sq { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -943,6 +973,7 @@ const I18N = {
     noParts: 'قطعه‌ای ثبت نشده', noPartsSub: 'قطعات مصرفی و یدکی خود را اینجا مدیریت کنید',
     lowStockOnly: 'فقط کمبودها', stockAlert: 'هشدار موجودی انبار', stockAlertSub: 'قطعه به حداقل موجودی رسیده',
     tParts: 'انبار قطعات', tPartsSub: 'موجودی و کمبودها',
+    tAnalytics: 'آمار و تحلیل', tAnalyticsSub: 'درآمد و عملکرد',
     // service due
     svcDue: 'سرویس‌های سررسید', overdue: 'عقب‌افتاده', dueSoon: 'نزدیک موعد',
     daysOverdue: 'روز تأخیر', daysLeft: 'روز مانده', lastService: 'آخرین سرویس', nextService: 'سرویس بعدی',
@@ -1081,7 +1112,40 @@ const I18N = {
     // v23 — signatures, standards library, inventory value
     signHint: 'با انگشت یا ماوس اینجا امضا کنید', signClear: 'پاک کردن امضا', noSignature: 'امضا ثبت نشده',
     partSupplier: 'تأمین‌کننده', partCode: 'کد فنی / شماره فابریک',
-    stockValue: 'ارزش کل موجودی', stockItems: 'اقلام', stInvValue: 'ارزش انبار'
+    stockValue: 'ارزش کل موجودی', stockItems: 'اقلام', stInvValue: 'ارزش انبار',
+    // v24 — services hub (calendar moved into services)
+    svcTabReports: 'گزارش‌های سرویس', svcTabCalendar: 'تقویم سرویس',
+    svcKpiToday: 'سرویس امروز', svcKpiMonth: 'سرویس این ماه',
+    svcKpiFollowup: 'نیاز به پیگیری', svcKpiOverdue: 'یادآوری سررسید گذشته',
+    svcCalHint: 'تقویم، سررسید قراردادها و یادآوری‌های سرویس — همه در یک نگاه',
+    calLegendEvents: 'رویداد هر روز (سرویس + یادآوری)',
+    calLegendToday: 'امروز', calLegendOverdue: 'سررسید گذشته', calLegendSoon: 'نزدیک موعد',
+    svcNoReminder: 'یادآوری فعالی نیست', svcOpenCalendar: 'باز کردن تقویم سرویس',
+    // v25 — analytics & insights
+    analytics: 'آمار و تحلیل',
+    anPeriod: 'بازهٔ زمانی', an3m: '۳ ماه', an6m: '۶ ماه', an12m: '۱۲ ماه',
+    anIncome: 'درآمد کل', anServices: 'تعداد سرویس', anBalance: 'مانده وصول‌نشده', anAvgMonth: 'میانگین ماهانه',
+    anRevenueTrend: 'روند درآمد', anSvcTrend: 'روند سرویس‌ها',
+    anByType: 'سرویس به تفکیک نوع', anByTech: 'بار کاری تکنسین‌ها',
+    anTopFaults: 'پرتکرارترین خرابی‌ها', anTopElevators: 'پرتقاضات‌ترین آسانسورها',
+    anPartsUsed: 'قطعات مصرف‌شده', anConsumedValue: 'ارزش مصرف',
+    anContractForecast: 'پیش‌بینی درآمد قراردادها', anForecastMonth: 'در ماه (قراردادهای فعال)',
+    anReceivables: 'مطالبات معوق', anNoData: 'در این بازه فعالیتی ثبت نشده',
+    anTitle: 'آمار و تحلیل عملکرد', anPrint: 'چاپ گزارش', anEmpty: 'داده‌ای برای نمایش نیست',
+    anServicesUnit: 'سرویس', anActiveContracts: 'قرارداد فعال', anRevenue: 'درآمد', anCount: 'تعداد',
+    // v26 — settings hub + notifications
+    settings: 'تنظیمات',
+    setSvcDefaults: 'پیش‌فرض‌های سرویس', setDefaultTech: 'نام تکنسین پیش‌فرض',
+    setDefaultTechHint: 'هنگام ثبت سرویس، این نام به‌صورت پیش‌فرض پر می‌شود',
+    setAppearance: 'ظاهر', setLight: 'روشن', setDark: 'تیره',
+    setNotifications: 'اعلان‌ها', setNotifyEnable: 'اعلان سررسید سرویس‌ها',
+    setNotifyHint: 'هنگام باز کردن اپ، سرویس‌های عقب‌افتاده و نزدیک موعد را اعلان می‌کند',
+    setNotifyRequest: 'اجازه دادن', setNotifyGranted: 'مجاز', setNotifyDenied: 'مسدود شده', setNotifyAsk: 'هنوز مجاز نشده',
+    setNotifyUnsupported: 'مرورگر شما از اعلان پشتیبانی نمی‌کند', setNotifyOn: 'اعلان‌ها فعال شد',
+    setOn: 'فعال', setOff: 'غیرفعال',
+    setData: 'مدیریت داده‌ها', setClearAll: 'پاک کردن همه داده‌ها',
+    setClearAllMsg: 'تمام پروژه‌ها، سرویس‌ها، فاکتورها و داده‌ها حذف می‌شوند. حتماً ابتدا بکاپ بگیرید! ادامه می‌دهید؟',
+    setAbout: 'درباره Z Lift'
   },
   en: {
     dir: 'ltr',
@@ -1168,6 +1232,7 @@ const I18N = {
     noParts: 'No parts yet', noPartsSub: 'Manage your spare and consumable parts here',
     lowStockOnly: 'Low stock only', stockAlert: 'Stock alert', stockAlertSub: 'part(s) at or below minimum',
     tParts: 'Parts inventory', tPartsSub: 'Stock & shortages',
+    tAnalytics: 'Analytics', tAnalyticsSub: 'Revenue & performance',
     svcDue: 'Service due', overdue: 'Overdue', dueSoon: 'Due soon',
     daysOverdue: 'days overdue', daysLeft: 'days left', lastService: 'Last service', nextService: 'Next service',
     serviceInterval: 'Service interval (days — 0 means no contract)', noDue: 'No overdue services ✅',
@@ -1292,7 +1357,40 @@ const I18N = {
     reminderTitleReq: 'Reminder title is required', reminderDays: 'Days to due', reminderInDays: 'days',
     signHint: 'Sign here with finger or mouse', signClear: 'Clear signature', noSignature: 'No signature recorded',
     partSupplier: 'Supplier', partCode: 'Part no. / code',
-    stockValue: 'Total stock value', stockItems: 'Items', stInvValue: 'Stock value'
+    stockValue: 'Total stock value', stockItems: 'Items', stInvValue: 'Stock value',
+    // v24 — services hub (calendar moved into services)
+    svcTabReports: 'Service reports', svcTabCalendar: 'Service calendar',
+    svcKpiToday: 'Services today', svcKpiMonth: 'Services this month',
+    svcKpiFollowup: 'Need follow-up', svcKpiOverdue: 'Overdue reminders',
+    svcCalHint: 'Calendar, contract due dates and service reminders — all in one glance',
+    calLegendEvents: 'Events per day (service + reminder)',
+    calLegendToday: 'Today', calLegendOverdue: 'Overdue', calLegendSoon: 'Due soon',
+    svcNoReminder: 'No active reminders', svcOpenCalendar: 'Open service calendar',
+    // v25 — analytics & insights
+    analytics: 'Analytics',
+    anPeriod: 'Period', an3m: '3 months', an6m: '6 months', an12m: '12 months',
+    anIncome: 'Total income', anServices: 'Services', anBalance: 'Outstanding balance', anAvgMonth: 'Avg / month',
+    anRevenueTrend: 'Revenue trend', anSvcTrend: 'Services trend',
+    anByType: 'Services by type', anByTech: 'Technician workload',
+    anTopFaults: 'Most frequent faults', anTopElevators: 'Most-serviced elevators',
+    anPartsUsed: 'Parts consumed', anConsumedValue: 'Consumed value',
+    anContractForecast: 'Contract revenue forecast', anForecastMonth: '/ month (active contracts)',
+    anReceivables: 'Receivables', anNoData: 'No activity in this period',
+    anTitle: 'Performance analytics', anPrint: 'Print report', anEmpty: 'No data to show',
+    anServicesUnit: 'services', anActiveContracts: 'active contracts', anRevenue: 'Income', anCount: 'Count',
+    // v26 — settings hub + notifications
+    settings: 'Settings',
+    setSvcDefaults: 'Service defaults', setDefaultTech: 'Default technician name',
+    setDefaultTechHint: 'Pre-filled when you log a new service',
+    setAppearance: 'Appearance', setLight: 'Light', setDark: 'Dark',
+    setNotifications: 'Notifications', setNotifyEnable: 'Service-due notifications',
+    setNotifyHint: 'When you open the app, alerts you about overdue and upcoming services',
+    setNotifyRequest: 'Allow', setNotifyGranted: 'Allowed', setNotifyDenied: 'Blocked', setNotifyAsk: 'Not allowed yet',
+    setNotifyUnsupported: 'Your browser does not support notifications', setNotifyOn: 'Notifications enabled',
+    setOn: 'On', setOff: 'Off',
+    setData: 'Data management', setClearAll: 'Clear all data',
+    setClearAllMsg: 'All projects, services, invoices and data will be deleted. Back up first! Continue?',
+    setAbout: 'About Z Lift'
   }
 };
 
@@ -3712,7 +3810,9 @@ const IC = {
   cam: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
   print: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>',
   std: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>',
-  cal: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>'
+  cal: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>',
+  stats: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 3 5-6"/><circle cx="7" cy="14" r="1.4" fill="currentColor" stroke="none"/><circle cx="11" cy="10" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="13" r="1.4" fill="currentColor" stroke="none"/><circle cx="20" cy="7" r="1.4" fill="currentColor" stroke="none"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'
 };
 
 /* ---------- theme & lang ---------- */
@@ -4062,6 +4162,8 @@ function enterApp() {
   $('#userAvatar').textContent = (state.user.name || '?').trim()[0] || '?';
   renderNav();
   navigate(state.route || '/dashboard');
+  /* surface overdue services as a native notification shortly after entering */
+  setTimeout(checkRemindersNotify, 1500);
 }
 const NAV = [
   { section: 'navMain' },
@@ -4072,7 +4174,7 @@ const NAV = [
   { route: '/invoices', key: 'invoices', icon: 'bill' },
   { route: '/contracts', key: 'contracts', icon: 'doc' },
   { route: '/report', key: 'monthlyReport', icon: 'chart' },
-  { route: '/calendar', key: 'calendar', icon: 'cal' },
+  { route: '/analytics', key: 'analytics', icon: 'stats' },
   { route: '/parts', key: 'parts', icon: 'box' },
   { section: 'navTools' },
   { route: '/checklists', key: 'checklists', icon: 'check' },
@@ -4083,7 +4185,8 @@ const NAV = [
   { section: 'navKnowledge' },
   { route: '/knowledge', key: 'knowledge', icon: 'kb' },
   { route: '/tools', key: 'tools', icon: 'wrench' },
-  { route: '/notes', key: 'notes', icon: 'note' }
+  { route: '/notes', key: 'notes', icon: 'note' },
+  { route: '/settings', key: 'settings', icon: 'gear' }
 ];
 let _navLang = null;
 function renderNav() {
@@ -4158,7 +4261,7 @@ async function render() {
     '/dashboard': 'dashboard', '/projects': 'projects', '/services': 'services',
     '/parts': 'parts', '/checklists': 'checklists', '/calculations': 'calculations',
     '/diagnostics': 'diagnostics', '/knowledge': 'knowledge', '/notes': 'notes',
-    '/vvvf': 'vvvf', '/issues': 'issues', '/tools': 'tools', '/invoices': 'invoices', '/contracts': 'contracts', '/report': 'monthlyReport', '/standards': 'standards', '/calendar': 'calendar'
+    '/vvvf': 'vvvf', '/issues': 'issues', '/tools': 'tools', '/invoices': 'invoices', '/contracts': 'contracts', '/report': 'monthlyReport', '/standards': 'standards', '/calendar': 'calendar', '/analytics': 'analytics', '/settings': 'settings'
   };
   const baseRoute = '/' + r.split('/')[1];
   $('#pageTitle').textContent = t(titles[baseRoute] || 'dashboard');
@@ -4183,6 +4286,8 @@ async function render() {
     else if (r === '/invoices') renderInvoices();
     else if (r === '/contracts') renderContracts();
     else if (r === '/report') renderMonthlyReport();
+    else if (r === '/analytics') renderAnalytics();
+    else if (r === '/settings') renderSettings();
     else if (r === '/tools') renderToolsPage();
     else if (r === '/knowledge') renderKnowledge();
     else if (r === '/standards') renderStandards();
@@ -4243,7 +4348,8 @@ function renderDashboard() {
     ['tCalc', 'tCalcSub', '/calculations', 'calc', 'var(--purple-soft)', 'var(--purple)'],
     ['tDiag', 'tDiagSub', '/diagnostics', 'diag', 'var(--warn-soft)', 'var(--warn)'],
     ['tKb', 'tKbSub', '/knowledge', 'kb', 'var(--danger-soft)', 'var(--danger)'],
-    ['tParts', 'tPartsSub', '/parts', 'box', 'var(--teal-soft)', 'var(--teal)']
+    ['tParts', 'tPartsSub', '/parts', 'box', 'var(--teal-soft)', 'var(--teal)'],
+    ['tAnalytics', 'tAnalyticsSub', '/analytics', 'stats', 'var(--accent-soft)', 'var(--accent-2)']
   ].map(([k, sub, route, icon, bg, fg]) => `
     <div class="tile" onclick="navigate('${route}')">
       <div class="t-icon" style="background:${bg};color:${fg}">${IC[icon]}</div>
@@ -4303,7 +4409,7 @@ function renderDashboard() {
     </div>`;
     }).join('') +
     remDue.map(r => `
-    <div class="due-item ${r.overdue ? 'overdue' : 'soon'}" onclick="navigate('/calendar')" style="cursor:pointer">
+    <div class="due-item ${r.overdue ? 'overdue' : 'soon'}" onclick="svcTab='calendar';navigate('/services')" style="cursor:pointer">
       <span style="font-size:19px">${remMeta(r.kind).icon}</span>
       <div class="grow">
         <strong>${esc(r.title)}</strong>
@@ -4749,20 +4855,86 @@ function renderProjectDetail(id) {
 }
 
 /* ================= SERVICES (independent module) ================= */
+/* v24: the Services page is now a hub with two tabs —
+   'list' (service reports) and 'calendar' (service calendar + reminders).
+   The calendar that used to live at its own nav entry is integrated here. */
 let svcFilter = { q: '', type: 'all', projectId: '' };
+let svcTab = 'list'; // 'list' | 'calendar'
 function viewProjectServices(projectId) {
   svcFilter = { q: '', type: 'all', projectId };
+  svcTab = 'list';
   navigate('/services');
+}
+function switchSvcTab(tab) {
+  svcTab = tab;
+  // only re-render the panel + tabs, keeping the KPI strip intact (no flicker)
+  const seg = $('#svcTabs');
+  if (seg) {
+    [...seg.querySelectorAll('.seg-btn')].forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    drawSvcPanel();
+  } else {
+    renderServices();
+  }
+}
+function svcKpiHTML(icon, bg, val, label, onclick) {
+  return `<div class="card stat-card svc-kpi" onclick="${onclick}">
+    <div class="stat-icon" style="background:${bg};font-size:20px">${icon}</div>
+    <div class="stat-body"><div class="stat-value">${val}</div><div class="stat-label">${label}</div></div></div>`;
 }
 function renderServices() {
   const c = $('#content');
   const filteredProj = svcFilter.projectId ? state.projects.find(p => p.id === svcFilter.projectId) : null;
+
+  /* ---- KPI strip (today / this month / follow-ups / overdue reminders) ---- */
+  const todayJ = tsToJalali(Date.now());
+  const { from: tStart, to: tEnd } = jalDayRange(todayJ.jy, todayJ.jm, todayJ.jd);
+  const todayCount = state.services.filter(s => s.date >= tStart && s.date < tEnd).length;
+  const monthCount = state.services.filter(s => { const j = tsToJalali(s.date); return j.jy === todayJ.jy && j.jm === todayJ.jm; }).length;
+  const followups = state.services.filter(s => s.finalStatus === 'followup').length;
+  const rems = buildReminders();
+  const overdueRems = rems.filter(r => r.overdue).length;
+
   c.innerHTML = `
     ${filteredProj ? `
     <div class="note-block" style="margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <span>🔎 ${t('svcOfProject')} <b>${esc(filteredProj.name)}</b></span>
       <button class="btn btn-ghost btn-sm" onclick="svcFilter.projectId='';renderServices()">✕ ${t('clearFilter')}</button>
     </div>` : ''}
+    <div class="grid-4" style="margin-bottom:16px">
+      ${svcKpiHTML('📅', 'var(--accent-soft)', faNum(todayCount), t('svcKpiToday'), "switchSvcTab('list')")}
+      ${svcKpiHTML('🗓️', 'var(--teal-soft)', faNum(monthCount), t('svcKpiMonth'), "switchSvcTab('list')")}
+      ${svcKpiHTML('📌', 'var(--warn-soft)', faNum(followups), t('svcKpiFollowup'), "svcFilter.type='all';switchSvcTab('list')")}
+      ${svcKpiHTML(overdueRems ? '🔴' : '🔔', overdueRems ? 'var(--danger-soft)' : 'var(--ok-soft)', faNum(overdueRems), t('svcKpiOverdue'), "switchSvcTab('calendar')")}
+    </div>
+    <div id="svcTabs" class="seg" role="tablist" style="margin-bottom:16px">
+      <button class="seg-btn ${svcTab === 'list' ? 'active' : ''}" data-tab="list" role="tab" aria-selected="${svcTab === 'list'}">📋 ${t('svcTabReports')}</button>
+      <button class="seg-btn ${svcTab === 'calendar' ? 'active' : ''}" data-tab="calendar" role="tab" aria-selected="${svcTab === 'calendar'}">📅 ${t('svcTabCalendar')}</button>
+    </div>
+    <div id="svcPanel"></div>`;
+  $$('#svcTabs .seg-btn').forEach(b => b.onclick = () => switchSvcTab(b.dataset.tab));
+  drawSvcPanel();
+}
+/* renders the active tab (reports list or calendar) into #svcPanel */
+function drawSvcPanel() {
+  const panel = $('#svcPanel');
+  if (!panel) return;
+  if (svcTab === 'calendar') {
+    if (!calState.jy) { const j = tsToJalali(Date.now()); calState = { jy: j.jy, jm: j.jm }; }
+    calSelDay = 0;
+    panel.innerHTML = `
+      <div class="toolbar" style="margin-bottom:14px">
+        <button class="btn btn-primary" onclick="openReminderForm()">${IC.plus} ${t('newReminder')}</button>
+        <button class="btn btn-ghost" onclick="openServiceForm()">${IC.plus} ${t('newServiceRec')}</button>
+        <div style="flex:1"></div>
+        <button class="btn btn-ghost btn-sm" onclick="calToday()">${t('today')}</button>
+      </div>
+      ${calendarSectionHTML()}`;
+    drawCalendar();
+    drawReminderList(buildReminders());
+    return;
+  }
+  /* reports list tab */
+  panel.innerHTML = `
     <div class="toolbar">
       <div class="search">${IC.search}<input id="svcSearch" placeholder="${t('searchServices')}" value="${esc(svcFilter.q)}" /></div>
       <div class="chip-row">
@@ -4774,7 +4946,7 @@ function renderServices() {
     </div>
     <div id="svcList"></div>`;
   $('#svcSearch').oninput = debounce(e => { svcFilter.q = e.target.value; drawSvcList(); }, 200);
-  $$('#content .toolbar .chip[data-t]').forEach(ch => ch.onclick = () => { svcFilter.type = ch.dataset.t; renderServices(); });
+  $$('#svcPanel .chip[data-t]').forEach(ch => ch.onclick = () => { svcFilter.type = ch.dataset.t; drawSvcPanel(); });
   drawSvcList();
 }
 function drawSvcList() {
@@ -4931,7 +5103,7 @@ function readSignature(prefix) {
 
 function openServiceForm(id, presetProject) {
   const s = id ? state.services.find(x => x.id === id) : null;
-  const v = s || { projectId: presetProject || '', customer: '', elevatorInfo: '', date: Date.now(), technician: state.user.name, serviceType: 'maintenance', complaint: '', problem: '', diagnosis: '', measurements: '', workDone: '', partsReplaced: '', recommendations: '', followUpDate: 0, finalStatus: 'ok' };
+  const v = s || { projectId: presetProject || '', customer: '', elevatorInfo: '', date: Date.now(), technician: (state.settings && state.settings.defaultTech) || state.user.name, serviceType: 'maintenance', complaint: '', problem: '', diagnosis: '', measurements: '', workDone: '', partsReplaced: '', recommendations: '', followUpDate: 0, finalStatus: 'ok' };
   const projOpts = `<option value="">— ${t('svcNoProject')} —</option>` +
     state.projects.map(p => `<option value="${p.id}" ${v.projectId === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
   /* jalali date inputs */
@@ -5100,6 +5272,18 @@ function buildReminders() {
   return out.sort((a, b) => a.due - b.due);
 }
 
+/* shared calendar markup — used both by the standalone /calendar route
+   and by the in-Services calendar tab (v24). The IDs (#calWrap, #reminderList,
+   #calGrid, #calDayDetail) are unique on screen at any one time because each
+   render() replaces #content. */
+function calendarSectionHTML() {
+  return `
+    <div id="calWrap" class="card" style="padding:16px"></div>
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">🔔 ${t('calReminderList')}</div>
+      <div id="reminderList"></div>
+    </div>`;
+}
 function renderCalendar() {
   const c = $('#content');
   if (!calState.jy) { const j = tsToJalali(Date.now()); calState = { jy: j.jy, jm: j.jm }; }
@@ -5110,11 +5294,7 @@ function renderCalendar() {
       <h2 style="margin:0;font-size:17px">📅 ${t('calendar')}</h2>
       <button class="btn btn-primary" onclick="openReminderForm()">${IC.plus} ${t('newReminder')}</button>
     </div>
-    <div id="calWrap" class="card" style="padding:16px"></div>
-    <div class="card" style="margin-top:16px">
-      <div class="card-title">🔔 ${t('calReminderList')}</div>
-      <div id="reminderList"></div>
-    </div>`;
+    ${calendarSectionHTML()}`;
   drawCalendar();
   drawReminderList(reminders);
 }
@@ -5178,6 +5358,12 @@ function drawCalendar() {
     </div>
     <div class="cal-week">${['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'].map(w => `<span>${w}</span>`).join('')}</div>
     <div id="calGrid" class="cal-grid">${cells}</div>
+    <div class="cal-legend">
+      <span class="lg"><span class="dot"></span>${t('calLegendEvents')}</span>
+      <span class="lg"><span class="sq" style="background:var(--accent-soft);border:1px solid var(--accent)"></span>${t('calLegendToday')}</span>
+      <span class="lg">🔴 ${t('calLegendOverdue')}</span>
+      <span class="lg">🟡 ${t('calLegendSoon')}</span>
+    </div>
     <div id="calDayDetail"></div>`;
 }
 function calPickDay(d) {
@@ -7834,6 +8020,295 @@ function printMonthlyReport() {
       ${svcs.map(s => `<tr><td>${fmtJalali(s.date)}</td><td>${esc(svcTarget(s))}</td><td>${esc(s.problem || s.complaint || '—')}</td><td>${t(finalMeta(s.finalStatus).key)}</td></tr>`).join('')}
     </table>
     <div class="sig-row"><div class="sig">${t('signTech')}</div></div>`);
+}
+
+/* ================= ANALYTICS & INSIGHTS (v25) ================= */
+/* A bird's-eye view of the business over a selectable window (3 / 6 / 12 months).
+   Everything is derived from existing collections — no new storage. */
+let anPeriod = +localStorage.getItem('zlift_anperiod') || 12;
+function anSetPeriod(n) { anPeriod = n; localStorage.setItem('zlift_anperiod', String(n)); renderAnalytics(); }
+/* trailing Jalali month buckets, oldest -> newest */
+function anBuckets(n) {
+  const out = [];
+  const now = tsToJalali(Date.now());
+  let jy = now.jy, jm = now.jm;
+  const keys = [];
+  for (let i = 0; i < n; i++) { keys.push({ jy, jm }); jm--; if (jm < 1) { jm = 12; jy--; } }
+  keys.reverse().forEach(({ jy, jm }) => {
+    const { from, to } = jalMonthRange(jy, jm);
+    out.push({ jy, jm, key: jy + '-' + jm, from, to });
+  });
+  return out;
+}
+/* compact axis label so 12 columns still fit a phone */
+function anMonthShort(jm) { const m = jalMonth(jm); return m.length > 4 ? m.slice(0, 3) : m; }
+/* horizontal bar chart from per-bucket values (scrolls on narrow screens) */
+function anBarChart(buckets, values, bg) {
+  const max = Math.max(1, ...values.map(v => +v || 0));
+  const cols = buckets.map((b, i) => {
+    const v = +values[i] || 0;
+    return `<div class="chart-col">
+      <span class="bar-num">${v ? faNum(v) : ''}</span>
+      <div class="bar-v" style="height:${Math.round(v / max * 100)}%;background:${bg || 'linear-gradient(180deg,var(--accent-2),var(--accent))'}"></div>
+      <span class="bar-lbl">${anMonthShort(b.jm)}</span>
+    </div>`;
+  }).join('');
+  return `<div style="overflow-x:auto"><div class="chart-bars" style="min-width:${buckets.length * 34}px">${cols}</div></div>`;
+}
+/* status-bars from [{label,value,color}] */
+function anStatusBars(rows, def) {
+  const max = Math.max(1, ...rows.map(r => +r.value || 0));
+  return `<div class="status-bars">${rows.map(r => {
+    const v = +r.value || 0; if (!v) return '';
+    return `<div class="sb-row"><span class="sb-lbl">${r.label}</span>
+      <div class="sb-track"><div class="sb-fill" style="width:${Math.round(v / max * 100)}%;background:${r.color || def || 'var(--accent)'}"></div></div>
+      <span class="sb-val">${faNum(v)}</span></div>`;
+  }).join('')}</div>`;
+}
+function svcColor(k) { return { maintenance: 'var(--teal)', repair: 'var(--accent-2)', emergency: 'var(--danger)', inspection: 'var(--purple)' }[k] || 'var(--accent)'; }
+function anWindow() {
+  const buckets = anBuckets(anPeriod);
+  const from = buckets[0].from, to = buckets[buckets.length - 1].to;
+  const inPeriod = ts => ts >= from && ts < to;
+  const keySet = new Set(buckets.map(b => b.key));
+  return { buckets, inPeriod, keySet };
+}
+function renderAnalytics() {
+  const c = $('#content');
+  const { buckets, inPeriod, keySet } = anWindow();
+  const svcs = state.services.filter(s => inPeriod(s.date));
+  const incomeByMonth = {}; buckets.forEach(b => incomeByMonth[b.key] = 0);
+  const svcByMonth = {}; buckets.forEach(b => svcByMonth[b.key] = 0);
+  let income = 0;
+  state.invoices.forEach(inv => (inv.payments || []).forEach(p => {
+    if (inPeriod(p.date)) { income += +p.amount || 0; const j = tsToJalali(p.date); const k = j.jy + '-' + j.jm; if (incomeByMonth[k] != null) incomeByMonth[k] += +p.amount || 0; }
+  }));
+  state.contracts.forEach(ct => (ctStats(ct).list || []).forEach(m => {
+    if (keySet.has(m.key) && ct.paid && ct.paid[m.key]) { income += +ct.amount || 0; if (incomeByMonth[m.key] != null) incomeByMonth[m.key] += +ct.amount || 0; }
+  }));
+  svcs.forEach(s => { const j = tsToJalali(s.date); const k = j.jy + '-' + j.jm; if (svcByMonth[k] != null) svcByMonth[k]++; });
+  let openBalance = 0, unpaidCount = 0;
+  state.invoices.forEach(inv => { const b = invTotals(inv).balance; openBalance += b; if (b > 0) unpaidCount++; });
+  const activeContracts = state.contracts.filter(ct => ctStats(ct).active);
+  const forecast = activeContracts.reduce((a, ct) => a + (+ct.amount || 0), 0);
+  const byType = Object.keys(SVC_META).map(k => ({ label: t(SVC_META[k].key), value: svcs.filter(s => s.serviceType === k).length, color: svcColor(k) }));
+  const techMap = {};
+  svcs.forEach(s => { const tk = (s.technician || '—').trim() || '—'; techMap[tk] = (techMap[tk] || 0) + 1; });
+  const byTech = Object.entries(techMap).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([label, value]) => ({ label, value }));
+  const topFaults = faultTally(svcs, FAULT_ICONS).slice(0, 7).map(([label, value]) => ({ label, value, color: 'var(--warn)' }));
+  const elevMap = {};
+  svcs.forEach(s => {
+    const key = s.projectId || ('c:' + (s.customer || svcTarget(s)));
+    if (!elevMap[key]) { const p = s.projectId ? (state.projects.find(x => x.id === s.projectId) || null) : null;
+      elevMap[key] = { name: p ? p.name : (s.customer || svcTarget(s)), n: 0, type: p ? p.elevatorType : '', pid: s.projectId || '' }; }
+    elevMap[key].n++;
+  });
+  const topElev = Object.values(elevMap).sort((a, b) => b.n - a.n).slice(0, 6);
+  const partsUsed = []; let consumedValue = 0;
+  state.parts.forEach(p => (p.history || []).forEach(h => {
+    if (inPeriod(h.date) && h.qty < 0) { const q = -h.qty; partsUsed.push({ name: p.name, qty: q }); consumedValue += q * (+p.price || 0); }
+  }));
+  partsUsed.sort((a, b) => b.qty - a.qty);
+  const hasData = svcs.length || income || state.invoices.length || state.contracts.length;
+  const avgMonth = Math.round((svcs.length / anPeriod) * 10) / 10;
+
+  const periodChips = [['an3m', 3], ['an6m', 6], ['an12m', 12]].map(([k, n]) =>
+    `<button class="chip ${anPeriod === n ? 'active' : ''}" onclick="anSetPeriod(${n})">${t(k)}</button>`).join('');
+  const muted = txt => `<p style="font-size:12.5px;color:var(--text-3)">${txt}</p>`;
+
+  c.innerHTML = `
+    <div class="toolbar">
+      <span style="font-size:12.5px;color:var(--text-2);font-weight:700">${t('anPeriod')}:</span>
+      <div class="chip-row">${periodChips}</div>
+      <div style="flex:1"></div>
+      <button class="btn btn-ghost" onclick="exportAnalyticsCsv()">📊 ${t('exportCsv')}</button>
+      <button class="btn btn-ghost" style="color:#2AABEE" onclick="shareTelegram(buildAnalyticsText())">${IC.telegram} ${t('shareTelegram')}</button>
+      <button class="btn btn-ghost" onclick="shareText(buildAnalyticsText())">📤 ${t('share')}</button>
+      <button class="btn btn-primary" onclick="printAnalytics()">${IC.print} ${t('anPrint')}</button>
+    </div>
+    ${!hasData ? `<div class="empty"><div class="e-icon">📉</div><strong>${t('anNoData')}</strong></div>` : `
+    <div class="grid-4" style="margin-bottom:16px">
+      ${svcKpiHTML('💰', 'var(--ok-soft)', money(income), t('anIncome'), "navigate('/invoices')")}
+      ${svcKpiHTML('🔧', 'var(--teal-soft)', faNum(svcs.length), t('anServices'), "navigate('/services')")}
+      ${svcKpiHTML('🧾', 'var(--danger-soft)', money(openBalance), t('anBalance'), "navigate('/invoices')")}
+      ${svcKpiHTML('📈', 'var(--accent-soft)', faNum(avgMonth), t('anAvgMonth'), "navigate('/analytics')")}
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">${IC.stats} ${t('anRevenueTrend')}<span style="margin-inline-start:auto;font-size:12px;color:var(--text-2);font-weight:600">${money(income)} ${t('rial')}</span></div>
+        ${income ? anBarChart(buckets, buckets.map(b => incomeByMonth[b.key]), 'linear-gradient(180deg,#34d399,var(--ok))') : muted('—')}
+      </div>
+      <div class="card">
+        <div class="card-title">${IC.chart} ${t('anSvcTrend')}</div>
+        ${svcs.length ? anBarChart(buckets, buckets.map(b => svcByMonth[b.key])) : muted('—')}
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top:16px">
+      <div class="card">
+        <div class="card-title">🔧 ${t('anByType')}</div>
+        ${byType.some(r => r.value) ? anStatusBars(byType) : muted('—')}
+      </div>
+      <div class="card">
+        <div class="card-title">👷 ${t('anByTech')}</div>
+        ${byTech.length ? anStatusBars(byTech, 'var(--purple)') : muted('—')}
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top:16px">
+      <div class="card">
+        <div class="card-title">🚨 ${t('anTopFaults')}</div>
+        ${topFaults.length ? anStatusBars(topFaults) : muted('—')}
+      </div>
+      <div class="card">
+        <div class="card-title">🛗 ${t('anTopElevators')}</div>
+        ${topElev.length ? topElev.map(e => {
+          const go = e.pid ? `svcFilter={q:'',type:'all',projectId:'${e.pid}'};svcTab='list';navigate('/services')` : `svcTab='list';navigate('/services')`;
+          return `<div class="due-item" style="cursor:pointer" onclick="${go}">
+            <div class="grow"><strong>${e.type === 'hydraulic' ? '🛢️ ' : '⚙️ '}${esc(e.name)}</strong></div>
+            <span class="badge b-blue">${faNum(e.n)} ${t('anServicesUnit')}</span></div>`;
+        }).join('') : muted('—')}
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top:16px">
+      <div class="card">
+        <div class="card-title">📦 ${t('anPartsUsed')}<span style="margin-inline-start:auto;font-size:12px;color:var(--text-2);font-weight:600">${t('anConsumedValue')}: ${money(consumedValue)} ${t('rial')}</span></div>
+        ${partsUsed.length ? `<div style="display:flex;flex-wrap:wrap;gap:7px">${partsUsed.slice(0, 10).map(p => `<span class="badge b-gray">${esc(p.name)} ×${faNum(p.qty)}</span>`).join('')}</div>` : muted('—')}
+      </div>
+      <div class="card">
+        <div class="card-title">📄 ${t('anContractForecast')}</div>
+        <div class="kv-cell" style="margin-bottom:10px"><div class="k">${t('anForecastMonth')}</div><div class="v" style="color:var(--ok)">${money(forecast)} ${t('rial')}</div></div>
+        <div class="kv-cell"><div class="k">${t('anActiveContracts')}</div><div class="v">${faNum(activeContracts.length)}</div></div>
+        ${openBalance ? `<div class="kv-cell" style="margin-top:10px"><div class="k">${t('anReceivables')} (${faNum(unpaidCount)})</div><div class="v" style="color:var(--danger)">${money(openBalance)} ${t('rial')}</div></div>` : ''}
+      </div>
+    </div>`}`;
+}
+function buildAnalyticsText() {
+  const { inPeriod } = anWindow();
+  const svcs = state.services.filter(s => inPeriod(s.date));
+  let income = state.invoices.reduce((a, inv) => a + (inv.payments || []).reduce((b, p) => b + (inPeriod(p.date) ? +p.amount || 0 : 0), 0), 0);
+  const openBalance = state.invoices.reduce((a, inv) => a + invTotals(inv).balance, 0);
+  const co = (state.settings || {}).company || 'Z Lift';
+  return `📊 ${t('anTitle')} — ${faNum(anPeriod)} ${LANG === 'fa' ? 'ماه' : 'months'}\n🏢 ${co}\n\n💰 ${t('anIncome')}: ${money(income)} ${t('rial')}\n🔧 ${t('anServices')}: ${faNum(svcs.length)}\n📈 ${t('anAvgMonth')}: ${faNum(Math.round(svcs.length / anPeriod))}\n🧾 ${t('anBalance')}: ${money(openBalance)} ${t('rial')}\n\n🛗 Z Lift`;
+}
+function printAnalytics() {
+  const { inPeriod } = anWindow();
+  const svcs = state.services.filter(s => inPeriod(s.date));
+  let income = state.invoices.reduce((a, inv) => a + (inv.payments || []).reduce((b, p) => b + (inPeriod(p.date) ? +p.amount || 0 : 0), 0), 0);
+  const byType = {}; svcs.forEach(s => byType[s.serviceType] = (byType[s.serviceType] || 0) + 1);
+  const topFaults = faultTally(svcs, FAULT_ICONS).slice(0, 8);
+  const subtitle = faNum(anPeriod) + ' ' + (LANG === 'fa' ? 'ماه' : 'months');
+  printDoc(`
+    ${printHeader(t('anTitle') + ' — ' + subtitle)}
+    <table>
+      <tr><th>${t('anIncome')}</th><td>${money(income)} ${t('rial')}</td></tr>
+      <tr><th>${t('anServices')}</th><td>${faNum(svcs.length)}</td></tr>
+      <tr><th>${t('anByType')}</th><td>${Object.keys(byType).map(k => t(svcMeta(k).key) + ' ' + faNum(byType[k])).join('، ') || '—'}</td></tr>
+    </table>
+    <table>
+      <tr><th>${t('anTopFaults')}</th><th style="width:80px">${t('anCount')}</th></tr>
+      ${topFaults.length ? topFaults.map(([lbl, n]) => `<tr><td>${esc(lbl)}</td><td>${faNum(n)}</td></tr>`).join('') : `<tr><td>—</td><td></td></tr>`}
+    </table>
+    <div class="sig-row"><div class="sig">${t('signTech')}</div></div>`);
+}
+function exportAnalyticsCsv() {
+  const buckets = anBuckets(anPeriod);
+  const head = [t('anPeriod'), t('anRevenue'), t('anServices')];
+  const rows = buckets.map(b => {
+    const svcN = state.services.filter(s => { const j = tsToJalali(s.date); return j.jy === b.jy && j.jm === b.jm; }).length;
+    let inc = 0;
+    state.invoices.forEach(inv => (inv.payments || []).forEach(p => { const j = tsToJalali(p.date); if (j.jy === b.jy && j.jm === b.jm) inc += +p.amount || 0; }));
+    state.contracts.forEach(ct => { if (ct.paid && ct.paid[b.key]) inc += +ct.amount || 0; });
+    return [jalMonth(b.jm) + ' ' + b.jy, inc, svcN];
+  });
+  downloadCsv('zlift-analytics-' + new Date().toISOString().slice(0, 10) + '.csv', head, rows);
+  toast(t('saved'));
+}
+
+/* ================= SETTINGS HUB (v26) ================= */
+function renderSettings() {
+  const c = $('#content');
+  const s = state.settings || {};
+  const theme = document.documentElement.getAttribute('data-theme') || 'light';
+  const notifyOn = !!s.notify;
+  const canNotify = notifySupported();
+  const perm = canNotify ? (Notification.permission || 'default') : 'unsupported';
+  let usage = '—';
+  try {
+    const raw = localStorage.getItem('zlift_db') || '';
+    const mb = (raw.length * 2 / 1048576).toFixed(1);
+    usage = faNum(mb) + ' MB · ' + faNum((state.photos || []).length) + ' ' + t('storagePhotos');
+  } catch (e) {}
+  const permBadge = perm === 'granted' ? `<span class="badge b-green">${t('setNotifyGranted')}</span>`
+    : perm === 'denied' ? `<span class="badge b-red">${t('setNotifyDenied')}</span>`
+    : perm === 'unsupported' ? `<span class="badge b-gray">—</span>`
+    : `<span class="badge b-amber">${t('setNotifyAsk')}</span>`;
+  c.innerHTML = `
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🏢 ${t('setCompany')}</div>
+        <div class="field"><label>${t('setCompany')}</label><input id="st_company" value="${esc(s.company || '')}" /></div>
+        <div class="form-grid">
+          <div class="field"><label>${t('setPhone')}</label><input id="st_phone" value="${esc(s.phone || '')}" /></div>
+          <div class="field"><label>${t('setAddress')}</label><input id="st_address" value="${esc(s.address || '')}" /></div>
+        </div>
+        <button class="btn btn-primary btn-sm" id="stSaveCompany">💾 ${t('save')}</button>
+      </div>
+      <div class="card">
+        <div class="card-title">🔧 ${t('setSvcDefaults')}</div>
+        <div class="field"><label>${t('setDefaultTech')}</label><input id="st_defaulttech" value="${esc(s.defaultTech || '')}" placeholder="${esc((state.user && state.user.name) || '')}" /></div>
+        <p class="hint">${t('setDefaultTechHint')}</p>
+        <button class="btn btn-primary btn-sm" id="stSaveSvc">💾 ${t('save')}</button>
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top:16px">
+      <div class="card">
+        <div class="card-title">🎨 ${t('setAppearance')}</div>
+        <div class="seg" style="margin-bottom:12px">
+          <button class="seg-btn ${theme === 'light' ? 'active' : ''}" onclick="setTheme('light')">☀️ ${t('setLight')}</button>
+          <button class="seg-btn ${theme === 'dark' ? 'active' : ''}" onclick="setTheme('dark')">🌙 ${t('setDark')}</button>
+        </div>
+        <div class="seg">
+          <button class="seg-btn ${LANG === 'fa' ? 'active' : ''}" onclick="setLang('fa')">فارسی</button>
+          <button class="seg-btn ${LANG === 'en' ? 'active' : ''}" onclick="setLang('en')">English</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔔 ${t('setNotifications')}</div>
+        ${canNotify ? `
+        <div class="due-item" style="align-items:center">
+          <div class="grow"><strong>${t('setNotifyEnable')}</strong><div class="d-sub">${t('setNotifyHint')}</div></div>
+          <div class="seg" style="max-width:170px">
+            <button class="seg-btn ${notifyOn ? 'active' : ''}" onclick="toggleNotify(true)">${t('setOn')}</button>
+            <button class="seg-btn ${!notifyOn ? 'active' : ''}" onclick="toggleNotify(false)">${t('setOff')}</button>
+          </div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          ${permBadge}
+          ${perm === 'default' ? `<button class="btn btn-ghost btn-sm" onclick="enableNotifications()">${t('setNotifyRequest')}</button>` : ''}
+        </div>` : `<p class="hint">${t('setNotifyUnsupported')}</p>`}
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">💾 ${t('setData')}</div>
+      <div class="kv-cell" style="margin-bottom:12px"><div class="k">📊 ${t('storageUsage')}</div><div class="v">${usage}</div></div>
+      <div style="display:flex;gap:9px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="openBackupModal()">💾 ${t('backup')}</button>
+        <button class="btn btn-soft-danger" onclick="clearAllData()">${IC.trash} ${t('setClearAll')}</button>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px;text-align:center">
+      <div style="font-size:32px;margin-bottom:4px">🛗</div>
+      <strong style="font-size:17px">Z Lift</strong>
+      <div style="color:var(--text-3);font-size:12.5px;margin-top:4px">v26 · ${t('tagline')}</div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:12px;color:#2AABEE" onclick="openTgChannel()">${IC.telegram} ${t('tgChannel')}</button>
+    </div>`;
+  $('#stSaveCompany').onclick = guard('#stSaveCompany', async () => {
+    try { const d = await api('/settings', { method: 'PUT', body: { company: $('#st_company').value, phone: $('#st_phone').value, address: $('#st_address').value } }); state.settings = d.settings; toast(t('saved')); }
+    catch (e) { toast(errMsg(e), 'err'); }
+  });
+  $('#stSaveSvc').onclick = guard('#stSaveSvc', async () => {
+    try { const d = await api('/settings', { method: 'PUT', body: { defaultTech: $('#st_defaulttech').value } }); state.settings = d.settings; toast(t('saved')); }
+    catch (e) { toast(errMsg(e), 'err'); }
+  });
 }
 
 /* ================= SHARE (Telegram / system) ================= */
@@ -10497,27 +10972,89 @@ function openBackupModal() {
 }
 
 /* ================= INIT ================= */
+/* ============ v26: theme/lang helpers + service-due notifications ============ */
+function setTheme(th) {
+  if (th !== 'dark') th = 'light';
+  localStorage.setItem('zlift_theme', th);
+  applyTheme();
+}
+function setLang(l) {
+  LANG = (l === 'en') ? 'en' : 'fa';
+  localStorage.setItem('zlift_lang', LANG);
+  applyLang();
+  updateOnlineBadge();
+  if (state.user) { renderNav(); render(); $('#userName').textContent = state.user.name; }
+  setAuthMode(authMode);
+}
+/* Browser notifications — only fired by user opt-in; the app has no backend,
+   so they surface when the app is opened/foregrounded with overdue items. */
+function notifySupported() { return typeof window !== 'undefined' && 'Notification' in window; }
+async function ensureNotifyPermission() {
+  if (!notifySupported() || typeof Notification.requestPermission !== 'function') return false;
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') return false;
+  try { return (await Notification.requestPermission()) === 'granted'; } catch (e) { return false; }
+}
+let _lastNotifyCheck = 0;
+function checkRemindersNotify() {
+  if (!notifySupported()) return;
+  const s = state.settings || {};
+  if (!s.notify || Notification.permission !== 'granted') return;
+  const rems = buildReminders();
+  const due = rems.filter(r => r.overdue || r.soon);
+  if (!due.length) return;
+  const overdueN = due.filter(r => r.overdue).length;
+  const title = overdueN
+    ? (LANG === 'fa' ? '🔴 ' + faNum(overdueN) + ' سرویس عقب‌افتاده' : overdueN + ' overdue services')
+    : (LANG === 'fa' ? '🟡 سرویس‌های نزدیک موعد' : 'Services due soon');
+  const body = due.slice(0, 5).map(r => '• ' + r.title).join('\n');
+  try {
+    const n = new Notification(title, { body, tag: 'zlift-reminders', icon: 'icons/icon-192.png' });
+    n.onclick = () => { try { window.focus(); n.close(); svcTab = 'calendar'; navigate('/services'); } catch (e) {} };
+    setTimeout(() => { try { n.close(); } catch (e) {} }, 10000);
+  } catch (e) { /* notifications can be blocked at runtime — fail silently */ }
+}
+async function enableNotifications() {
+  const ok = await ensureNotifyPermission();
+  if (!ok) { toast(t('setNotifyDenied'), 'err'); renderSettings(); return false; }
+  try { const d = await api('/settings', { method: 'PUT', body: { notify: true } }); state.settings = d.settings; } catch (e) { toast(errMsg(e), 'err'); }
+  toast(t('setNotifyOn'), 'ok');
+  renderSettings();
+  checkRemindersNotify();
+  return true;
+}
+async function toggleNotify(on) {
+  if (!on) {
+    try { const d = await api('/settings', { method: 'PUT', body: { notify: false } }); state.settings = d.settings; } catch (e) {}
+    renderSettings();
+    return;
+  }
+  await enableNotifications();
+}
+function clearAllData() {
+  confirmDialog(t('confirmDeleteTitle'), t('setClearAllMsg'), () => {
+    try { localStorage.removeItem('zlift_db'); localStorage.removeItem('zlift_db_mirror'); } catch (e) {}
+    doLocalLogout();
+    try { location.reload(); } catch (e) {}
+  });
+}
+
 async function init() {
   applyTheme();
   applyLang();
   initAuth();
 
-  $('#themeBtn').onclick = () => {
-    const th = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    localStorage.setItem('zlift_theme', th);
-    applyTheme();
-  };
-  $('#langBtn').onclick = () => {
-    LANG = LANG === 'fa' ? 'en' : 'fa';
-    localStorage.setItem('zlift_lang', LANG);
-    applyLang();
-    updateOnlineBadge();
-    if (state.user) { renderNav(); render(); $('#userName').textContent = state.user.name; }
-    setAuthMode(authMode);
-  };
+  $('#themeBtn').onclick = () => setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  $('#langBtn').onclick = () => setLang(LANG === 'fa' ? 'en' : 'fa');
   updateOnlineBadge();
   window.addEventListener('online', updateOnlineBadge);
   window.addEventListener('offline', updateOnlineBadge);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    if (Date.now() - _lastNotifyCheck < 5 * 60 * 1000) return;
+    _lastNotifyCheck = Date.now();
+    checkRemindersNotify();
+  });
   $('#menuBtn').onclick = () => {
     $('#sidebar').classList.add('open');
     $('#backdrop').classList.add('show');
@@ -11026,7 +11563,8 @@ async function api(path, opts = {}) {
   /* settings */
   if (path === '/settings' && method === 'GET') return { settings: db.settings };
   if (path === '/settings' && method === 'PUT') {
-    ['company', 'phone', 'address'].forEach(f => { if (b[f] !== undefined) db.settings[f] = String(b[f]); });
+    ['company', 'phone', 'address', 'defaultTech'].forEach(f => { if (b[f] !== undefined) db.settings[f] = String(b[f]); });
+    if (b.notify !== undefined) db.settings.notify = !!b.notify;
     _lsSave();
     return { settings: db.settings };
   }
