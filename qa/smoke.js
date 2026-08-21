@@ -278,6 +278,358 @@ async function T(name, cond, info) {
     await T('calendar page works in English', () => ev(`document.querySelector('#pageTitle').textContent === 'Service calendar'`));
     await ev(`LANG = 'fa'; applyLang(); navigate('/dashboard');`); await waitLoaded();
 
+    /* ================= v19 hardening regressions ================= */
+
+    /* -- every inline on*="fn(...)" handler resolves to a real function -- */
+    const unresolved = await ev(`(() => {
+      const skip = new Set(['String','Number','Math','JSON','Date','event','this','if','for','while','return','function','typeof','parseInt','parseFloat','confirm','alert','setTimeout','clearTimeout']);
+      const names = new Set();
+      const html = document.documentElement.outerHTML;
+      for (const m of html.matchAll(/\\son[a-z]+="([^"]*)"/g)) {
+        for (const c of m[1].matchAll(/([A-Za-z_$][\\w$]*)\\s*\\(/g)) names.add(c[1]);
+      }
+      return [...names].filter(n => !skip.has(n) && typeof window[n] !== 'function' &&
+        !['find','getElementById','querySelector','replace','setItem','stopPropagation','toggle','now','push','slice','includes','map','join','filter'].includes(n));
+    })()`);
+    await T('every rendered inline handler resolves to a function', unresolved.length === 0, unresolved.join(', '));
+
+    /* -- optimistic delete never removes a random row when the id is gone -- */
+    await T('optimisticRemove ignores unknown ids', () => ev(`(() => {
+      const list = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
+      const miss = optimisticRemove(list, 'zzz');
+      if (miss !== null || list.length !== 3) return false;
+      const hit = optimisticRemove(list, 'b');
+      if (!hit || list.length !== 2) return false;
+      hit.restore();
+      return list.length === 3 && list[1].id === 'b';
+    })()`));
+
+    /* -- safe meta lookups on unknown/legacy values -- */
+    await T('meta lookups never throw on unknown values', () => ev(`(() => {
+      return svcMeta('nope') === SVC_META.maintenance && finalMeta(undefined) === FINAL_META.ok &&
+             statMeta('???') === STATUS_META.contract && issueMeta(null) === ISSUE_META.open &&
+             remMeta('x') === REMINDER_META.custom &&
+             serviceRow({ id: 'x', serviceType: 'weird', finalStatus: 'weird', date: Date.now(), technician: 'q', problem: 'p' }).length > 10;
+    })()`));
+
+    /* -- inline-handler string escaping (quotes must not break the handler) -- */
+    await T('jsAttr escapes quotes for inline handlers', () => ev(`(() => {
+      const out = jsAttr("it's a \\"test\\"");
+      return out.indexOf('\\\\&#39;') >= 0 && out.indexOf('&quot;') >= 0;
+    })()`));
+    await T('a query with quotes survives an inline handler round-trip', () => ev(`(() => {
+      const q = "it's a \\"test\\"";
+      const box = document.createElement('div');
+      box.innerHTML = '<button id="qaEscBtn" onclick="calcFilter={cat:\\'all\\',q:\\'' + jsAttr(q) + '\\'}">x</button>';
+      document.body.appendChild(box);
+      calcFilter = { cat: 'all', q: '' };
+      box.querySelector('#qaEscBtn').click();
+      const got = calcFilter.q;
+      box.remove();
+      calcFilter = { cat: 'all', q: '' };
+      return got === q;
+    })()`));
+
+    /* -- Jalali day boundaries: a morning service belongs to that day -- */
+    const dayTest = await ev(`(() => {
+      const j = tsToJalali(Date.now());
+      const r = jalDayRange(j.jy, j.jm, j.jd);
+      const morning = new Date(); morning.setHours(8, 30, 0, 0);
+      const night = new Date(); night.setHours(23, 45, 0, 0);
+      return { okMorning: morning.getTime() >= r.from && morning.getTime() < r.to,
+               okNight: night.getTime() >= r.from && night.getTime() < r.to,
+               span: r.to - r.from };
+    })()`);
+    await T('jalDayRange covers a whole local day (08:30 and 23:45)', dayTest.okMorning && dayTest.okNight, JSON.stringify(dayTest));
+
+    const monthTest = await ev(`(() => {
+      const j = tsToJalali(Date.now());
+      const r = jalMonthRange(j.jy, j.jm);
+      const first = jalDayStart(j.jy, j.jm, 1) + 30 * 60000;       // 00:30 on the 1st
+      const last = jalDayStart(j.jy, j.jm, jalDaysInMonth(j.jy, j.jm)) + 23 * 3600000;
+      const nextMonthFirst = r.to + 60000;
+      return first >= r.from && first < r.to && last >= r.from && last < r.to && !(nextMonthFirst < r.to);
+    })()`);
+    await T('jalMonthRange starts at midnight and excludes the next month', monthTest === true);
+
+    const morningSvc = await ev(`(() => {
+      const d = new Date(); d.setHours(8, 15, 0, 0);
+      return api('/services', { method: 'POST', body: { customer: 'سرویس صبح QA', technician: 'QA', serviceType: 'maintenance', date: d.getTime(), problem: 'x', diagnosis: 'y', workDone: 'z', partsReplaced: '-', finalStatus: 'ok' } });
+    })()`);
+    await ev(`(() => { state.services = null; return loadAll(true); })()`);
+    await ev(`(() => { const j = tsToJalali(Date.now()); calState = { jy: j.jy, jm: j.jm }; navigate('/calendar'); })()`);
+    await waitLoaded();
+    await ev(`(() => { const j = tsToJalali(Date.now()); calPickDay(j.jd); })()`);
+    await T('morning service (08:15) appears on today in the calendar', () => ev(`document.querySelector('#calDayDetail').innerHTML.includes('سرویس صبح QA')`));
+    await T('picked day is highlighted in the grid', () => ev(`document.querySelectorAll('#calGrid .cal-sel').length === 1`));
+    await ev(`api('/services/${morningSvc.service.id}', { method: 'DELETE' }); state.services = null; loadAll(true);`);
+
+    /* -- monthly report navigation & month range -- */
+    await ev(`mrMonth = null; navigate('/report');`); await waitLoaded();
+    const mrNow = await ev(`JSON.stringify(mrMonth)`);
+    await ev(`_mrPrev();`);
+    const mrPrev = await ev(`JSON.stringify(mrMonth)`);
+    await ev(`_mrNext();`);
+    const mrBack = await ev(`JSON.stringify(mrMonth)`);
+    await T('monthly report prev/next move exactly one month', mrPrev !== mrNow && mrBack === mrNow, mrNow + ' → ' + mrPrev + ' → ' + mrBack);
+    await T('month nav arrows follow text direction', () => ev(`(() => {
+      const fa = (LANG = 'fa', navArrows());
+      const en = (LANG = 'en', navArrows());
+      LANG = 'fa';
+      return fa.prev === '›' && fa.next === '‹' && en.prev === '‹' && en.next === '›';
+    })()`));
+
+    /* -- contracts stay active until the END of the last month -- */
+    const ctTest = await ev(`(() => {
+      const j = tsToJalali(Date.now());
+      const ct = { id: 'ctqa', building: 'QA', amount: 1000, months: 1, startTs: jalDayStart(j.jy, j.jm, 1), paid: {} };
+      const st = ctStats(ct);
+      return { active: st.active, expired: st.expired, endsAfterNow: st.endTs > Date.now() };
+    })()`);
+    await T('a contract in its final month is still active', ctTest.active === true && ctTest.expired === false && ctTest.endsAfterNow, JSON.stringify(ctTest));
+    await T('a finished contract is reported expired', () => ev(`(() => {
+      const j = tsToJalali(Date.now() - 400 * 86400000);
+      return ctStats({ id: 'old', building: 'x', amount: 1, months: 2, startTs: jalDayStart(j.jy, j.jm, 1), paid: {} }).expired === true;
+    })()`));
+    await T('contract without startTs falls back to createdAt', () => ev(`ctMonthList({ months: 3, createdAt: Date.now() }).length === 3`));
+
+    /* -- invoices: inventory is consumed on save and returned when the row is deleted -- */
+    const partQa = await ev(`api('/parts', { method: 'POST', body: { name: 'قطعه تست فاکتور', category: 'QA', unit: 'عدد', qty: 10, minQty: 1, price: 5000 } })`);
+    await ev(`state.parts = null; loadAll(true);`);
+    await ev(`navigate('/invoices')`); await waitLoaded();
+    await ev(`openInvoiceForm(); invUsePart(${JSON.stringify(partQa.part.id)}); document.querySelector('#inv_customer').value = 'مشتری QA'; document.querySelector('#inv_labor').value = '200000'; document.querySelector('#inv_labor').oninput();`);
+    await ev(`document.querySelector('#invSave').onclick()`);
+    await waitUntil(() => ev(`state.invoices.some(i => i.customer === 'مشتری QA')`), 8000, 'invoice saved');
+    const invQa = await ev(`state.invoices.find(i => i.customer === 'مشتری QA')`);
+    await T('invoice saved with the picked part', !!(invQa && invQa.items && invQa.items.length === 1 && invQa.items[0].partId === partQa.part.id));
+    await T('stock is consumed once on save (10 → 9)', () => ev(`state.parts.find(p => p.id === ${JSON.stringify(partQa.part.id)}).qty === 9`), await ev(`String(state.parts.find(p => p.id === ${JSON.stringify(partQa.part.id)}).qty)`));
+
+    await ev(`openInvoiceForm(${JSON.stringify(invQa.id)}); invDelItem(0);`);
+    await ev(`document.querySelector('#invSave').onclick()`);
+    await wait(300);
+    await T('removing the row gives the part back to stock (9 → 10)', () => ev(`state.parts.find(p => p.id === ${JSON.stringify(partQa.part.id)}).qty === 10`), await ev(`String(state.parts.find(p => p.id === ${JSON.stringify(partQa.part.id)}).qty)`));
+
+    /* -- payment on a saved invoice must not be blocked by a false overpay guard -- */
+    await ev(`openInvoiceForm(${JSON.stringify(invQa.id)}); document.querySelector('#invPayBtn').onclick();`);
+    await ev(`document.querySelector('#pay_amount').value = '200000'; document.querySelector('#payOk').onclick();`);
+    await T('payment up to the saved total is accepted on the first tap', () => ev(`invDraft && invDraft.payments.length === 1 && invDraft.payments[0].amount === 200000`), await ev(`JSON.stringify(invDraft && invDraft.payments)`));
+    await ev(`document.querySelector('#invPayBtn').onclick(); document.querySelector('#pay_amount').value = '999999'; document.querySelector('#payOk').onclick();`);
+    await T('a real overpayment still needs a confirmation tap', () => ev(`invDraft.payments.length === 1`));
+    await ev(`closeModal(); invDraft = null;`);
+
+    /* -- deleting a project keeps its service history (services are independent) -- */
+    const delProj = await ev(`api('/projects', { method: 'POST', body: { name: 'پروژه حذفی QA' } })`);
+    await ev(`state.projects = null; loadAll(true);`);
+    const delSvc = await ev(`api('/services', { method: 'POST', body: { projectId: ${JSON.stringify('')} || '', customer: 'مشتری حذفی', technician: 'QA', serviceType: 'repair', problem: 'x', diagnosis: 'y', workDone: 'z', partsReplaced: '-', finalStatus: 'ok' } })`);
+    await ev(`api('/services/${delSvc.service.id}', { method: 'PUT', body: { projectId: ${JSON.stringify(delProj.project.id)} } })`);
+    await ev(`state.services = null; state.projects = null; loadAll(true);`);
+    await ev(`api('/projects/${delProj.project.id}', { method: 'DELETE' }); state.projects = null; state.services = null; loadAll(true);`);
+    await T('services survive their project deletion (detached, not lost)', () => ev(`(() => { const s = state.services.find(x => x.id === ${JSON.stringify(delSvc.service.id)}); return !!s && !s.projectId; })()`));
+
+    /* -- reminders can be edited & deleted from the UI -- */
+    const rmUi = await ev(`api('/reminders', { method: 'POST', body: { title: 'یادآوری رابط کاربری', due: Date.now() + 4 * 86400000, kind: 'custom' } })`);
+    await ev(`(() => { state.reminders = null; return loadAll(true); })()`);
+    await ev(`navigate('/calendar')`); await waitLoaded();
+    await T('custom reminder row opens its editor', () => ev(`document.querySelector('#reminderList').innerHTML.includes("openReminderForm('${rmUi.reminder.id}')")`));
+    await ev(`openReminderForm('${rmUi.reminder.id}'); document.querySelector('#rm_title').value = 'یادآوری ویرایش‌شده از UI'; document.querySelector('#rmSave').onclick();`);
+    await waitUntil(() => ev(`(state.reminders || []).some(r => r.title === 'یادآوری ویرایش‌شده از UI')`), 8000, 'reminder edited via UI');
+    await T('reminder edited through the form', true);
+    await ev(`openReminderForm('${rmUi.reminder.id}'); deleteReminder('${rmUi.reminder.id}'); document.querySelector('#confirmYes').onclick();`);
+    await waitUntil(() => ev(`!(state.reminders || []).some(r => r.id === '${rmUi.reminder.id}')`), 8000, 'reminder deleted via UI');
+    await T('reminder deleted through the form', true);
+    const errsBefore = jsdomErrors.length;
+    await T('markReminderDone on a missing id does not crash', () => ev(`markReminderDone('does-not-exist').then(() => true)`));
+    jsdomErrors.length = errsBefore;   // the handled error above is logged on purpose
+
+    /* -- due manual reminders are surfaced on the dashboard -- */
+    const rmDash = await ev(`api('/reminders', { method: 'POST', body: { title: 'یادآوری داشبورد QA', due: Date.now() - 86400000, kind: 'custom' } })`);
+    await ev(`(() => { state.reminders = null; return loadAll(true); })()`);
+    await ev(`navigate('/dashboard')`); await waitLoaded();
+    await T('overdue manual reminder shows on the dashboard', () => ev(`document.querySelector('#content').innerHTML.includes('یادآوری داشبورد QA')`));
+    await ev(`api('/reminders/${rmDash.reminder.id}', { method: 'DELETE' })`);
+    await ev(`(() => { state.reminders = null; return loadAll(true); })()`);
+
+    /* -- router: the newest navigation always wins -- */
+    await ev(`navigate('/projects'); navigate('/parts');`);
+    await waitLoaded();
+    await T('fast double navigation renders the last route only', () => ev(`state.route === '/parts' && document.querySelector('#content').innerHTML.includes('partList')`));
+
+    /* -- storage layer -- */
+    await T('_lsSave reports success', () => ev(`_lsSave() === true`));
+    await T('old login sessions are pruned', () => ev(`(() => {
+      const db = _lsLoad();
+      db.sessions['stale-token'] = { userId: 'x', createdAt: Date.now() - 400 * 86400000 };
+      _lsPruneSessions();
+      return !db.sessions['stale-token'] && !!db.sessions[state.token];
+    })()`));
+
+    /* -- service worker contract -- */
+    await T('service worker cache version bumped', () => {
+      const sw = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
+      return /const CACHE = 'zlift-pwa-v(\d+)'/.test(sw) && sw.includes("req.mode === 'navigate'");
+    });
+
+    /* ================= v20 polish regressions ================= */
+
+    /* -- Persian-aware search: Arabic ي/ك, Persian digits, ZWNJ -- */
+    await T('norm() folds Arabic letters, Persian digits and ZWNJ', () => ev(`(() => {
+      return norm('کلـيد ۱۲') === norm('كليد 12') && norm('می\\u200cشود') === norm('میشود') && norm('  Aا  ') === 'aا';
+    })()`));
+    const noteQa = await ev(`api('/notes', { method: 'POST', body: { title: 'تنظیم کلید ۱۲ ولت', content: 'یادداشت تست جست‌وجو', tags: ['تست'] } })`);
+    await ev(`(() => { state.notes = null; return loadAll(true); })()`);
+    await ev(`navigate('/notes')`); await waitLoaded();
+    await T('search with Arabic «كليد» finds Persian «کلید»', () => ev(`(() => { noteQuery = 'كليد'; drawNotes(); return document.querySelector('#noteList').innerHTML.includes('تنظیم کلید'); })()`));
+    await T('search with Latin digits finds Persian digits', () => ev(`(() => { noteQuery = '12'; drawNotes(); return document.querySelector('#noteList').innerHTML.includes('تنظیم کلید'); })()`));
+    await T('search ignoring ZWNJ still matches', () => ev(`(() => { noteQuery = 'جستوجو'; drawNotes(); return document.querySelector('#noteList').innerHTML.includes('تنظیم کلید'); })()`));
+    await ev(`(() => { noteQuery = ''; drawNotes(); return api('/notes/${noteQa.note.id}', { method: 'DELETE' }); })()`);
+    await ev(`(() => { state.notes = null; return loadAll(true); })()`);
+
+    /* -- modal is a real dialog: aria, scroll lock, focus, Enter = save -- */
+    await ev(`navigate('/notes')`); await waitLoaded();
+    await ev(`openNoteForm()`);
+    await T('modal exposes dialog semantics', () => ev(`(() => {
+      const box = document.querySelector('#modalRoot .modal');
+      return box.getAttribute('role') === 'dialog' && box.getAttribute('aria-modal') === 'true' && !!box.getAttribute('aria-labelledby');
+    })()`));
+    await T('page behind the modal is scroll-locked', () => ev(`document.body.classList.contains('scroll-lock')`));
+    await T('focus moves inside the dialog', () => ev(`document.querySelector('#modalRoot .modal').contains(document.activeElement)`));
+    await ev(`closeModal()`);
+    await T('scroll lock released after closing', () => ev(`!document.body.classList.contains('scroll-lock')`));
+
+    await ev(`openServiceForm(); document.querySelector('#s_customer').value = 'مشتری اینتر QA';`);
+    await ev(`document.querySelector('#modalRoot form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))`);
+    await waitUntil(() => ev(`(state.services || []).some(x => x.customer === 'مشتری اینتر QA')`), 8000, 'Enter submits the form');
+    await T('Enter inside a form runs the primary action (no page reload)', true);
+    await ev(`(() => { const s = state.services.find(x => x.customer === 'مشتری اینتر QA'); return s ? api('/services/' + s.id, { method: 'DELETE' }) : null; })()`);
+    await ev(`(() => { state.services = null; return loadAll(true); })()`);
+
+    /* -- validation marks and focuses the offending field -- */
+    await ev(`navigate('/projects')`); await waitLoaded();
+    await ev(`openProjectForm(); document.querySelector('#f_name').value = '   '; document.querySelector('#projSave').onclick();`);
+    await T('empty required field is highlighted and focused', () => ev(`(() => {
+      const el = document.querySelector('#f_name');
+      return el.classList.contains('input-error') && document.activeElement === el;
+    })()`));
+    await T('the error clears as soon as the user types', () => ev(`(() => {
+      const el = document.querySelector('#f_name');
+      el.value = 'x'; el.dispatchEvent(new Event('input', { bubbles: true }));
+      return !el.classList.contains('input-error');
+    })()`));
+    await ev(`closeModal()`);
+
+    /* -- API error codes become readable messages -- */
+    await T('error codes map to specific messages', () => ev(`(() => {
+      return errMsg({ code: 'not_found' }) === t('errNotFound') &&
+             errMsg({ code: 'too_large' }) === t('photoTooLarge') &&
+             errMsg({ code: 'nope' }) === t('errGeneric');
+    })()`));
+
+    /* -- printing pipeline builds a sheet and cleans it up -- */
+    await T('printDoc renders a sheet and clears it afterwards', () => ev(`(() => {
+      window.print = () => {};
+      printDoc('<h1>QA print</h1>');
+      const filled = document.getElementById('printSheet').innerHTML.includes('QA print');
+      window.dispatchEvent(new Event('afterprint'));
+      return filled && document.getElementById('printSheet').innerHTML === '';
+    })()`));
+
+    /* -- Jalali month names follow the interface language -- */
+    await T('Jalali months are transliterated in English mode', () => ev(`(() => {
+      LANG = 'en'; const en = jalMonth(6) + ' ' + fmtJalali(Date.now());
+      LANG = 'fa'; const fa = jalMonth(6);
+      return en.startsWith('Shahrivar') && !/[\\u0600-\\u06FF]/.test(en) && fa === 'شهریور';
+    })()`));
+
+    /* -- scroll position: new page starts at top, back restores -- */
+    await T('scroll position is remembered per route', () => ev(`(() => {
+      Object.defineProperty(window, 'scrollY', { value: 240, configurable: true });
+      state.route = '/projects';
+      _saveScroll();
+      Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
+      return _scrollPos['/projects'] === 240;
+    })()`));
+
+    /* -- navigation menu keeps its handlers and marks the current page -- */
+    await ev(`navigate('/parts')`); await waitLoaded();
+    await T('nav marks the active route for assistive tech', () => ev(`(() => {
+      const btn = [...document.querySelectorAll('#mainNav .nav-item')].find(b => b.dataset.route === '/parts');
+      return btn.classList.contains('active') && btn.getAttribute('aria-current') === 'page' && typeof btn.onclick === 'function';
+    })()`));
+
+    /* -- toasts never pile up -- */
+    await T('at most 3 toasts are shown at once', () => ev(`(() => {
+      for (let i = 0; i < 6; i++) toast('t' + i);
+      const n = document.querySelector('#toastRoot').children.length;
+      document.querySelector('#toastRoot').innerHTML = '';
+      return n <= 3;
+    })()`));
+
+    /* ================= v21 visual consistency ================= */
+    await T('empty states carry no ad-hoc inline styles', () => {
+      const src = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+      return !/class="empty"[^>]*style=/.test(src.replace(/class="empty" data-cal="noevents" style="margin-top:12px"/g, ''));
+    });
+    await T('dark theme drives native controls (color-scheme)', () => {
+      const src = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+      return /html\[data-theme="dark"\] \{\s*color-scheme: dark;/.test(src) && /html\[data-theme="light"\] \{\s*color-scheme: light;/.test(src);
+    });
+    await T('reduced-motion and touch-hover rules are present', () => {
+      const src = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+      return src.includes('prefers-reduced-motion: reduce') && src.includes('@media (hover: none)');
+    });
+    await T('print stylesheet sets page margins and avoids broken rows', () => {
+      const src = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+      return src.includes('@page { size: A4; margin: 14mm; }') && src.includes('display: table-header-group');
+    });
+    await T('theme toggle updates the browser theme colour', () => ev(`(() => {
+      localStorage.setItem('zlift_theme', 'dark'); applyTheme();
+      const dark = document.getElementById('metaTheme').getAttribute('content');
+      localStorage.setItem('zlift_theme', 'light'); applyTheme();
+      const light = document.getElementById('metaTheme').getAttribute('content');
+      return dark === '#0b1220' && light === '#2563eb' && document.documentElement.getAttribute('data-theme') === 'light';
+    })()`));
+
+    /* ================= v22 wording & form flow ================= */
+    await T('delete confirmation title is generic (not "delete project")', () => ev(`(() => {
+      return !I18N.fa.confirmDeleteTitle.includes('پروژه') && !/project/i.test(I18N.en.confirmDeleteTitle);
+    })()`));
+    await T('project delete message matches what really happens', () => ev(`(() => {
+      return I18N.fa.confirmDeleteMsg.includes('چک‌لیست') && I18N.fa.confirmDeleteMsg.includes('حذف نمی‌شوند') &&
+             /kept/i.test(I18N.en.confirmDeleteMsg);
+    })()`));
+    await T('no informal imperative verbs left in the Persian UI', () => ev(`(() => {
+      const bad = /(?:^|\\s)(?:بگیر|حذف کن|بازیابی کن|بزن|برو|ببین)(?:$|[\\s،.!؟])/;
+      return !Object.keys(I18N.fa).some(k => typeof I18N.fa[k] === 'string' && bad.test(I18N.fa[k]));
+    })()`));
+    await T('English labels use sentence case', () => ev(`(() => {
+      const keys = ['projects','parts','tools','issues','knowledge','standards','monthlyReport','settings',
+                    'newProject','editProject','newPart','editPart','newNote','editNote','newInvoice',
+                    'editInvoice','newContract','editContract','tCalc','tDiag','tKb','tChecklists','latestProject'];
+      const bad = keys.filter(k => {
+        const v = I18N.en[k]; if (!v) return true;
+        return v.split(' ').slice(1).some(w => /^[A-Z][a-z]+$/.test(w.replace(/[()&—,.-]/g, '')));
+      });
+      return bad.length === 0;
+    })()`));
+    await ev(`navigate('/services')`); await waitLoaded();
+    await ev(`openServiceForm()`);
+    await T('service form follows the real job flow', () => ev(`(() => {
+      const ids = [...document.querySelectorAll('#modalRoot .field input, #modalRoot .field select, #modalRoot .field textarea')].map(e => e.id);
+      const want = ['s_project','s_customer','s_elevator','s_date','s_type','s_tech','s_complaint','s_problem',
+                    's_diag','s_meas','s_work','s_parts','s_recommend','s_final','s_followup'];
+      return want.join(',') === ids.join(',') && document.querySelectorAll('#modalRoot .form-sep').length === 3;
+    })()`), await ev(`[...document.querySelectorAll('#modalRoot .field input, #modalRoot .field select, #modalRoot .field textarea')].map(e => e.id).join(',')`));
+    await ev(`closeModal()`);
+    await ev(`navigate('/projects')`); await waitLoaded();
+    await ev(`openProjectForm()`);
+    await T('project form is grouped: details, specs, equipment, status', () => ev(`(() => {
+      const seps = [...document.querySelectorAll('#projForm .form-sep')].map(e => e.textContent);
+      const ids = [...document.querySelectorAll('#projForm .field input, #projForm .field select, #projForm .field textarea')].map(e => e.id);
+      return seps.length === 4 && ids[0] === 'f_name' && ids.indexOf('f_type') < ids.indexOf('f_controller') &&
+             ids.indexOf('f_controller') < ids.indexOf('f_status') && ids[ids.length - 1] === 'f_notes';
+    })()`));
+    await ev(`closeModal()`);
+
     /* ---------- legacy regressions ---------- */
     await ev(`navigate('/checklists/traction-install')`); await waitLoaded();
     await T('traction install checklist still renders (30 items)', () => ev(`document.querySelectorAll('#content .check-item[data-item]').length === 30`));

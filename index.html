@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="theme-color" content="#2563eb" />
+<meta name="theme-color" content="#2563eb" id="metaTheme" />
+<meta name="color-scheme" content="light dark" />
+<meta name="description" content="Z Lift — دستیار حرفه‌ای تکنسین آسانسور: مدیریت پروژه، گزارش سرویس، چک‌لیست EN 81-20، محاسبات، عیب‌یابی و فاکتور. کاملاً آفلاین." />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -36,6 +38,7 @@
   --sidebar-w: 264px;
 }
 html[data-theme="light"] {
+  color-scheme: light;
   --bg: #f1f5f9;
   --bg-card: #ffffff;
   --bg-soft: #f8fafc;
@@ -48,14 +51,15 @@ html[data-theme="light"] {
   --shadow-lg: 0 8px 32px rgba(15, 23, 42, .14);
 }
 html[data-theme="dark"] {
+  color-scheme: dark;
   --bg: #0b1220;
   --bg-card: #131c2e;
   --bg-soft: #182339;
   --bg-hover: #1d2a44;
   --border: #253550;
-  --text: #e6edf7;
-  --text-2: #9fb0c9;
-  --text-3: #64748b;
+  --text: #e8eefa;
+  --text-2: #aab9d0;
+  --text-3: #8598b4;
   --shadow: 0 1px 3px rgba(0, 0, 0, .35), 0 6px 20px rgba(0, 0, 0, .25);
   --shadow-lg: 0 12px 40px rgba(0, 0, 0, .5);
   --accent-soft: rgba(59, 130, 246, .18);
@@ -64,6 +68,8 @@ html[data-theme="dark"] {
 html, body { height: 100%; }
 body {
   font-family: var(--font);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
   background: var(--bg);
   color: var(--text);
   font-size: 14.5px;
@@ -72,12 +78,36 @@ body {
 }
 html[dir="ltr"] body { letter-spacing: .1px; }
 .hidden { display: none !important; }
+body.scroll-lock { overflow: hidden; }
+.input-error, .input-error:focus { border-color: var(--danger) !important; box-shadow: 0 0 0 3px var(--danger-soft); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn:focus-visible, .icon-btn:focus-visible, .chip:focus-visible { outline-offset: 3px; }
 button { font-family: inherit; cursor: pointer; }
 input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+::placeholder { color: var(--text-3); opacity: 1; }
 a { color: var(--accent-2); text-decoration: none; }
+a:hover { text-decoration: underline; }
+::selection { background: var(--accent-soft); color: var(--text); }
 ::-webkit-scrollbar { width: 9px; height: 9px; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
 ::-webkit-scrollbar-track { background: transparent; }
+* { scrollbar-color: var(--border) transparent; scrollbar-width: thin; }
+/* touch devices: no sticky hover effects after a tap — use a press state instead */
+@media (hover: none) {
+  .row-item:hover, .tile:hover, .kb-card:hover, .btn-primary:hover { transform: none; }
+  .row-item:hover, .diag-q:hover, .check-item:hover, .parts-table tr:hover td { background: inherit; }
+  .chip:hover { border-color: var(--border); color: var(--text-2); }
+}
+.row-item:active, .tile:active, .kb-card:active { transform: scale(.995); }
+.btn:active { transform: translateY(1px); }
+/* respect the OS "reduce motion" setting */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important; scroll-behavior: auto !important;
+  }
+}
 
 /* ============ auth ============ */
 .auth-wrap {
@@ -141,6 +171,11 @@ a { color: var(--accent-2); text-decoration: none; }
 .field textarea { resize: vertical; min-height: 84px; }
 .field .hint { font-size: 12px; color: var(--text-3); margin-top: 4px; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+.form-sep {
+  font-size: 12px; font-weight: 800; color: var(--text-3); letter-spacing: .4px;
+  margin: 4px 0 12px; padding-bottom: 6px; border-bottom: 1px dashed var(--border);
+}
+.form-sep:first-child { margin-top: 0; }
 .form-grid .span2 { grid-column: span 2; }
 @media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } .form-grid .span2 { grid-column: span 1; } }
 
@@ -295,7 +330,6 @@ a { color: var(--accent-2); text-decoration: none; }
 /* quick access tiles */
 .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 @media (max-width: 900px) { .tiles { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 520px) { .tiles { grid-template-columns: repeat(2, 1fr); } }
 .tile {
   background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 18px 16px; text-align: center; box-shadow: var(--shadow);
@@ -321,6 +355,7 @@ a { color: var(--accent-2); text-decoration: none; }
 .badge.b-purple { background: var(--purple-soft); color: var(--purple); }
 .badge.b-teal { background: var(--teal-soft); color: var(--teal); }
 .badge.b-gray { background: var(--bg-soft); color: var(--text-2); border: 1px solid var(--border); }
+.badge.badge-sm { font-size: 10.5px; padding: 2px 8px; vertical-align: middle; }
 
 /* list rows */
 .row-item {
@@ -365,7 +400,11 @@ html[dir="ltr"] .toolbar .search svg { inset-inline-end: auto; inset-inline-star
 .empty {
   text-align: center; padding: 54px 20px; color: var(--text-2);
   border: 2px dashed var(--border); border-radius: var(--radius); background: var(--bg-card);
+  grid-column: 1 / -1;                      /* always full width inside a grid */
 }
+/* nested inside a card or a modal the dashed frame is noise */
+.card .empty, .modal-body .empty, #calDayDetail .empty { border: 0; background: transparent; padding: 30px 14px; }
+.empty .btn { margin-top: 2px; }
 .empty .e-icon { font-size: 40px; margin-bottom: 10px; opacity: .9; }
 .empty strong { display: block; font-size: 16px; color: var(--text); margin-bottom: 4px; }
 .empty p { font-size: 13.5px; margin-bottom: 16px; }
@@ -415,7 +454,7 @@ html[dir="ltr"] .toolbar .search svg { inset-inline-end: auto; inset-inline-star
 
 /* ============ toast ============ */
 .toast-root {
-  position: fixed; bottom: 20px; inset-inline-start: 50%; transform: translateX(-50%);
+  position: fixed; bottom: calc(20px + env(safe-area-inset-bottom)); inset-inline-start: 50%; transform: translateX(-50%);
   z-index: 200; display: flex; flex-direction: column; gap: 9px; align-items: center; pointer-events: none;
 }
 html[dir="rtl"] .toast-root { transform: translateX(50%); }
@@ -459,11 +498,12 @@ html[dir="rtl"] .toast-root { transform: translateX(50%); }
   padding: 9px 11px; border-radius: 10px; transition: background .12s; cursor: pointer;
 }
 .check-item:hover { background: var(--bg-hover); }
+.check-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--bg-hover); }
 .check-item input { margin-top: 5px; width: 17px; height: 17px; accent-color: var(--ok); flex-shrink: 0; cursor: pointer; }
 .check-item.done .ci-text { text-decoration: line-through; color: var(--text-3); }
 .ci-text { font-size: 13.8px; }
 .ci-ref { font-size: 11px; color: var(--text-3); display: block; }
-.check-progress-wrap { position: sticky; top: 68px; z-index: 5; background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 13px 18px; box-shadow: var(--shadow); margin-bottom: 16px; }
+.check-progress-wrap { position: sticky; top: calc(66px + env(safe-area-inset-top)); z-index: 5; background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 13px 18px; box-shadow: var(--shadow); margin-bottom: 16px; }
 
 /* ============ calculators ============ */
 .calc-result {
@@ -547,7 +587,9 @@ mark { background: color-mix(in srgb, var(--warn) 35%, transparent); color: inhe
 
 /* ============ print report ============ */
 .print-sheet { display: none; }
+@page { size: A4; margin: 14mm; }
 @media print {
+  html, body { background: #fff !important; }
   body * { visibility: hidden; }
   .print-sheet, .print-sheet * { visibility: visible; }
   .print-sheet {
@@ -559,8 +601,12 @@ mark { background: color-mix(in srgb, var(--warn) 35%, transparent); color: inhe
   .print-sheet table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
   .print-sheet th, .print-sheet td { border: 1px solid #999; padding: 7px 10px; text-align: start; }
   .print-sheet th { background: #f0f0f0; width: 160px; }
-  .print-sheet .sig-row { display: flex; gap: 40px; margin-top: 50px; }
+  .print-sheet thead { display: table-header-group; }          /* repeat headers across pages */
+  .print-sheet tr, .print-sheet .sig-row { page-break-inside: avoid; break-inside: avoid; }
+  .print-sheet h1, .print-sheet h2 { page-break-after: avoid; }
+  .print-sheet .sig-row { display: flex; gap: 40px; margin-top: 50px; page-break-inside: avoid; }
   .print-sheet .sig { flex: 1; text-align: center; border-top: 1px solid #666; padding-top: 8px; font-size: 12px; }
+  #updBanner, .toast-root, .modal-overlay { display: none !important; }
 }
 
 /* timeline for services in project detail */
@@ -615,6 +661,7 @@ mark { background: color-mix(in srgb, var(--warn) 35%, transparent); color: inhe
   /* modals become bottom sheets */
   .modal-overlay { padding: 0; align-items: flex-end; }
   .modal { max-width: 100% !important; max-height: 93vh; border-radius: 22px 22px 0 0; animation: sheetIn .25s ease; }
+  .modal::before { content: ''; display: block; width: 38px; height: 4px; border-radius: 99px; background: var(--border); margin: 8px auto 0; flex-shrink: 0; }
   @keyframes sheetIn { from { transform: translateY(48px); opacity: .5; } }
   .modal-body { padding: 16px 16px; }
   .modal-head { padding: 15px 16px 12px; }
@@ -629,7 +676,7 @@ mark { background: color-mix(in srgb, var(--warn) 35%, transparent); color: inhe
   .section-title { margin: 20px 0 10px; }
   .card { padding: 15px 14px; }
   .kb-article { font-size: 13.5px; }
-  .check-progress-wrap { top: 62px; }
+  .check-progress-wrap { top: calc(60px + env(safe-area-inset-top)); }
   /* bigger touch targets */
   .btn { padding: 11px 16px; min-height: 44px; }
   .btn-sm { min-height: 38px; padding: 8px 13px; }
@@ -686,6 +733,8 @@ html, body { overflow-x: hidden; max-width: 100%; }
 .cal-day { position: relative; border: 1px solid var(--border); background: var(--bg-card); border-radius: 10px; padding: 8px 0 20px; font-family: inherit; font-size: 13px; cursor: pointer; color: var(--text); }
 .cal-day:hover { border-color: var(--accent); }
 .cal-day.cal-today { border-color: var(--accent); background: var(--accent-soft); }
+.cal-day.cal-sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); background: var(--accent-soft); }
+.cal-day:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .cal-num { font-weight: 600; }
 .cal-dot { position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; font-size: 9.5px; font-weight: 700; min-width: 15px; height: 15px; line-height: 15px; border-radius: 8px; padding: 0 4px; }
 .sub-title { font-size: 12.5px; font-weight: 700; color: var(--text-2); margin: 4px 0 6px; }
@@ -709,7 +758,7 @@ html, body { overflow-x: hidden; max-width: 100%; }
       <form id="authForm" autocomplete="off">
         <div id="nameField" class="field hidden">
           <label data-i18n="fullName">نام و نام خانوادگی</label>
-          <input type="text" id="authName" placeholder="مثلاً رضا محمدی" />
+          <input type="text" id="authName" placeholder="رضا محمدی" data-i18n-ph="phFullName" />
         </div>
         <div class="field">
           <label data-i18n="username">نام کاربری</label>
@@ -751,10 +800,10 @@ html, body { overflow-x: hidden; max-width: 100%; }
             <strong id="userName">—</strong>
             <span data-i18n="roleTech">تکنسین آسانسور</span>
           </div>
-          <button class="icon-btn" id="backupBtn" title="پشتیبان‌گیری">
+          <button class="icon-btn" id="backupBtn" aria-label="پشتیبان‌گیری" title="پشتیبان‌گیری">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           </button>
-          <button class="icon-btn" id="logoutBtn" title="خروج">
+          <button class="icon-btn" id="logoutBtn" aria-label="خروج" title="خروج">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           </button>
         </div>
@@ -768,18 +817,19 @@ html, body { overflow-x: hidden; max-width: 100%; }
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
         <h2 class="page-title" id="pageTitle">داشبورد</h2>
+        <span id="offlineBadge" class="badge b-amber hidden" style="flex-shrink:0"></span>
         <div class="topbar-actions">
-          <button class="icon-btn" id="tgChannelBtn" title="کانال تلگرام Z Lift" style="color:#2AABEE">
+          <button class="icon-btn" id="tgChannelBtn" aria-label="کانال تلگرام Z Lift" title="کانال تلگرام Z Lift" style="color:#2AABEE">
             <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
           </button>
-          <button class="icon-btn" id="gSearchBtn" title="جستجوی سراسری">
+          <button class="icon-btn" id="gSearchBtn" aria-label="جستجوی سراسری" title="جستجوی سراسری">
             <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </button>
-          <button class="icon-btn hidden" id="installBtn" onclick="promptInstall()" title="نصب اپلیکیشن" style="color:var(--accent-2);border-color:var(--accent-2)">
+          <button class="icon-btn hidden" id="installBtn" aria-label="نصب اپلیکیشن" onclick="promptInstall()" title="نصب اپلیکیشن" style="color:var(--accent-2);border-color:var(--accent-2)">
             <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           </button>
-          <button class="icon-btn" id="langBtn" title="English / فارسی"><span id="langLabel">EN</span></button>
-          <button class="icon-btn" id="themeBtn" title="حالت تیره/روشن">
+          <button class="icon-btn" id="langBtn" aria-label="English / فارسی" title="English / فارسی"><span id="langLabel">EN</span></button>
+          <button class="icon-btn" id="themeBtn" aria-label="حالت تیره/روشن" title="حالت تیره/روشن">
             <svg id="iconMoon" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
             <svg id="iconSun" class="hidden" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
           </button>
@@ -807,6 +857,14 @@ const I18N = {
     demoHint: 'حساب آزمایشی:', roleTech: 'تکنسین آسانسور', logout: 'خروج',
     errInvalidCred: 'نام کاربری یا رمز عبور اشتباه است', errUserTaken: 'این نام کاربری قبلاً ثبت شده',
     errWeakPass: 'رمز عبور باید حداقل ۶ کاراکتر باشد', errBadUser: 'نام کاربری حداقل ۳ کاراکتر', errGeneric: 'خطایی رخ داد؛ دوباره تلاش کنید',
+    errNotFound: 'این مورد پیدا نشد؛ شاید قبلاً حذف شده است', errSessionExpired: 'نشست شما منقضی شد؛ دوباره وارد شوید',
+    photoReadFailed: 'خواندن این تصویر ممکن نشد؛ فایل دیگری انتخاب کنید', invPayInvalid: 'مبلغ پرداخت باید بزرگ‌تر از صفر باشد',
+    phFullName: 'مثلاً رضا محمدی', phCustomer: 'مثلاً آقای احمدی — ساختمان نگین', phElevator: 'مثلاً کششی ۶ نفره، سعادت‌آباد',
+    phMeasure: 'مثلاً: V=382/379/381 · I=13.8A · P=34bar',
+    backupLast: 'آخرین پشتیبان‌گیری', backupNever: 'تا کنون پشتیبان نگرفته‌اید', daysAgo: 'روز پیش',
+    secJob: 'مشخصات کار', secFindings: 'شرح مشکل و بررسی', secWork: 'اقدامات و نتیجه',
+    secProject: 'مشخصات پروژه', secSpecs: 'مشخصات فنی آسانسور', secEquip: 'تجهیزات', secStatus: 'وضعیت و سرویس',
+    errSaveFailed: 'ذخیره نشد؛ دوباره تلاش کنید', errOffline: 'برای این کار به اینترنت نیاز است',
     // nav
     navMain: 'اصلی', navTools: 'ابزار فنی', navKnowledge: 'دانش فنی',
     dashboard: 'داشبورد', projects: 'پروژه‌های نصب', services: 'سرویس‌ها',
@@ -835,12 +893,12 @@ const I18N = {
     prType: 'نوع آسانسور', prCapacity: 'ظرفیت (kg)', prPersons: 'ظرفیت (نفر)', prFloors: 'تعداد طبقات',
     prStops: 'تعداد توقف', prSpeed: 'سرعت (m/s)', prController: 'تابلو فرمان', prMotor: 'موتور / پاوریونیت',
     prStatus: 'وضعیت پروژه', prProgress: 'درصد پیشرفت', prNotes: 'یادداشت / توضیحات',
-    save: 'ذخیره', cancel: 'انصراف', create: 'ایجاد', edit: 'ویرایش', delete: 'حذف', close: 'بستن',
-    confirmDeleteTitle: 'حذف پروژه', confirmDeleteMsg: 'این پروژه به همراه تمام سرویس‌ها و چک‌لیست‌های آن حذف می‌شود. مطمئن هستید؟',
+    save: 'ذخیره', cancel: 'انصراف', create: 'ثبت', edit: 'ویرایش', delete: 'حذف', close: 'بستن',
+    confirmDeleteTitle: 'تأیید حذف', confirmDeleteMsg: 'این پروژه و چک‌لیست‌هایش حذف می‌شود. گزارش‌های سرویس حذف نمی‌شوند و مستقل باقی می‌مانند.',
     confirmDeleteSvcMsg: 'این گزارش سرویس حذف می‌شود. مطمئن هستید؟',
     confirmDeleteNoteMsg: 'این یادداشت حذف می‌شود. مطمئن هستید؟',
-    yesDelete: 'بله، حذف کن',
-    saved: 'ذخیره شد', deleted: 'حذف شد', created: 'ایجاد شد',
+    yesDelete: 'بله، حذف شود',
+    saved: 'ذخیره شد', deleted: 'حذف شد', created: 'ثبت شد',
     statusContract: 'عقد قرارداد', statusInstalling: 'در حال نصب', statusTesting: 'تست و راه‌اندازی',
     statusInspection: 'در انتظار بازرسی', statusDelivered: 'تحویل شده', statusMaintenance: 'قرارداد سرویس',
     floorsUnit: 'طبقه', personsUnit: 'نفر', lastUpdate: 'آخرین بروزرسانی',
@@ -849,7 +907,7 @@ const I18N = {
     noServices: 'سرویسی ثبت نشده', noServicesSub: 'اولین گزارش سرویس را ثبت کنید',
     notFound: 'موردی یافت نشد', notFoundSub: 'عبارت جستجو یا فیلتر را تغییر دهید',
     // services
-    newServiceRec: 'گزارش سرویس جدید', editService: 'ویرایش گزارش',
+    newServiceRec: 'ثبت سرویس', editService: 'ویرایش گزارش سرویس',
     svcProject: 'پروژه / دستگاه', svcDate: 'تاریخ', svcTechnician: 'تکنسین', svcType: 'نوع سرویس',
     svcProblem: 'شرح مشکل / درخواست', svcDiagnosis: 'تشخیص عیب', svcWork: 'اقدامات انجام‌شده',
     svcParts: 'قطعات تعویض‌شده', svcFinal: 'وضعیت نهایی',
@@ -860,7 +918,7 @@ const I18N = {
     chSelectProject: 'اتصال به پروژه (اختیاری — برای ذخیره پیشرفت)', chNoProject: 'بدون پروژه (فقط مشاهده)',
     chProgress: 'پیشرفت چک‌لیست', chReset: 'شروع مجدد', itemsDone: 'مورد تکمیل شده',
     // calc
-    calcIntro: 'ابزارهای محاسباتی پرکاربرد برای تکنسین آسانسور — نتایج جنبه راهنمایی دارند و جایگزین طراحی مهندسی نیستند.',
+    calcIntro: 'محاسبات پرکاربرد تکنسین آسانسور — نتایج راهنماست و جایگزین طراحی مهندسی نیست.',
     calculate: 'محاسبه',
     // diag
     diagIntro: 'علائم خرابی را انتخاب کنید تا علت‌های محتمل و مراحل بررسی را ببینید.',
@@ -919,7 +977,7 @@ const I18N = {
     backup: 'پشتیبان‌گیری', backupExport: 'دانلود فایل پشتیبان', backupImport: 'بازیابی از فایل',
     backupHint: 'داده‌ها فقط روی همین دستگاه ذخیره می‌شوند — مرتب پشتیبان بگیرید.',
     backupDone: 'فایل پشتیبان آماده شد', restoreDone: 'بازیابی انجام شد', restoreBad: 'فایل پشتیبان نامعتبر است',
-    restoreConfirmTitle: 'بازیابی پشتیبان', restoreConfirmMsg: 'داده‌های فعلی با محتوای فایل جایگزین می‌شود. ادامه می‌دهید؟', yesRestore: 'بله، بازیابی کن',
+    restoreConfirmTitle: 'بازیابی پشتیبان', restoreConfirmMsg: 'داده‌های فعلی با محتوای فایل جایگزین می‌شود. ادامه می‌دهید؟', yesRestore: 'بله، بازیابی شود',
     // auth note
     authLocalNote: 'ورود آزمایشی/محلی — داده‌ها فقط روی همین دستگاه ذخیره می‌شود',
     svcCustomer: 'نام مشتری', svcElevator: 'اطلاعات آسانسور (آدرس، نوع، ظرفیت...)',
@@ -931,9 +989,9 @@ const I18N = {
     vvvf: 'کدهای خطای درایو', vvvfPick: 'برند و مدل درایو را انتخاب کنید', vvvfSearch: 'جستجوی کد خطا...',
     vvvfWarn: 'کدها الگوهای متداول هر خانواده درایو هستند؛ معنی دقیق به مدل و نسخه بستگی دارد — همیشه با منوال همان مدل تطبیق دهید.',
     vvvfMeaning: 'معنی', vvvfCauses: 'علل محتمل', vvvfChecks: 'بررسی‌ها', vvvfMeas: 'اندازه‌گیری مرتبط',
-    issues: 'مسائل باز', newIssue: 'مسئله جدید', issueOpen: 'مشکل باز', issueFollow: 'نیاز به پیگیری', issueRecommend: 'توصیه',
-    issueTitle: 'شرح مسئله', issueDone: 'انجام شد', issueReopen: 'بازگشایی', noIssues: 'مسئله بازی ثبت نشده ✅',
-    confirmDeleteIssueMsg: 'این مسئله حذف می‌شود. مطمئن هستید؟', issueStatus: 'نوع', issueClosed: 'بسته شده',
+    issues: 'موارد باز', newIssue: 'ثبت مورد باز', issueOpen: 'باز', issueFollow: 'نیاز به پیگیری', issueRecommend: 'توصیه',
+    issueTitle: 'شرح مورد', issueDone: 'انجام شد', issueReopen: 'بازگشایی', noIssues: 'موردی باز نمانده ✅',
+    confirmDeleteIssueMsg: 'این مورد حذف می‌شود. مطمئن هستید؟', issueStatus: 'نوع', issueClosed: 'بسته‌شده',
     tools: 'ابزار من', newTool: 'افزودن ابزار', toolName: 'نام ابزار', toolNote: 'توضیح (مدل، وضعیت...)',
     toolSuggest: 'پیشنهادها', noTools: 'ابزاری ثبت نشده', confirmDeleteToolMsg: 'این ابزار حذف می‌شود. مطمئن هستید؟',
     photos: 'تصاویر', addPhoto: 'افزودن عکس', photoCat: 'دسته', noPhotos: 'عکسی ثبت نشده',
@@ -957,31 +1015,31 @@ const I18N = {
     invQty: 'تعداد', invUnitPrice: 'قیمت واحد (ریال)', invRowTotal: 'جمع ردیف',
     invLabor: 'دستمزد / اجرت', invDiscount: 'تخفیف (ریال)', invSubtotal: 'جمع اقلام',
     invGrand: 'جمع کل', invPaid: 'دریافت‌شده', invBalance: 'مانده',
-    invStatus: 'وضعیت', invUnpaid: 'پرداخت‌نشده', invPartial: 'پرداخت ناقص', invPaidFull: 'تسویه شده',
+    invStatus: 'وضعیت', invUnpaid: 'پرداخت‌نشده', invPartial: 'پرداخت ناقص', invPaidFull: 'تسویه‌شده',
     invAddPay: 'ثبت دریافت', invPayAmount: 'مبلغ دریافتی (ریال)', invPayNote: 'بابت / روش (نقد، کارت...)',
     invPayments: 'دریافت‌ها', invPrint: 'چاپ فاکتور', invNo: 'شماره فاکتور',
     noInvoices: 'فاکتوری ثبت نشده', noInvoicesSub: 'اولین فاکتور سرویس یا نصب را صادر کنید',
     confirmDeleteInvMsg: 'این فاکتور حذف می‌شود. مطمئن هستید؟', searchInvoices: 'جستجوی فاکتور، مشتری...',
     invFromService: 'اتصال به گزارش سرویس (اختیاری)', invTotalsMonth: 'درآمد این ماه', invOpenBalance: 'مانده وصول‌نشده',
-    rial: 'ریال', invNote2: 'توضیحات فاکتور', invConsumeHint: 'با افزودن قطعه از انبار، موجودی هم به‌صورت خودکار کم می‌شود',
+    rial: 'ریال', invNote2: 'توضیحات فاکتور', invConsumeHint: 'افزودن قطعه از انبار، موجودی را هم کم می‌کند',
     // v10 polish
     globalSearch: 'جستجوی سراسری...', searchEverywhere: 'جستجو در همه بخش‌ها',
     srProjects: 'پروژه‌ها', srServices: 'سرویس‌ها', srParts: 'قطعات', srNotes: 'یادداشت‌ها',
     srKb: 'دانش فنی', srDiag: 'عیب‌یابی', srInv: 'فاکتورها', srCalc: 'محاسبات', noResults: 'نتیجه‌ای یافت نشد',
     dupService: 'کپی به سرویس جدید', sortBy: 'مرتب‌سازی', sortNewest: 'جدیدترین', sortName: 'نام', sortProgress: 'پیشرفت',
     statusFilter: 'وضعیت', summaryToday: 'خلاصه امروز', quickNewService: 'ثبت سریع سرویس',
-    exportCsv: 'خروجی CSV', kbRelClick: 'برای مطالعه کلیک کنید',
+    exportCsv: 'خروجی CSV', kbRelClick: 'برای مطالعه بزنید',
     // v11
     contracts: 'قراردادها', newContract: 'قرارداد جدید', editContract: 'ویرایش قرارداد',
-    ctBuilding: 'نام ساختمان / مشتری *', ctAmount: 'مبلغ ماهانه (ریال)', ctStart: 'تاریخ شروع',
-    ctMonths: 'مدت (ماه)', ctPayTable: 'جدول پرداخت ماه‌ها', ctPaid: 'پرداخت شد', ctUnpaid: 'پرداخت نشده',
+    ctBuilding: 'نام ساختمان / مشتری', ctAmount: 'مبلغ ماهانه (ریال)', ctStart: 'تاریخ شروع',
+    ctMonths: 'مدت (ماه)', ctPayTable: 'جدول پرداخت ماه‌ها', ctPaid: 'پرداخت‌شده', ctUnpaid: 'پرداخت‌نشده',
     ctOverdueMonths: 'ماه عقب‌افتاده', ctActive: 'فعال', ctExpired: 'پایان‌یافته',
     ctExpectMonth: 'درآمد قراردادی ماه', ctCollected: 'وصول‌شده', noContracts: 'قراردادی ثبت نشده',
     noContractsSub: 'قرارداد سرویس ماهانه ساختمان‌ها را اینجا مدیریت کنید',
     confirmDeleteCtMsg: 'این قرارداد حذف می‌شود. مطمئن هستید؟', ctLinkProject: 'اتصال به آسانسور (اختیاری)',
     ctNote: 'توضیحات', ctTapMonth: 'روی هر ماه بزنید تا وضعیت پرداخت تغییر کند',
     backupNagTitle: 'یادآوری پشتیبان‌گیری', backupNagMsg: 'روز از آخرین پشتیبان‌گیری گذشته است. داده‌ها فقط روی همین دستگاه هستند!',
-    backupNagBtn: 'همین حالا بکاپ بگیر', backupNagLater: 'بعداً',
+    backupNagBtn: 'همین حالا پشتیبان بگیرید', backupNagLater: 'بعداً',
     faultStats: 'الگوی خرابی این آسانسور', faultStatsSub: 'بر اساس گزارش‌های سرویس ثبت‌شده',
     kbReadMore: 'مطالعه در دانش فنی', today: 'امروز',
     storageFull: '⛔ حافظه دستگاه پر است! ذخیره انجام نشد — چند عکس قدیمی را حذف کنید و فوراً بکاپ بگیرید',
@@ -993,16 +1051,16 @@ const I18N = {
     monthlyReport: 'گزارش ماهانه', mrPick: 'انتخاب ماه', mrServices: 'سرویس‌های انجام‌شده',
     mrByType: 'به تفکیک نوع', mrTopFaults: 'پرتکرارترین خرابی‌ها', mrIncome: 'دریافتی فاکتورها',
     mrContracts: 'وصولی قراردادها', mrOpenBalance: 'مانده وصول‌نشده', mrPartsUsed: 'قطعات مصرف‌شده',
-    mrNewProjects: 'پروژه جدید', mrOpenIssues: 'مسائل باز مانده', mrPrint: 'چاپ گزارش ماهانه',
+    mrNewProjects: 'پروژه‌های جدید', mrOpenIssues: 'موارد باز', mrPrint: 'چاپ گزارش ماهانه',
     mrEmpty: 'در این ماه فعالیتی ثبت نشده', mrTitle: 'گزارش عملکرد ماهانه',
     share: 'اشتراک', shareTelegram: 'ارسال در تلگرام', shareSystem: 'اشتراک...',
     shareCopied: 'متن کپی شد — در تلگرام Paste کنید',
-    qrCode: 'کد QR آسانسور', qrHint: 'این کد را چاپ کنید و داخل کابین یا موتورخانه بچسبانید؛ با اسکن آن مستقیم به پروفایل همین آسانسور می‌رسید',
+    qrCode: 'کد QR آسانسور', qrHint: 'چاپ کنید و داخل کابین یا موتورخانه بچسبانید؛ اسکن، پروفایل همین آسانسور را باز می‌کند',
     qrPrint: 'چاپ برچسب QR', qrScanHint: 'اسکن = باز شدن پروفایل این آسانسور در Z Lift',
     tgChannel: 'کانال تلگرام Z Lift', tgChannelSub: 'اخبار، آموزش و نکات فنی',
     errUnexpected: 'خطای غیرمنتظره‌ای رخ داد — دوباره تلاش کنید',
     payOverConfirm: '⚠️ مبلغ از مانده بیشتر است! برای تأیید اضافه‌پرداخت دوباره بزنید',
-    chFailToIssue: 'ثبت موارد مردود به‌عنوان مسئله',
+    chFailToIssue: 'ثبت موارد مردود در فهرست موارد باز',
     mirrorFound: 'یک نسخه امن داخلی از داده‌های قبلی شما پیدا شد (حافظه اصلی خالی بود). بازیابی شود؟',
     mirrorRestore: 'بازیابی داده‌ها', adjustLabel: 'اصلاح دستی موجودی',
     restoreOf: 'محتوای فایل',
@@ -1011,6 +1069,10 @@ const I18N = {
     calNoEvents: 'رویدادی در این روز ثبت نشده', calServicesOnDay: 'سرویس‌های این روز', calRemindersDue: 'یادآوری‌های این روز',
     calOverdue: 'سررسید گذشته', calDueSoon: 'در آستانه سررسید', calUpcoming: 'سررسید آینده',
     calReminderList: 'یادآوری سرویس‌ها', calNoReminders: 'یادآوری فعالی نیست', calTapDay: 'برای مشاهده سرویس‌های هر روز روی آن بزنید',
+    prevMonth: 'ماه قبل', nextMonth: 'ماه بعد', reminderProject: 'پروژه مرتبط', reminderEditHint: 'برای ویرایش یا حذف روی یادآوری دستی بزنید',
+    reminderDeleted: 'یادآوری حذف شد', confirmDeleteReminderMsg: 'این یادآوری حذف شود؟',
+    consumeOverStock: 'مقدار مصرف از موجودی بیشتر است — برای تأیید دوباره بزنید',
+    offlineMode: 'آفلاین',
     reminders: 'یادآوری‌ها', newReminder: 'یادآوری جدید', editReminder: 'ویرایش یادآوری',
     reminderTitle: 'عنوان یادآوری', reminderDate: 'تاریخ سررسید', reminderMarkDone: 'انجام شد',
     reminderPeriodic: 'سرویس دوره‌ای', reminderFollowup: 'پیگیری', reminderCustom: 'یادآوری دستی',
@@ -1019,32 +1081,40 @@ const I18N = {
   },
   en: {
     dir: 'ltr',
-    tagline: 'Professional Elevator Technician Assistant',
-    taglineShort: 'Elevator Tech Assistant',
+    tagline: 'Professional elevator technician assistant',
+    taglineShort: 'Elevator tech assistant',
     login: 'Login', register: 'Register', loginBtn: 'Sign in', registerBtn: 'Create account',
     username: 'Username', password: 'Password', fullName: 'Full name',
-    demoHint: 'Demo account:', roleTech: 'Elevator Technician', logout: 'Logout',
+    demoHint: 'Demo account:', roleTech: 'Elevator technician', logout: 'Logout',
     errInvalidCred: 'Invalid username or password', errUserTaken: 'Username already taken',
     errWeakPass: 'Password must be at least 6 characters', errBadUser: 'Username must be at least 3 characters', errGeneric: 'Something went wrong; try again',
-    navMain: 'Main', navTools: 'Technical Tools', navKnowledge: 'Knowledge',
-    dashboard: 'Dashboard', projects: 'Installation Projects', services: 'Services',
+    errNotFound: 'Not found — it may already have been deleted', errSessionExpired: 'Your session expired; please sign in again',
+    photoReadFailed: 'This image could not be read; pick another file', invPayInvalid: 'Payment amount must be greater than zero',
+    phFullName: 'e.g. Reza Mohammadi', phCustomer: 'e.g. Mr. Ahmadi — Negin building', phElevator: 'e.g. traction, 6 persons, Saadatabad',
+    phMeasure: 'e.g. V=382/379/381 · I=13.8A · P=34bar',
+    backupLast: 'Last backup', backupNever: 'No backup taken yet', daysAgo: 'days ago',
+    secJob: 'Job details', secFindings: 'Reported problem & findings', secWork: 'Work done & outcome',
+    secProject: 'Project details', secSpecs: 'Elevator specification', secEquip: 'Equipment', secStatus: 'Status & service',
+    errSaveFailed: 'Could not save; please try again', errOffline: 'This action needs an internet connection',
+    navMain: 'Main', navTools: 'Technical tools', navKnowledge: 'Knowledge',
+    dashboard: 'Dashboard', projects: 'Installation projects', services: 'Services',
     checklists: 'Checklists', calculations: 'Calculations', diagnostics: 'Diagnostics',
-    knowledge: 'Knowledge Base', notes: 'Notes',
-    standards: 'EN 81-20 Standard', stdSearch: 'Search requirement, value or clause…',
+    knowledge: 'Knowledge base', notes: 'Notes',
+    standards: 'EN 81-20 standard', stdSearch: 'Search requirement, value or clause…',
     stdBanner: 'Quick reference of key EN 81-20:2020 requirements (mirrored by ISIRI 6303-20). For quick on-site decisions; the approved standard text prevails in official inspection.',
     stdClause: 'Clause', stdExpand: 'Full details', stdNoMatch: 'No requirement found for this term',
     stdDisclaimer: 'Practical summary — not a substitute for the full standard text.',
-    latestProject: 'Latest Project', currentStatus: 'Current status', progress: 'Project progress',
+    latestProject: 'Latest project', currentStatus: 'Current status', progress: 'Project progress',
     viewDetails: 'View details', newService: 'Log service', quickAccess: 'Quick access',
     recentServices: 'Recent services', viewAll: 'View all',
     stTotalProjects: 'Total projects', stActive: 'Active projects', stServices: 'Total services', stMonth: 'Services this month',
     stFollowup: 'Need follow-up', stOut: 'Out of service',
-    tProjects: 'Installation Projects', tServices: 'Services', tChecklists: 'Install & Service Checklists',
-    tCalc: 'Engineering Calcs', tDiag: 'Smart Diagnostics', tKb: 'Components & Knowledge',
+    tProjects: 'Installation projects', tServices: 'Services', tChecklists: 'Install & service checklists',
+    tCalc: 'Engineering calculators', tDiag: 'Smart diagnostics', tKb: 'Components & knowledge',
     tProjectsSub: 'Create & track', tServicesSub: 'Log & report', tChecklistsSub: 'Traction & hydraulic',
     tCalcSub: 'Engineering tools', tDiagSub: 'Troubleshooting', tKbSub: 'Technical reference',
     noProjects: 'No projects yet', noProjectsSub: 'Create your first elevator project',
-    newProject: 'New Project', editProject: 'Edit Project', deleteProject: 'Delete Project',
+    newProject: 'New project', editProject: 'Edit project', deleteProject: 'Delete project',
     searchProjects: 'Search project, customer, location...',
     all: 'All', traction: 'Traction', hydraulic: 'Hydraulic', bothTypes: 'Both types',
     prName: 'Project name', prCustomer: 'Customer', prPhone: 'Phone', prLocation: 'Address / location',
@@ -1052,7 +1122,7 @@ const I18N = {
     prStops: 'Stops', prSpeed: 'Speed (m/s)', prController: 'Controller', prMotor: 'Motor / Power unit',
     prStatus: 'Project status', prProgress: 'Progress %', prNotes: 'Notes',
     save: 'Save', cancel: 'Cancel', create: 'Create', edit: 'Edit', delete: 'Delete', close: 'Close',
-    confirmDeleteTitle: 'Delete project', confirmDeleteMsg: 'This project with all its services and checklists will be deleted. Are you sure?',
+    confirmDeleteTitle: 'Confirm deletion', confirmDeleteMsg: 'This project and its checklists will be deleted. Service reports are kept as standalone records.',
     confirmDeleteSvcMsg: 'This service report will be deleted. Are you sure?',
     confirmDeleteNoteMsg: 'This note will be deleted. Are you sure?',
     yesDelete: 'Yes, delete',
@@ -1064,7 +1134,7 @@ const I18N = {
     serviceHistory: 'Service & repair history', projectChecklists: 'Project checklists',
     noServices: 'No services logged', noServicesSub: 'Log the first service report',
     notFound: 'Nothing found', notFoundSub: 'Change your search or filter',
-    newServiceRec: 'New Service Report', editService: 'Edit Report',
+    newServiceRec: 'Log service', editService: 'Edit service report',
     svcProject: 'Project / unit', svcDate: 'Date', svcTechnician: 'Technician', svcType: 'Service type',
     svcProblem: 'Problem / request', svcDiagnosis: 'Diagnosis', svcWork: 'Work performed',
     svcParts: 'Parts replaced', svcFinal: 'Final status',
@@ -1073,33 +1143,33 @@ const I18N = {
     searchServices: 'Search reports...',
     chSelectProject: 'Attach to project (optional — saves progress)', chNoProject: 'No project (view only)',
     chProgress: 'Checklist progress', chReset: 'Reset', itemsDone: 'items done',
-    calcIntro: 'Practical calculators for elevator technicians — results are guidance only, not a substitute for engineering design.',
+    calcIntro: 'Everyday calculators for elevator technicians — guidance only, not engineering design.',
     calculate: 'Calculate',
     diagIntro: 'Pick a symptom to see probable causes and checking steps.',
     diagSafety: 'Safety first! Before working on the controller or machine room, switch off the main power and tag the panel. Never work on a moving car.',
     probableCauses: 'Probable causes', checkSteps: 'Check & fix steps',
     searchDiag: 'Search symptom...',
     searchKb: 'Search knowledge, components, standards...',
-    newNote: 'New Note', editNote: 'Edit Note', noteTitle: 'Title', noteContent: 'Content',
+    newNote: 'New note', editNote: 'Edit note', noteTitle: 'Title', noteContent: 'Content',
     noteTags: 'Tags (comma separated)', noNotes: 'No notes yet', noNotesSub: 'Save important technical tips here',
     searchNotes: 'Search notes...',
     loadError: 'Failed to load data', retry: 'Retry',
     requiredName: 'Project name is required', requiredTitle: 'Title is required', requiredProject: 'Project is required',
     standardRef: 'Reference: EN 81-20 / Iranian National Standard 6303-20',
-    parts: 'Parts Inventory', newPart: 'New Part', editPart: 'Edit Part',
+    parts: 'Parts inventory', newPart: 'New part', editPart: 'Edit part',
     partName: 'Part name', partCategory: 'Category', partUnit: 'Unit', partQty: 'Quantity',
     partMin: 'Min quantity', partPrice: 'Unit price (IRR)', partLocation: 'Storage location', partNote: 'Notes',
     lowStock: 'Low stock', inStock: 'In stock', searchParts: 'Search parts...',
     confirmDeletePartMsg: 'This part will be removed from inventory. Are you sure?',
     noParts: 'No parts yet', noPartsSub: 'Manage your spare and consumable parts here',
     lowStockOnly: 'Low stock only', stockAlert: 'Stock alert', stockAlertSub: 'part(s) at or below minimum',
-    tParts: 'Parts Inventory', tPartsSub: 'Stock & shortages',
+    tParts: 'Parts inventory', tPartsSub: 'Stock & shortages',
     svcDue: 'Service due', overdue: 'Overdue', dueSoon: 'Due soon',
     daysOverdue: 'days overdue', daysLeft: 'days left', lastService: 'Last service', nextService: 'Next service',
     serviceInterval: 'Service interval (days — 0 means no contract)', noDue: 'No overdue services ✅',
     logService: 'Log service',
     monthlyChart: 'Services in last 6 months', statusChart: 'Project status',
-    printReport: 'Print report', reportTitle: 'Elevator Service & Repair Report',
+    printReport: 'Print report', reportTitle: 'Elevator service & repair report',
     signTech: 'Technician signature', signCustomer: 'Customer signature', reportNo: 'Report No.',
     company: 'Company',
     diagStart: 'Start diagnosis', diagRestart: 'Restart', diagBack: 'Previous step',
@@ -1125,14 +1195,14 @@ const I18N = {
     vvvf: 'Drive fault codes', vvvfPick: 'Pick drive brand & model', vvvfSearch: 'Search fault code...',
     vvvfWarn: 'Codes are common family patterns; exact meaning depends on model & firmware — always match the manual.',
     vvvfMeaning: 'Meaning', vvvfCauses: 'Possible causes', vvvfChecks: 'Checks', vvvfMeas: 'Related measurement',
-    issues: 'Open Issues', newIssue: 'New issue', issueOpen: 'Open problem', issueFollow: 'Follow-up', issueRecommend: 'Recommendation',
+    issues: 'Open issues', newIssue: 'New issue', issueOpen: 'Open', issueFollow: 'Follow-up', issueRecommend: 'Recommendation',
     issueTitle: 'Issue description', issueDone: 'Done', issueReopen: 'Reopen', noIssues: 'No open issues ✅',
-    confirmDeleteIssueMsg: 'This issue will be deleted. Sure?', issueStatus: 'Type', issueClosed: 'Closed',
-    tools: 'My Tools', newTool: 'Add tool', toolName: 'Tool name', toolNote: 'Note (model, condition...)',
-    toolSuggest: 'Suggestions', noTools: 'No tools yet', confirmDeleteToolMsg: 'This tool will be deleted. Sure?',
+    confirmDeleteIssueMsg: 'This issue will be deleted. Are you sure?', issueStatus: 'Type', issueClosed: 'Closed',
+    tools: 'My tools', newTool: 'Add tool', toolName: 'Tool name', toolNote: 'Note (model, condition...)',
+    toolSuggest: 'Suggestions', noTools: 'No tools yet', confirmDeleteToolMsg: 'This tool will be deleted. Are you sure?',
     photos: 'Photos', addPhoto: 'Add photo', photoCat: 'Category', noPhotos: 'No photos yet',
     photoCats: 'Machine room|Controller|Shaft|Car|Doors|Faulty part|Replaced part|Final state|Documents',
-    confirmDeletePhotoMsg: 'This photo will be deleted. Sure?', photoTooLarge: 'Photo too large (max ~1.5 MB)',
+    confirmDeletePhotoMsg: 'This photo will be deleted. Are you sure?', photoTooLarge: 'Photo too large (max ~1.5 MB)',
     measures: 'Measurements', measAdd: 'Log measurement', measValue: 'Value', measCheck: 'Assessment',
     measBalanced: 'Voltage balance appears acceptable ({p}% deviation)', measUnbalanced: 'Voltage imbalance ({p}%) — check connections and supply',
     measNote: 'Acceptable limits depend on manufacturer, model and system design — match nameplate and manual.',
@@ -1145,7 +1215,7 @@ const I18N = {
     profile: 'Elevator profile', profTabs: 'Specs|Services|Diagnostics|Calculations|Photos|Issues',
     prRoping: 'Roping', prEncoder: 'Encoder', prBrake: 'Brake',
     tipTitle: 'Technician tip', linkedFrom: 'From diagnostics',
-    invoices: 'Invoices', newInvoice: 'New Invoice', editInvoice: 'Edit Invoice', invoice: 'Invoice',
+    invoices: 'Invoices', newInvoice: 'New invoice', editInvoice: 'Edit invoice', invoice: 'Invoice',
     invCustomer: 'Customer', invDate: 'Invoice date', invItems: 'Invoice items',
     invAddItem: 'Add row', invAddPart: 'Add part from inventory', invDesc: 'Description',
     invQty: 'Qty', invUnitPrice: 'Unit price (IRR)', invRowTotal: 'Row total',
@@ -1155,45 +1225,45 @@ const I18N = {
     invAddPay: 'Add payment', invPayAmount: 'Amount received (IRR)', invPayNote: 'For / method (cash, card...)',
     invPayments: 'Payments', invPrint: 'Print invoice', invNo: 'Invoice No.',
     noInvoices: 'No invoices yet', noInvoicesSub: 'Issue your first service or installation invoice',
-    confirmDeleteInvMsg: 'This invoice will be deleted. Sure?', searchInvoices: 'Search invoice, customer...',
+    confirmDeleteInvMsg: 'This invoice will be deleted. Are you sure?', searchInvoices: 'Search invoice, customer...',
     invFromService: 'Link to service report (optional)', invTotalsMonth: 'Income this month', invOpenBalance: 'Uncollected balance',
-    rial: 'IRR', invNote2: 'Invoice notes', invConsumeHint: 'Adding a part from inventory also reduces stock automatically',
+    rial: 'IRR', invNote2: 'Invoice notes', invConsumeHint: 'Adding a part from inventory also updates stock',
     globalSearch: 'Global search...', searchEverywhere: 'Search everywhere',
     srProjects: 'Projects', srServices: 'Services', srParts: 'Parts', srNotes: 'Notes',
     srKb: 'Knowledge', srDiag: 'Diagnostics', srInv: 'Invoices', srCalc: 'Calculations', noResults: 'No results',
     dupService: 'Duplicate as new', sortBy: 'Sort', sortNewest: 'Newest', sortName: 'Name', sortProgress: 'Progress',
     statusFilter: 'Status', summaryToday: 'Today summary', quickNewService: 'Quick service log',
-    exportCsv: 'Export CSV', kbRelClick: 'Click to read',
-    contracts: 'Contracts', newContract: 'New Contract', editContract: 'Edit Contract',
-    ctBuilding: 'Building / customer *', ctAmount: 'Monthly amount (IRR)', ctStart: 'Start date',
+    exportCsv: 'Export CSV', kbRelClick: 'Tap to read',
+    contracts: 'Contracts', newContract: 'New contract', editContract: 'Edit contract',
+    ctBuilding: 'Building / customer', ctAmount: 'Monthly amount (IRR)', ctStart: 'Start date',
     ctMonths: 'Duration (months)', ctPayTable: 'Monthly payment table', ctPaid: 'Paid', ctUnpaid: 'Unpaid',
     ctOverdueMonths: 'overdue months', ctActive: 'Active', ctExpired: 'Expired',
     ctExpectMonth: 'Contract income this month', ctCollected: 'Collected', noContracts: 'No contracts yet',
     noContractsSub: 'Manage monthly maintenance contracts here',
-    confirmDeleteCtMsg: 'This contract will be deleted. Sure?', ctLinkProject: 'Link to elevator (optional)',
+    confirmDeleteCtMsg: 'This contract will be deleted. Are you sure?', ctLinkProject: 'Link to elevator (optional)',
     ctNote: 'Notes', ctTapMonth: 'Tap a month to toggle its payment status',
     backupNagTitle: 'Backup reminder', backupNagMsg: 'days since last backup. Data lives only on this device!',
     backupNagBtn: 'Back up now', backupNagLater: 'Later',
     faultStats: 'Fault pattern of this elevator', faultStatsSub: 'Based on logged service reports',
     kbReadMore: 'Read in knowledge base', today: 'Today',
     storageFull: '⛔ Device storage full! Save failed — delete old photos and back up now',
-    settings: 'Company Settings', settingsSub: 'Shown on printed reports and invoices',
+    settings: 'Company settings', settingsSub: 'Shown on printed reports and invoices',
     setCompany: 'Company name', setPhone: 'Phone', setAddress: 'Address',
     storageUsage: 'Data storage used', storagePhotos: 'photos', srContracts: 'Contracts',
     profInvoices: 'Invoices for this elevator', profContract: 'Service contract of this building',
-    monthlyReport: 'Monthly Report', mrPick: 'Pick month', mrServices: 'Services performed',
+    monthlyReport: 'Monthly report', mrPick: 'Pick month', mrServices: 'Services performed',
     mrByType: 'By type', mrTopFaults: 'Most frequent faults', mrIncome: 'Invoice income',
     mrContracts: 'Contract collections', mrOpenBalance: 'Uncollected balance', mrPartsUsed: 'Parts consumed',
-    mrNewProjects: 'New projects', mrOpenIssues: 'Open issues left', mrPrint: 'Print monthly report',
-    mrEmpty: 'No activity logged this month', mrTitle: 'Monthly Performance Report',
+    mrNewProjects: 'New projects', mrOpenIssues: 'Open issues', mrPrint: 'Print monthly report',
+    mrEmpty: 'No activity logged this month', mrTitle: 'Monthly performance report',
     share: 'Share', shareTelegram: 'Send via Telegram', shareSystem: 'Share...',
     shareCopied: 'Text copied — paste it in Telegram',
     qrCode: 'Elevator QR code', qrHint: 'Print this and stick it in the car or machine room; scanning opens this elevator profile directly',
     qrPrint: 'Print QR label', qrScanHint: 'Scan = open this elevator profile in Z Lift',
-    tgChannel: 'Z Lift Telegram Channel', tgChannelSub: 'News, training & technical tips',
+    tgChannel: 'Z Lift Telegram channel', tgChannelSub: 'News, training & technical tips',
     errUnexpected: 'An unexpected error occurred — please try again',
     payOverConfirm: '⚠️ Amount exceeds balance! Tap again to confirm overpayment',
-    chFailToIssue: 'Log failed items as an issue',
+    chFailToIssue: 'Add failed items to open issues',
     mirrorFound: 'An internal safety copy of your previous data was found (main storage was empty). Restore it?',
     mirrorRestore: 'Restore data', adjustLabel: 'Manual stock adjustment',
     restoreOf: 'File contents',
@@ -1207,6 +1277,10 @@ const I18N = {
     calNoEvents: 'No events on this day', calServicesOnDay: 'Services on this day', calRemindersDue: 'Reminders due this day',
     calOverdue: 'Overdue', calDueSoon: 'Due soon', calUpcoming: 'Upcoming',
     calReminderList: 'Service reminders', calNoReminders: 'No active reminders', calTapDay: 'Tap a day to see its services',
+    prevMonth: 'Previous month', nextMonth: 'Next month', reminderProject: 'Linked project', reminderEditHint: 'Tap a custom reminder to edit or delete it',
+    reminderDeleted: 'Reminder deleted', confirmDeleteReminderMsg: 'Delete this reminder?',
+    consumeOverStock: 'Quantity exceeds stock — tap again to confirm',
+    offlineMode: 'Offline',
     reminders: 'Reminders', newReminder: 'New reminder', editReminder: 'Edit reminder',
     reminderTitle: 'Reminder title', reminderDate: 'Due date', reminderMarkDone: 'Mark done',
     reminderPeriodic: 'Periodic service', reminderFollowup: 'Follow-up', reminderCustom: 'Custom reminder',
@@ -1297,15 +1371,40 @@ function jalaliToTs(jy, jm, jd) {
   const g = d2g(j2d(jy, jm, jd));
   return new Date(g.gy, g.gm - 1, g.gd, 12, 0, 0).getTime();
 }
+/* Range helpers — jalaliToTs() intentionally returns NOON (DST-safe anchor for
+   stored dates), so it must NOT be used as a range boundary: a service logged
+   at 09:00 would fall into the previous day. These return real local midnight. */
+function jalDayStart(jy, jm, jd) {
+  const g = d2g(j2d(jy, jm, jd));
+  return new Date(g.gy, g.gm - 1, g.gd, 0, 0, 0, 0).getTime();
+}
+function jalDayRange(jy, jm, jd) {
+  const days = jalDaysInMonth(jy, jm);
+  let ny = jy, nm = jm, nd = jd + 1;
+  if (nd > days) { nd = 1; nm++; if (nm > 12) { nm = 1; ny++; } }
+  return { from: jalDayStart(jy, jm, jd), to: jalDayStart(ny, nm, nd) };
+}
+function jalMonthRange(jy, jm) {
+  let ny = jy, nm = jm + 1;
+  if (nm > 12) { nm = 1; ny++; }
+  return { from: jalDayStart(jy, jm, 1), to: jalDayStart(ny, nm, 1) };
+}
+/* month navigation arrows: in RTL "back" points right, in LTR it points left */
+function navArrows() {
+  return I18N[LANG].dir === 'rtl' ? { prev: '›', next: '‹' } : { prev: '‹', next: '›' };
+}
 function tsToJalali(ts) {
   const d = new Date(ts);
   return d2j(g2d(d.getFullYear(), d.getMonth() + 1, d.getDate()));
 }
 const JAL_MONTHS = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+const JAL_MONTHS_EN = ['Farvardin', 'Ordibehesht', 'Khordad', 'Tir', 'Mordad', 'Shahrivar', 'Mehr', 'Aban', 'Azar', 'Dey', 'Bahman', 'Esfand'];
+/* Jalali month name in the active interface language (1-based) */
+function jalMonth(jm) { return (LANG === 'fa' ? JAL_MONTHS : JAL_MONTHS_EN)[(jm - 1 + 12) % 12]; }
 function jalDaysInMonth(jy, jm) { return jm <= 6 ? 31 : (jm <= 11 ? 30 : (jalCal(jy).leap === 0 ? 30 : 29)); }
 function fmtJalali(ts) {
   const j = tsToJalali(ts);
-  return faNum(j.jd) + ' ' + JAL_MONTHS[j.jm - 1] + ' ' + faNum(j.jy);
+  return faNum(j.jd) + ' ' + jalMonth(j.jm) + ' ' + faNum(j.jy);
 }
 
 /* Z Lift — technical content: checklists, diagnostics, knowledge base, calculators
@@ -3445,11 +3544,31 @@ const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 function toast(msg, type = 'ok') {
+  const root = $('#toastRoot');
+  if (!root) return;
+  while (root.children.length >= 3) root.firstElementChild.remove();   // never cover the screen
   const el = document.createElement('div');
   el.className = 'toast ' + type;
+  el.setAttribute('role', type === 'ok' ? 'status' : 'alert');
+  el.setAttribute('aria-live', type === 'ok' ? 'polite' : 'assertive');
   el.innerHTML = (type === 'ok' ? '✅' : '⚠️') + ' <span>' + esc(msg) + '</span>';
-  $('#toastRoot').appendChild(el);
-  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 320); }, 2600);
+  const hide = () => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 320); };
+  el.onclick = hide;                                                   // tap to dismiss
+  root.appendChild(el);
+  setTimeout(hide, 2600);
+}
+/* inline validation: say what is wrong, mark the field and put the cursor in it
+   (a toast alone leaves the user hunting for the empty box) */
+function fieldError(sel, msgKey) {
+  toast(t(msgKey), 'err');
+  const el = $(sel);
+  if (!el) return false;
+  el.classList.add('input-error');
+  el.addEventListener('input', () => el.classList.remove('input-error'), { once: true });
+  el.addEventListener('change', () => el.classList.remove('input-error'), { once: true });
+  try { el.focus({ preventScroll: true }); } catch (e) { try { el.focus(); } catch (e2) {} }
+  try { el.scrollIntoView({ block: 'center' }); } catch (e) {}
+  return false;
 }
 function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 /* wrap an async save handler: disables the button during the call and
@@ -3463,6 +3582,18 @@ function guard(btnSel, fn) {
     catch (e) { reportError(e, 'guard:' + btnSel); }
     finally { const b2 = $(btnSel); if (b2) b2.disabled = false; }
   };
+}
+/* turn an API error code into a message the technician can act on */
+const ERR_KEYS = {
+  name_required: 'requiredTitle', customer_required: 'requiredCustomer',
+  not_found: 'errNotFound', too_large: 'photoTooLarge', bad_backup: 'restoreBad',
+  unauthorized: 'errSessionExpired', invalid_credentials: 'errInvalidCred',
+  username_taken: 'errUserTaken', weak_password: 'errWeakPass', bad_username: 'errBadUser'
+};
+function errMsg(e) {
+  if (e && e.code && ERR_KEYS[e.code]) return t(ERR_KEYS[e.code]);
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return t('errOffline');
+  return t('errGeneric');
 }
 /* central error handler */
 function reportError(e, ctx) {
@@ -3496,7 +3627,51 @@ const FINAL_META = {
   followup: { key: 'finalFollowup', cls: 'b-amber' },
   outoforder: { key: 'finalOut', cls: 'b-red' }
 };
-function statusBadge(s) { const m = STATUS_META[s] || STATUS_META.contract; return `<span class="badge ${m.cls}">${t(m.key)}</span>`; }
+/* safe meta lookups — never throw on unknown/legacy values (restored backups, old records) */
+function svcMeta(k) { return SVC_META[k] || SVC_META.maintenance; }
+function finalMeta(k) { return FINAL_META[k] || FINAL_META.ok; }
+function statMeta(k) { return STATUS_META[k] || STATUS_META.contract; }
+function issueMeta(k) { return ISSUE_META[k] || ISSUE_META.open; }
+function remMeta(k) { return REMINDER_META[k] || REMINDER_META.custom; }
+/* escape a value that is embedded as a JS string literal inside an inline HTML
+   handler attribute: JS-escape first, then HTML-escape (the parser decodes the
+   entities before the JS is evaluated) */
+function jsAttr(s) {
+  return esc(String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, '\\n'));
+}
+/* ---- Persian-aware text normalisation for every search box ----
+   Arabic ي/ك typed by many keyboards must match Persian ی/ک, Persian & Arabic
+   digits must match Latin ones, and ZWNJ / diacritics / tatweel must be ignored,
+   otherwise «کليد» never finds «کلید» and «۱۲» never finds «12». */
+const _NORM_MAP = {
+  'ي': 'ی', 'ﻱ': 'ی', 'ﻲ': 'ی', 'ی': 'ی', 'ئ': 'ی', 'ى': 'ی',
+  'ك': 'ک', 'ﻙ': 'ک', 'ﻚ': 'ک',
+  'أ': 'ا', 'إ': 'ا', 'آ': 'ا', 'ٱ': 'ا', 'ا': 'ا',
+  'ؤ': 'و', 'ة': 'ه', 'ۀ': 'ه',
+  '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9',
+  '۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4', '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9'
+};
+function norm(s) {
+  return String(s == null ? '' : s)
+    .toLowerCase()
+    .replace(/[\u200c\u200f\u200e\u0640]/g, '')          // ZWNJ, bidi marks, tatweel
+    .replace(/[\u064b-\u0652]/g, '')                      // harakat
+    .replace(/[يﻱﻲیئىكﻙﻚأإآٱاؤةۀ٠-٩۰-۹]/g, c => _NORM_MAP[c] || c)
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+/* join any number of fields into one normalised haystack */
+function hay(...parts) { return norm(parts.filter(v => v != null && v !== '').join(' ')); }
+
+/* optimistic list removal with rollback — safe when the id is already gone
+   (a stale button / double tap must never delete a random last row) */
+function optimisticRemove(list, id) {
+  const idx = list.findIndex(x => x && x.id === id);
+  if (idx < 0) return null;
+  const [removed] = list.splice(idx, 1);
+  return { idx, removed, restore() { list.splice(idx, 0, removed); } };
+}
+function statusBadge(s) { const m = statMeta(s); return `<span class="badge ${m.cls}">${t(m.key)}</span>`; }
 function typeBadge(type) {
   if (type === 'hydraulic') return `<span class="badge b-teal">🛢️ ${t('hydraulic')}</span>`;
   if (type === 'both') return `<span class="badge b-purple">⚖️ ${t('bothTypes')}</span>`;
@@ -3539,12 +3714,24 @@ function applyTheme() {
   document.documentElement.setAttribute('data-theme', th);
   $('#iconMoon').classList.toggle('hidden', th === 'dark');
   $('#iconSun').classList.toggle('hidden', th !== 'dark');
+  const meta = document.getElementById('metaTheme');
+  if (meta) meta.setAttribute('content', th === 'dark' ? '#0b1220' : '#2563eb');
+}
+/* offline indicator — everything keeps working (data is local), but sharing,
+   Telegram and map links need a connection, so say so quietly */
+function updateOnlineBadge() {
+  const el = document.getElementById('offlineBadge');
+  if (!el) return;
+  const off = navigator.onLine === false;
+  el.classList.toggle('hidden', !off);
+  el.textContent = '📴 ' + t('offlineMode');
 }
 function applyLang() {
   document.documentElement.lang = LANG;
   document.documentElement.dir = I18N[LANG].dir;
   $('#langLabel').textContent = LANG === 'fa' ? 'EN' : 'فا';
   $$('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
+  $$('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.getAttribute('data-i18n-ph')); });
 }
 
 /* ---------- UI back-stack (phone back button support) ----------
@@ -3592,15 +3779,58 @@ window.addEventListener('popstate', () => {
   }, 30);
 });
 
-/* ---------- modal ---------- */
-function _closeModalDom() { $('#modalRoot').innerHTML = ''; document.removeEventListener('keydown', escClose); }
+/* ---------- modal ----------
+   Accessible dialog: aria roles, focus moved in and restored on close, Tab is
+   trapped inside, the page behind cannot scroll, and Enter inside a form runs
+   the primary action instead of doing an implicit submit (which reloaded the
+   whole app and lost the typed data). */
+const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+let _modalReturnFocus = null;
+function _lockScroll(on) { document.body.classList.toggle('scroll-lock', !!on); }
+function _closeModalDom() {
+  $('#modalRoot').innerHTML = '';
+  document.removeEventListener('keydown', escClose);
+  if (!document.getElementById('jdOverlay')) _lockScroll(false);
+  const back = _modalReturnFocus;
+  _modalReturnFocus = null;
+  if (back && document.contains(back)) { try { back.focus({ preventScroll: true }); } catch (e) {} }
+}
 function openModal(html, opts = {}) {
   const hadModal = !!document.getElementById('modalOverlay');
+  if (!hadModal) _modalReturnFocus = document.activeElement;
+  const keepFocus = _modalReturnFocus;
   _closeModalDom();
+  _modalReturnFocus = keepFocus;
   const root = $('#modalRoot');
-  root.innerHTML = `<div class="modal-overlay" id="modalOverlay"><div class="modal ${opts.size || ''}">${html}</div></div>`;
+  root.innerHTML = `<div class="modal-overlay" id="modalOverlay"><div class="modal ${opts.size || ''}" role="dialog" aria-modal="true" aria-label="Z Lift">${html}</div></div>`;
+  const box = root.querySelector('.modal');
+  const head = box.querySelector('.modal-head h3');
+  if (head) { head.id = 'modalTitle'; box.setAttribute('aria-labelledby', 'modalTitle'); box.removeAttribute('aria-label'); }
   $('#modalOverlay').addEventListener('mousedown', e => { if (e.target.id === 'modalOverlay') closeModal(); });
   document.addEventListener('keydown', escClose);
+  _lockScroll(true);
+  /* Enter anywhere in the form = the primary button (never an implicit submit) */
+  box.querySelectorAll('form').forEach(f => {
+    f.addEventListener('submit', e => {
+      e.preventDefault();
+      const primary = box.querySelector('.modal-foot .btn-primary:not([disabled])');
+      if (primary) primary.click();
+    });
+  });
+  /* keep Tab inside the dialog */
+  box.addEventListener('keydown', e => {
+    if (e.key !== 'Tab') return;
+    const items = [...box.querySelectorAll(FOCUSABLE)].filter(el => el.offsetParent !== null || el === document.activeElement);
+    if (!items.length) return;
+    const first = items[0], last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+  /* move focus into the dialog — on phones don't pop the keyboard automatically */
+  const wide = typeof matchMedia === 'function' && matchMedia('(min-width: 641px)').matches;
+  const target = (wide && box.querySelector('input:not([readonly]):not([type="file"]), textarea, select')) ||
+                 box.querySelector('.modal-foot .btn-primary') || box.querySelector('.modal-head .icon-btn');
+  if (target) { try { target.focus({ preventScroll: true }); } catch (e) {} }
   if (!hadModal) pushUiLayer('modal', _closeModalDom);
 }
 function escClose(e) { if (e.key === 'Escape') closeModal(); }
@@ -3618,6 +3848,91 @@ function confirmDialog(title, msg, onYes) {
       <button class="btn btn-danger" id="confirmYes">${t('yesDelete')}</button>
     </div>`, { size: 'sm' });
   $('#confirmYes').onclick = onYes;
+}
+
+/* ---------- printing ----------
+   One pipeline for every printable document (service report, invoice, monthly
+   report, QR label): build the sheet, print it, then take it out of the DOM so
+   nothing stale is left behind for the next print. */
+function printDoc(html) {
+  let sheet = document.getElementById('printSheet');
+  if (!sheet) {
+    sheet = document.createElement('div');
+    sheet.id = 'printSheet';
+    sheet.className = 'print-sheet';
+    document.body.appendChild(sheet);
+  }
+  sheet.dir = I18N[LANG].dir;
+  sheet.innerHTML = html;
+  const cleanup = () => {
+    window.removeEventListener('afterprint', cleanup);
+    const el = document.getElementById('printSheet');
+    if (el) el.innerHTML = '';
+  };
+  window.addEventListener('afterprint', cleanup);
+  setTimeout(cleanup, 60000);            // safety net for browsers without afterprint
+  try { window.print(); } catch (e) { reportError(e, 'print'); }
+}
+/* shared header for printed documents */
+function printHeader(subtitle) {
+  const st = state.settings || {};
+  return `<h1>🛗 ${esc(st.company || 'Z Lift')}</h1>
+    <div class="ph-sub">${subtitle}${st.phone ? ' · ' + esc(st.phone) : ''}${st.address ? ' · ' + esc(st.address) : ''}</div>`;
+}
+/* ---------- file downloads ---------- */
+function downloadBlob(blob, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+}
+/* Excel-friendly CSV (UTF-8 BOM + CRLF) */
+function downloadCsv(filename, head, rows) {
+  const cell = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const csv = '\ufeff' + [head, ...rows].map(r => r.map(cell).join(',')).join('\r\n');
+  downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), filename);
+}
+/* paint long lists in chunks: the first screenful is instant even with hundreds
+   of records, the rest is appended silently while the user scrolls */
+function paintList(el, items, rowFn, chunk = 60) {
+  if (!el) return;
+  if (typeof IntersectionObserver !== 'function' || items.length <= chunk) {
+    el.innerHTML = items.map(rowFn).join('');
+    return;
+  }
+  el.innerHTML = items.slice(0, chunk).map(rowFn).join('');
+  let i = chunk;
+  const sentinel = document.createElement('div');
+  sentinel.setAttribute('aria-hidden', 'true');
+  sentinel.style.height = '1px';
+  el.appendChild(sentinel);
+  const io = new IntersectionObserver(entries => {
+    if (!entries.some(e => e.isIntersecting)) return;
+    if (!document.contains(sentinel)) { io.disconnect(); return; }
+    sentinel.insertAdjacentHTML('beforebegin', items.slice(i, i + chunk).map(rowFn).join(''));
+    i += chunk;
+    if (i >= items.length) { io.disconnect(); sentinel.remove(); }
+  }, { rootMargin: '600px' });
+  io.observe(sentinel);
+}
+
+/* keywords used by the fault statistics (project profile + monthly report) */
+const FAULT_WORDS = [
+  ['درب', 'درب'], ['فتوسل', 'فتوسل'], ['ترمز', 'ترمز'], ['انکودر', 'انکودر'], ['درایو', 'درایو'],
+  ['موتور', 'موتور'], ['بکسل', 'بکسل'], ['قفل', 'قفل درب'], ['روغن', 'روغن'], ['سیل', 'سیل جک'],
+  ['شیر', 'شیرها'], ['پمپ', 'پمپ'], ['ریزش', 'ریزش'], ['همسطح', 'همسطح‌سازی'], ['برق', 'برق'],
+  ['کنتاکتور', 'کنتاکتور'], ['لیمیت', 'لیمیت'], ['صدا', 'صدا'], ['لرزش', 'لرزش']
+];
+const FAULT_ICONS = { 'درب': '🚪', 'ترمز': '🛑', 'درایو': '🖥️', 'موتور': '⚙️', 'بکسل': '🔗', 'قفل درب': '🔒', 'روغن': '🛢️', 'همسطح‌سازی': '🎯', 'برق': '⚡', 'صدا': '🔊' };
+function faultTally(services, icons) {
+  const words = {};
+  services.forEach(sv => {
+    const txt = norm((sv.problem || '') + ' ' + (sv.diagnosis || '') + ' ' + (sv.complaint || ''));
+    FAULT_WORDS.forEach(([w, lbl]) => { if (txt.includes(norm(w))) { const k = icons && icons[lbl] ? lbl + ' ' + icons[lbl] : lbl; words[k] = (words[k] || 0) + 1; } });
+  });
+  return Object.entries(words).sort((a, b) => b[1] - a[1]);
 }
 
 /* ---------- data loading ---------- */
@@ -3673,7 +3988,10 @@ function showAuth() {
 function doLocalLogout() {
   flushUiLayers();
   state.token = null; state.user = null;
-  state.projects = state.services = state.notes = state.checklists = null;
+  ['projects', 'services', 'notes', 'checklists', 'parts', 'settings', 'diagSessions',
+   'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders']
+    .forEach(k => { state[k] = null; });
+  invDraft = null; diagSession = null;
   localStorage.removeItem('zlift_token');
   showAuth();
 }
@@ -3760,14 +4078,24 @@ const NAV = [
   { route: '/tools', key: 'tools', icon: 'wrench' },
   { route: '/notes', key: 'notes', icon: 'note' }
 ];
+let _navLang = null;
 function renderNav() {
   const nav = $('#mainNav');
-  nav.innerHTML = NAV.map(item => {
-    if (item.section) return `<div class="nav-section">${t(item.section)}</div>`;
-    const active = state.route === item.route || state.route.startsWith(item.route + '/');
-    return `<button class="nav-item ${active ? 'active' : ''}" data-route="${item.route}">${IC[item.icon]}<span>${t(item.key)}</span></button>`;
-  }).join('');
-  nav.querySelectorAll('.nav-item').forEach(b => b.onclick = () => { navigate(b.dataset.route); closeSidebar(); });
+  if (!nav) return;
+  if (_navLang !== LANG || !nav.children.length) {          // (re)build only when needed
+    _navLang = LANG;
+    nav.innerHTML = NAV.map(item => {
+      if (item.section) return `<div class="nav-section">${t(item.section)}</div>`;
+      return `<button class="nav-item" data-route="${item.route}" aria-current="false">${IC[item.icon]}<span>${t(item.key)}</span></button>`;
+    }).join('');
+    nav.querySelectorAll('.nav-item').forEach(b => b.onclick = () => { navigate(b.dataset.route); closeSidebar(); });
+  }
+  nav.querySelectorAll('.nav-item').forEach(b => {
+    const r = b.dataset.route;
+    const active = state.route === r || state.route.startsWith(r + '/');
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-current', active ? 'page' : 'false');
+  });
 }
 function _closeSidebarDom() { $('#sidebar').classList.remove('open'); $('#backdrop').classList.remove('show'); }
 function closeSidebar() {
@@ -3787,23 +4115,35 @@ function flushUiLayers() {
   _closeSidebarDom();
   diagSession = null;
 }
+/* remember where the user was on each page: opening a page starts at the top,
+   coming back restores the previous scroll position (like a native app) */
+const _scrollPos = {};
+let _pendingScroll = 0;
+function _saveScroll() { if (state.route) _scrollPos[state.route] = window.scrollY || window.pageYOffset || 0; }
 function navigate(route) {
+  if (route === state.route) { flushUiLayers(); render(); return; }
+  _saveScroll();
   flushUiLayers();
   state.route = route;
+  _pendingScroll = 0;                 // a freshly opened page starts at the top
   location.hash = route;
   render();
 }
 window.addEventListener('hashchange', () => {
   const r = location.hash.slice(1) || '/dashboard';
   if (r !== state.route) {
+    _saveScroll();
     state.route = r;
+    _pendingScroll = _scrollPos[r] || 0;   // back/forward → restore the old spot
     // route changed underneath any open overlays: close them & reset stack
     flushUiLayers();
     if (state.user) render();
   }
 });
 
+let _renderSeq = 0;
 async function render() {
+  const seq = ++_renderSeq;          // only the newest render may paint
   renderNav();
   const c = $('#content');
   const r = state.route;
@@ -3815,9 +4155,13 @@ async function render() {
   };
   const baseRoute = '/' + r.split('/')[1];
   $('#pageTitle').textContent = t(titles[baseRoute] || 'dashboard');
-  c.innerHTML = '<div class="page-loading"><div class="spinner"></div></div>';
+  const spinner = setTimeout(() => {
+    if (seq === _renderSeq) c.innerHTML = '<div class="page-loading"><div class="spinner"></div></div>';
+  }, 160);                                   // no spinner flash on instant local data
   try {
     await loadAll();
+    clearTimeout(spinner);
+    if (seq !== _renderSeq) return;  // a newer navigation won the race
     if (r === '/dashboard') renderDashboard();
     else if (r === '/projects') renderProjects();
     else if (r.startsWith('/projects/')) renderProjectDetail(r.split('/')[2]);
@@ -3838,8 +4182,13 @@ async function render() {
     else if (r === '/notes') renderNotes();
     else if (r === '/calendar') renderCalendar();
     else renderDashboard();
+    const y = _pendingScroll; _pendingScroll = 0;
+    if (typeof window.scrollTo === 'function') { try { window.scrollTo(0, y); } catch (e2) {} }
   } catch (e) {
-    if (e.message === 'unauthorized') return;
+    clearTimeout(spinner);
+    if (seq !== _renderSeq) return;
+    if (e && e.message === 'unauthorized') return;
+    reportError(e, 'render:' + r);
     c.innerHTML = `<div class="error-box"><p style="font-weight:700;margin-bottom:10px">⚠️ ${t('loadError')}</p><button class="btn btn-primary" onclick="render()">${t('retry')}</button></div>`;
   }
 }
@@ -3869,7 +4218,7 @@ function renderDashboard() {
         <span class="kv">👤 ${faNum(latest.persons)} ${t('personsUnit')}</span>
       </div>
       <div class="hero-progress">
-        <div class="row"><span>${t(STATUS_META[latest.status].key)}</span><span>${faNum(latest.progress)}٪</span></div>
+        <div class="row"><span>${t(statMeta(latest.status).key)}</span><span>${faNum(latest.progress)}٪</span></div>
         <div class="bar"><div class="fill" style="width:${latest.progress}%"></div></div>
       </div>
       <div class="hero-actions">
@@ -3912,8 +4261,10 @@ function renderDashboard() {
     .map(ct => ({ ct, st: ctStats(ct) }))
     .filter(x => x.st.overdue > 0)
     .slice(0, 3);
+  /* manual calendar reminders that are due — they used to be visible only in the calendar */
+  const remDue = buildReminders().filter(r => r.reminderId && (r.overdue || r.soon)).slice(0, 4);
 
-  const dueHtml = (dues.length || openIssues.length || openIssueItems.length || ctOverdue.length) ? (
+  const dueHtml = (dues.length || openIssues.length || openIssueItems.length || ctOverdue.length || remDue.length) ? (
     dues.map(({ p, d }) => `
     <div class="due-item ${d.overdue ? 'overdue' : 'soon'}">
       <span style="font-size:19px">${d.overdue ? '🔴' : '🟡'}</span>
@@ -3930,10 +4281,10 @@ function renderDashboard() {
         <strong>${esc(projName(s.projectId))}</strong>
         <span class="d-sub">${esc(s.problem || s.complaint || '—')}${s.followUpDate ? ' · ' + t('svcFollowUp') + ': ' + fmtDate(s.followUpDate) : ''}</span>
       </div>
-      <span class="badge ${FINAL_META[s.finalStatus].cls}">${t(FINAL_META[s.finalStatus].key)}</span>
+      <span class="badge ${finalMeta(s.finalStatus).cls}">${t(finalMeta(s.finalStatus).key)}</span>
     </div>`).join('') +
     openIssueItems.map(i => {
-      const m = ISSUE_META[i.kind] || ISSUE_META.open;
+      const m = issueMeta(i.kind);
       return `
     <div class="due-item ${i.kind === 'open' ? 'overdue' : 'soon'}" onclick="openIssueForm('${i.id}')" style="cursor:pointer">
       <span style="font-size:19px">${m.icon}</span>
@@ -3944,6 +4295,15 @@ function renderDashboard() {
       <span class="badge ${m.cls}">${t(m.key)}</span>
     </div>`;
     }).join('') +
+    remDue.map(r => `
+    <div class="due-item ${r.overdue ? 'overdue' : 'soon'}" onclick="navigate('/calendar')" style="cursor:pointer">
+      <span style="font-size:19px">${remMeta(r.kind).icon}</span>
+      <div class="grow">
+        <strong>${esc(r.title)}</strong>
+        <span class="d-sub">${r.projectId ? esc(projName(r.projectId)) + ' · ' : ''}${fmtJalali(r.due)} · ${r.overdue ? faNum(Math.abs(r.days)) + ' ' + t('daysOverdue') : faNum(r.days) + ' ' + t('daysLeft')}</span>
+      </div>
+      <span class="badge ${r.overdue ? 'b-red' : 'b-amber'}">${r.overdue ? t('calOverdue') : t('calDueSoon')}</span>
+    </div>`).join('') +
     ctOverdue.map(({ ct, st }) => `
     <div class="due-item overdue" onclick="navigate('/contracts')" style="cursor:pointer">
       <span style="font-size:19px">📄</span>
@@ -3982,7 +4342,7 @@ function renderDashboard() {
     const n = projects.filter(p => p.status === s).length;
     if (!n && !projects.length) return '';
     const pct = projects.length ? Math.round(n / projects.length * 100) : 0;
-    return `<div class="sb-row"><span class="sb-lbl">${t(STATUS_META[s].key)}</span>
+    return `<div class="sb-row"><span class="sb-lbl">${t(statMeta(s).key)}</span>
       <div class="sb-track"><div class="sb-fill" style="width:${pct}%;background:${stColors[s]}"></div></div>
       <span class="sb-val">${faNum(n)}</span></div>`;
   }).join('')}</div>`;
@@ -4055,17 +4415,18 @@ function renderProjects() {
     </div>
     <div id="projList"></div>`;
   $('#projSearch').oninput = debounce(e => { projFilter.q = e.target.value; drawProjList(); }, 200);
-  $$('.chip').forEach(ch => ch.onclick = () => { projFilter.type = ch.dataset.t; renderProjects(); });
+  $$('#content .toolbar .chip[data-t]').forEach(ch => ch.onclick = () => { projFilter.type = ch.dataset.t; renderProjects(); });
   $('#projStatusSel').onchange = e => { projFilter.status = e.target.value; drawProjList(); };
   $('#projSortSel').onchange = e => { projFilter.sort = e.target.value; drawProjList(); };
   drawProjList();
 }
 function drawProjList() {
-  const q = projFilter.q.trim().toLowerCase();
+  if (!$('#projList')) return;
+  const q = norm(projFilter.q);
   let list = state.projects;
   if (projFilter.type !== 'all') list = list.filter(p => p.elevatorType === projFilter.type);
   if (projFilter.status !== 'all') list = list.filter(p => p.status === projFilter.status);
-  if (q) list = list.filter(p => (p.name + ' ' + p.customer + ' ' + p.location + ' ' + p.controller + ' ' + p.motor).toLowerCase().includes(q));
+  if (q) list = list.filter(p => hay(p.name, p.customer, p.location, p.controller, p.motor).includes(q));
   list = [...list];
   if (projFilter.sort === 'name') list.sort((a, b) => a.name.localeCompare(b.name, 'fa'));
   else if (projFilter.sort === 'progress') list.sort((a, b) => b.progress - a.progress);
@@ -4078,7 +4439,7 @@ function drawProjList() {
     el.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p></div>`;
     return;
   }
-  el.innerHTML = list.map(p => `
+  paintList(el, list, p => `
     <div class="row-item" onclick="navigate('/projects/${p.id}')">
       <div class="row-icon" style="background:${p.elevatorType === 'hydraulic' ? 'var(--teal-soft)' : 'var(--accent-soft)'};font-size:20px">${p.elevatorType === 'hydraulic' ? '🛢️' : '⚙️'}</div>
       <div class="row-body">
@@ -4090,7 +4451,7 @@ function drawProjList() {
         ${statusBadge(p.status)}
         <span class="date">${faNum(p.floors)} ${t('floorsUnit')} · ${faNum(p.capacityKg)}kg · ${faNum(p.progress)}٪</span>
       </div>
-    </div>`).join('');
+    </div>`);
 }
 
 function openProjectForm(id) {
@@ -4100,32 +4461,39 @@ function openProjectForm(id) {
   openModal(`
     <div class="modal-head"><h3>${p ? '✏️ ' + t('editProject') : '🏗️ ' + t('newProject')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body"><form id="projForm" class="form-grid">
+      <div class="form-sep span2">${t('secProject')}</div>
       <div class="field span2"><label>${t('prName')} *</label><input id="f_name" value="${esc(v.name)}" required /></div>
       <div class="field"><label>${t('prCustomer')}</label><input id="f_customer" value="${esc(v.customer)}" /></div>
       <div class="field"><label>${t('prPhone')}</label><input id="f_phone" value="${esc(v.phone)}" /></div>
       <div class="field span2"><label>${t('prLocation')}</label><input id="f_location" value="${esc(v.location)}" /></div>
+
+      <div class="form-sep span2">${t('secSpecs')}</div>
       <div class="field"><label>${t('prType')}</label><select id="f_type">
         <option value="traction" ${v.elevatorType === 'traction' ? 'selected' : ''}>⚙️ ${t('traction')}</option>
         <option value="hydraulic" ${v.elevatorType === 'hydraulic' ? 'selected' : ''}>🛢️ ${t('hydraulic')}</option>
       </select></div>
-      <div class="field"><label>${t('prStatus')}</label><select id="f_status">${statusOpts}</select></div>
+      <div class="field"><label>${t('prSpeed')}</label><input id="f_speed" type="number" step="0.1" value="${v.speed}" /></div>
       <div class="field"><label>${t('prCapacity')}</label><input id="f_cap" type="number" value="${v.capacityKg}" /></div>
       <div class="field"><label>${t('prPersons')}</label><input id="f_persons" type="number" value="${v.persons}" /></div>
       <div class="field"><label>${t('prFloors')}</label><input id="f_floors" type="number" value="${v.floors}" /></div>
       <div class="field"><label>${t('prStops')}</label><input id="f_stops" type="number" value="${v.stops}" /></div>
-      <div class="field"><label>${t('prSpeed')}</label><input id="f_speed" type="number" step="0.1" value="${v.speed}" /></div>
-      <div class="field"><label>${t('prProgress')}</label><input id="f_progress" type="number" min="0" max="100" value="${v.progress}" /></div>
-      <div class="field span2"><label>${t('serviceInterval')}</label><input id="f_interval" type="number" min="0" value="${v.serviceIntervalDays || 0}" /></div>
-      <div class="field span2"><label>${t('prController')}</label><input id="f_controller" value="${esc(v.controller)}" /></div>
-      <div class="field span2"><label>${t('prMotor')}</label><input id="f_motor" value="${esc(v.motor)}" /></div>
-      <div class="field"><label>${t('prDrive')}</label><input id="f_drive" value="${esc(v.drive || '')}" /></div>
-      <div class="field"><label>${t('prDoorOp')}</label><input id="f_doorop" value="${esc(v.doorOperator || '')}" /></div>
       <div class="field"><label>${t('prRoping')}</label><select id="f_roping">
         <option value="1:1" ${v.roping !== '2:1' ? 'selected' : ''}>1:1</option>
         <option value="2:1" ${v.roping === '2:1' ? 'selected' : ''}>2:1</option>
       </select></div>
+
+      <div class="form-sep span2">${t('secEquip')}</div>
+      <div class="field span2"><label>${t('prController')}</label><input id="f_controller" value="${esc(v.controller)}" /></div>
+      <div class="field span2"><label>${t('prMotor')}</label><input id="f_motor" value="${esc(v.motor)}" /></div>
+      <div class="field"><label>${t('prDrive')}</label><input id="f_drive" value="${esc(v.drive || '')}" /></div>
+      <div class="field"><label>${t('prDoorOp')}</label><input id="f_doorop" value="${esc(v.doorOperator || '')}" /></div>
       <div class="field"><label>${t('prEncoder')}</label><input id="f_encoder" value="${esc(v.encoder || '')}" /></div>
-      <div class="field span2"><label>${t('prBrake')}</label><input id="f_brake" value="${esc(v.brake || '')}" /></div>
+      <div class="field"><label>${t('prBrake')}</label><input id="f_brake" value="${esc(v.brake || '')}" /></div>
+
+      <div class="form-sep span2">${t('secStatus')}</div>
+      <div class="field"><label>${t('prStatus')}</label><select id="f_status">${statusOpts}</select></div>
+      <div class="field"><label>${t('prProgress')}</label><input id="f_progress" type="number" min="0" max="100" value="${v.progress}" /></div>
+      <div class="field span2"><label>${t('serviceInterval')}</label><input id="f_interval" type="number" min="0" value="${v.serviceIntervalDays || 0}" /></div>
       <div class="field span2"><label>${t('prNotes')}</label><textarea id="f_notes">${esc(v.notes)}</textarea></div>
     </form></div>
     <div class="modal-foot">
@@ -4134,7 +4502,7 @@ function openProjectForm(id) {
     </div>`, { size: 'lg' });
   $('#projSave').onclick = async () => {
     const name = $('#f_name').value.trim();
-    if (!name) { toast(t('requiredName'), 'err'); return; }
+    if (!name) { fieldError('#f_name', 'requiredName'); return; }
     const body = {
       name, customer: $('#f_customer').value, phone: $('#f_phone').value, location: $('#f_location').value,
       elevatorType: $('#f_type').value, status: $('#f_status').value,
@@ -4159,24 +4527,26 @@ function openProjectForm(id) {
       }
       state.projects.sort((a, b) => b.updatedAt - a.updatedAt);
       closeModal(); render();
-    } catch (e) { toast(t('errGeneric'), 'err'); btn.disabled = false; }
+    } catch (e) { toast(errMsg(e), 'err'); btn.disabled = false; }
   };
 }
 
 function deleteProject(id) {
   confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteMsg'), async () => {
     // optimistic
-    const idx = state.projects.findIndex(p => p.id === id);
-    const [removed] = state.projects.splice(idx, 1);
+    const rb = optimisticRemove(state.projects, id);
+    if (!rb) { closeModal(); return; }
     closeModal();
     navigate('/projects');
     try {
       await api('/projects/' + id, { method: 'DELETE' });
-      state.services = state.services.filter(s => s.projectId !== id);
+      // services survive a project deletion (independent module) — just detach them
+      state.services.forEach(s => { if (s.projectId === id) s.projectId = ''; });
+      state.checklists = state.checklists.filter(c => c.projectId !== id);
       toast(t('deleted'));
     } catch (e) {
-      state.projects.splice(idx, 0, removed);
-      toast(t('errGeneric'), 'err'); render();
+      rb.restore();
+      toast(errMsg(e), 'err'); render();
     }
   });
 }
@@ -4296,14 +4666,7 @@ function renderProjectDetail(id) {
       /* fault pattern stats */
       const pSvc = state.services.filter(s => s.projectId === p.id);
       if (pSvc.length >= 2) {
-        const words = {};
-        pSvc.forEach(s => {
-          const txt = (s.problem || '') + ' ' + (s.diagnosis || '');
-          [['درب', 'درب 🚪'], ['فتوسل', 'فتوسل'], ['ترمز', 'ترمز 🛑'], ['انکودر', 'انکودر'], ['درایو', 'درایو 🖥️'], ['موتور', 'موتور ⚙️'], ['بکسل', 'بکسل 🔗'], ['قفل', 'قفل درب 🔒'], ['روغن', 'روغن 🛢️'], ['سیل', 'سیل جک'], ['شیر', 'شیرها'], ['پمپ', 'پمپ'], ['ریزش', 'ریزش'], ['همسطح', 'همسطح‌سازی 🎯'], ['برق', 'برق ⚡'], ['کنتاکتور', 'کنتاکتور'], ['لیمیت', 'لیمیت'], ['صدا', 'صدا 🔊'], ['لرزش', 'لرزش']].forEach(([w, lbl]) => {
-            if (txt.includes(w)) words[lbl] = (words[lbl] || 0) + 1;
-          });
-        });
-        const top = Object.entries(words).sort((a, b) => b[1] - a[1]).slice(0, 6);
+        const top = faultTally(pSvc, FAULT_ICONS).slice(0, 6);
         if (top.length) {
           const mx = top[0][1];
           out += `<div class="card" style="margin-top:16px"><div class="card-title">📊 ${t('faultStats')}</div>
@@ -4356,7 +4719,7 @@ function renderProjectDetail(id) {
   const range = $('#progRange');
   const saveProg = debounce(async val => {
     try { await api('/projects/' + p.id, { method: 'PUT', body: { progress: val } }); toast(t('saved')); }
-    catch (e) { toast(t('errGeneric'), 'err'); }
+    catch (e) { toast(errMsg(e), 'err'); }
   }, 600);
   range.oninput = () => {
     const v = +range.value;
@@ -4393,15 +4756,16 @@ function renderServices() {
     </div>
     <div id="svcList"></div>`;
   $('#svcSearch').oninput = debounce(e => { svcFilter.q = e.target.value; drawSvcList(); }, 200);
-  $$('.chip').forEach(ch => ch.onclick = () => { svcFilter.type = ch.dataset.t; renderServices(); });
+  $$('#content .toolbar .chip[data-t]').forEach(ch => ch.onclick = () => { svcFilter.type = ch.dataset.t; renderServices(); });
   drawSvcList();
 }
 function drawSvcList() {
-  const q = svcFilter.q.trim().toLowerCase();
+  if (!$('#svcList')) return;
+  const q = norm(svcFilter.q);
   let list = state.services;
   if (svcFilter.projectId) list = list.filter(s => s.projectId === svcFilter.projectId);
   if (svcFilter.type !== 'all') list = list.filter(s => s.serviceType === svcFilter.type);
-  if (q) list = list.filter(s => (svcTarget(s) + ' ' + (s.customer || '') + ' ' + (s.elevatorInfo || '') + ' ' + s.technician + ' ' + s.problem + ' ' + (s.complaint || '') + ' ' + s.diagnosis + ' ' + s.workDone + ' ' + s.partsReplaced).toLowerCase().includes(q));
+  if (q) list = list.filter(s => hay(svcTarget(s), s.customer, s.elevatorInfo, s.technician, s.problem, s.complaint, s.diagnosis, s.workDone, s.partsReplaced, s.recommendations).includes(q));
   const el = $('#svcList');
   if (!state.services.length) {
     el.innerHTML = `<div class="empty"><div class="e-icon">🔧</div><strong>${t('noServices')}</strong><p>${t('noServicesSub')}</p><button class="btn btn-primary" onclick="openServiceForm()">${IC.plus} ${t('newServiceRec')}</button></div>`;
@@ -4411,37 +4775,29 @@ function drawSvcList() {
     el.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p></div>`;
     return;
   }
-  el.innerHTML = list.map(serviceRow).join('');
+  paintList(el, list, serviceRow);
 }
 function exportServicesCsv() {
   const head = [t('svcDate'), t('svcCustomer'), t('svcProject'), t('svcTechnician'), t('svcType'), t('svcProblem'), t('svcDiagnosis'), t('svcWork'), t('svcParts'), t('svcFinal')];
   const rows = state.services.map(s => [
     new Date(s.date).toISOString().slice(0, 10),
     s.customer || '', s.projectId ? projName(s.projectId) : '', s.technician,
-    t(SVC_META[s.serviceType].key), s.problem, s.diagnosis, s.workDone, s.partsReplaced,
-    t(FINAL_META[s.finalStatus].key)
+    t(svcMeta(s.serviceType).key), s.problem, s.diagnosis, s.workDone, s.partsReplaced,
+    t(finalMeta(s.finalStatus).key)
   ]);
-  const csvEsc = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-  const csv = '\ufeff' + [head, ...rows].map(r => r.map(csvEsc).join(',')).join('\r\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'zlift-services-' + new Date().toISOString().slice(0, 10) + '.csv';
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+  downloadCsv('zlift-services-' + new Date().toISOString().slice(0, 10) + '.csv', head, rows);
   toast(t('saved'));
 }
 function serviceRow(s) {
-  const m = SVC_META[s.serviceType];
+  const m = svcMeta(s.serviceType);
   return `<div class="row-item" onclick="openServiceView('${s.id}')">
     <div class="row-icon" style="background:var(--bg-soft);border:1px solid var(--border);font-size:19px">${m.icon}</div>
     <div class="row-body">
-      <strong>${esc(svcTarget(s))} ${s.projectId ? '' : '<span class="badge b-gray" style="font-size:10px;vertical-align:middle">🔧</span>'}</strong>
+      <strong>${esc(svcTarget(s))} ${s.projectId ? '' : '<span class="badge b-gray badge-sm">🔧</span>'}</strong>
       <span class="sub">${esc(s.problem || s.complaint || '—')}</span>
     </div>
     <div class="row-side">
-      <span class="badge ${FINAL_META[s.finalStatus].cls}">${t(FINAL_META[s.finalStatus].key)}</span>
+      <span class="badge ${finalMeta(s.finalStatus).cls}">${t(finalMeta(s.finalStatus).key)}</span>
       <span class="date">${fmtDate(s.date)} · ${esc(s.technician)}</span>
     </div>
   </div>`;
@@ -4449,7 +4805,7 @@ function serviceRow(s) {
 function openServiceView(id) {
   const s = state.services.find(x => x.id === id);
   if (!s) return;
-  const m = SVC_META[s.serviceType];
+  const m = svcMeta(s.serviceType);
   const rows = [
     [t('svcCustomer'), s.customer || (s.projectId ? (state.projects.find(p => p.id === s.projectId) || {}).customer : '')],
     [t('svcElevator'), s.elevatorInfo],
@@ -4467,7 +4823,7 @@ function openServiceView(id) {
     [t('svcFollowUp'), s.followUpDate ? fmtDate(s.followUpDate) : '']
   ].filter(x => x[1]);
   openModal(`
-    <div class="modal-head"><h3>${m.icon} ${t(m.key)} <span class="badge ${FINAL_META[s.finalStatus].cls}" style="margin-inline-start:6px">${t(FINAL_META[s.finalStatus].key)}</span></h3>
+    <div class="modal-head"><h3>${m.icon} ${t(m.key)} <span class="badge ${finalMeta(s.finalStatus).cls}" style="margin-inline-start:6px">${t(finalMeta(s.finalStatus).key)}</span></h3>
     <button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body"><div class="kv-grid" style="grid-template-columns:1fr">
       ${rows.map(([k, v]) => `<div class="kv-cell"><div class="k">${esc(k)}</div><div class="v" style="font-weight:500;white-space:pre-wrap">${esc(v)}</div></div>`).join('')}
@@ -4491,24 +4847,30 @@ function openServiceForm(id, presetProject) {
   openModal(`
     <div class="modal-head"><h3>${s ? '✏️ ' + t('editService') : '🔧 ' + t('newServiceRec')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body"><form class="form-grid">
-      <div class="field span2"><label>${t('svcCustomer')} ${v.projectId ? '' : '*'}</label><input id="s_customer" value="${esc(v.customer || '')}" placeholder="مثلاً آقای احمدی — ساختمان نگین" /></div>
-      <div class="field span2"><label>${t('svcElevator')}</label><input id="s_elevator" value="${esc(v.elevatorInfo || '')}" placeholder="مثلاً کششی ۶ نفره، سعادت‌آباد" /></div>
+      <!-- 1) where & who: picking a project fills in the identity, so it comes first -->
+      <div class="form-sep span2">${t('secJob')}</div>
       <div class="field span2"><label>${t('svcLinkProject')}</label><select id="s_project">${projOpts}</select></div>
+      <div class="field span2"><label>${t('svcCustomer')} ${v.projectId ? '' : '*'}</label><input id="s_customer" value="${esc(v.customer || '')}" placeholder="${esc(t('phCustomer'))}" /></div>
+      <div class="field span2"><label>${t('svcElevator')}</label><input id="s_elevator" value="${esc(v.elevatorInfo || '')}" placeholder="${esc(t('phElevator'))}" /></div>
       <div class="field"><label>${t('svcDate')}</label>${jdateInput('s_date', v.date)}</div>
-      <div class="field"><label>${t('svcTechnician')}</label><input id="s_tech" value="${esc(v.technician)}" /></div>
       <div class="field"><label>${t('svcType')}</label><select id="s_type">
         ${Object.keys(SVC_META).map(k => `<option value="${k}" ${v.serviceType === k ? 'selected' : ''}>${t(SVC_META[k].key)}</option>`).join('')}
       </select></div>
-      <div class="field"><label>${t('svcFinal')}</label><select id="s_final">
-        ${Object.keys(FINAL_META).map(k => `<option value="${k}" ${v.finalStatus === k ? 'selected' : ''}>${t(FINAL_META[k].key)}</option>`).join('')}
-      </select></div>
+      <div class="field span2"><label>${t('svcTechnician')}</label><input id="s_tech" value="${esc(v.technician)}" /></div>
+      <!-- 2) what was reported and what was found -->
+      <div class="form-sep span2">${t('secFindings')}</div>
       <div class="field span2"><label>${t('svcComplaint')}</label><textarea id="s_complaint" style="min-height:52px">${esc(v.complaint || '')}</textarea></div>
       <div class="field span2"><label>${t('svcProblem')}</label><textarea id="s_problem" style="min-height:52px">${esc(v.problem)}</textarea></div>
       <div class="field span2"><label>${t('svcDiagnosis')}</label><textarea id="s_diag" style="min-height:52px">${esc(v.diagnosis)}</textarea></div>
-      <div class="field span2"><label>${t('svcMeasurements')}</label><textarea id="s_meas" style="min-height:52px" placeholder="مثلاً: V=382/379/381 · I=13.8A · P=34bar">${esc(v.measurements || '')}</textarea></div>
+      <div class="field span2"><label>${t('svcMeasurements')}</label><textarea id="s_meas" style="min-height:52px" placeholder="${esc(t('phMeasure'))}">${esc(v.measurements || '')}</textarea></div>
+      <!-- 3) what was done and how it ended -->
+      <div class="form-sep span2">${t('secWork')}</div>
       <div class="field span2"><label>${t('svcWork')}</label><textarea id="s_work" style="min-height:64px">${esc(v.workDone)}</textarea></div>
       <div class="field span2"><label>${t('svcParts')}</label><input id="s_parts" value="${esc(v.partsReplaced)}" /></div>
       <div class="field span2"><label>${t('svcRecommend')}</label><textarea id="s_recommend" style="min-height:52px">${esc(v.recommendations || '')}</textarea></div>
+      <div class="field"><label>${t('svcFinal')}</label><select id="s_final">
+        ${Object.keys(FINAL_META).map(k => `<option value="${k}" ${v.finalStatus === k ? 'selected' : ''}>${t(FINAL_META[k].key)}</option>`).join('')}
+      </select></div>
       <div class="field"><label>${t('svcFollowUp')}</label>${jdateInput('s_followup', v.followUpDate || 0, true)}</div>
     </form></div>
     <div class="modal-foot">
@@ -4518,7 +4880,7 @@ function openServiceForm(id, presetProject) {
   $('#svcSave').onclick = async () => {
     const projectId = $('#s_project').value;
     const customer = $('#s_customer').value.trim();
-    if (!projectId && !customer) { toast(t('requiredCustomer'), 'err'); return; }
+    if (!projectId && !customer) { fieldError('#s_customer', 'requiredCustomer'); return; }
     const body = {
       projectId, customer, elevatorInfo: $('#s_elevator').value,
       date: jdateVal('s_date') || Date.now(),
@@ -4540,22 +4902,13 @@ function openServiceForm(id, presetProject) {
       }
       state.services.sort((a, b) => b.date - a.date);
       closeModal(); render();
-    } catch (e) { toast(t('errGeneric'), 'err'); btn.disabled = false; }
+    } catch (e) { toast(errMsg(e), 'err'); btn.disabled = false; }
   };
 }
 function printServiceReport(id) {
   const s = state.services.find(x => x.id === id);
   if (!s) return;
   const p = state.projects.find(x => x.id === s.projectId) || {};
-  const st = state.settings || {};
-  let sheet = document.getElementById('printSheet');
-  if (!sheet) {
-    sheet = document.createElement('div');
-    sheet.id = 'printSheet';
-    sheet.className = 'print-sheet';
-    document.body.appendChild(sheet);
-  }
-  sheet.dir = I18N[LANG].dir;
   const rows = [
     [t('reportNo'), s.id.slice(0, 8).toUpperCase()],
     [t('svcDate'), fmtDateTime(s.date)],
@@ -4563,7 +4916,7 @@ function printServiceReport(id) {
     [t('svcElevator'), s.elevatorInfo || (p.name ? [p.name, p.location].filter(Boolean).join(' — ') : '—')],
     p.id ? [t('prType'), p.elevatorType === 'hydraulic' ? t('hydraulic') : t('traction')] : null,
     [t('svcTechnician'), s.technician],
-    [t('svcType'), t(SVC_META[s.serviceType].key)],
+    [t('svcType'), t(svcMeta(s.serviceType).key)],
     [t('svcComplaint'), s.complaint],
     [t('svcProblem'), s.problem],
     [t('svcDiagnosis'), s.diagnosis],
@@ -4571,18 +4924,16 @@ function printServiceReport(id) {
     [t('svcWork'), s.workDone],
     [t('svcParts'), s.partsReplaced],
     [t('svcRecommend'), s.recommendations],
-    [t('svcFinal'), t(FINAL_META[s.finalStatus].key)],
+    [t('svcFinal'), t(finalMeta(s.finalStatus).key)],
     [t('svcFollowUp'), s.followUpDate ? fmtDate(s.followUpDate) : '']
   ].filter(r => r && r[1]);
-  sheet.innerHTML = `
-    <h1>🛗 ${esc(st.company || 'Z Lift')}</h1>
-    <div class="ph-sub">${t('reportTitle')} — ${esc(st.phone || '')} ${st.address ? '· ' + esc(st.address) : ''}</div>
+  printDoc(`
+    ${printHeader(t('reportTitle'))}
     <table>${rows.map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(v || '—')}</td></tr>`).join('')}</table>
     <div class="sig-row">
       <div class="sig">${t('signTech')}</div>
       <div class="sig">${t('signCustomer')}</div>
-    </div>`;
-  window.print();
+    </div>`);
 }
 
 function duplicateService(id) {
@@ -4602,11 +4953,11 @@ function duplicateService(id) {
 }
 function deleteService(id) {
   confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteSvcMsg'), async () => {
-    const idx = state.services.findIndex(s => s.id === id);
-    const [removed] = state.services.splice(idx, 1);
+    const rb = optimisticRemove(state.services, id);
+    if (!rb) { closeModal(); return; }
     closeModal(); render();
     try { await api('/services/' + id, { method: 'DELETE' }); toast(t('deleted')); }
-    catch (e) { state.services.splice(idx, 0, removed); toast(t('errGeneric'), 'err'); render(); }
+    catch (e) { rb.restore(); toast(errMsg(e), 'err'); render(); }
   });
 }
 
@@ -4617,6 +4968,7 @@ const REMINDER_META = {
   custom:   { key: 'reminderCustom', icon: '📌', cls: 'b-gray' }
 };
 let calState = { jy: 0, jm: 0 }; // initialized to current Jalali month on first render
+let calSelDay = 0;                 // day highlighted in the grid (0 = none)
 
 /* Pure derivation of every active reminder from projects + services + manual entries.
    periodic  → project.serviceIntervalDays elapsed since its last maintenance/repair
@@ -4650,6 +5002,7 @@ function buildReminders() {
 function renderCalendar() {
   const c = $('#content');
   if (!calState.jy) { const j = tsToJalali(Date.now()); calState = { jy: j.jy, jm: j.jm }; }
+  calSelDay = 0;
   const reminders = buildReminders();
   c.innerHTML = `
     <div class="toolbar">
@@ -4665,6 +5018,7 @@ function renderCalendar() {
   drawReminderList(reminders);
 }
 function calShift(d) {
+  calSelDay = 0;
   calState.jm += d;
   if (calState.jm > 12) { calState.jm = 1; calState.jy++; }
   if (calState.jm < 1) { calState.jm = 12; calState.jy--; }
@@ -4672,10 +5026,11 @@ function calShift(d) {
 }
 function calToday() {
   const j = tsToJalali(Date.now());
+  calSelDay = 0;
   calState = { jy: j.jy, jm: j.jm };
   drawCalendar();
 }
-function drawCalendar() {
+function calCellsHTML() {
   const { jy, jm } = calState;
   const days = jalDaysInMonth(jy, jm);
   const firstTs = jalaliToTs(jy, jm, 1);
@@ -4695,17 +5050,29 @@ function drawCalendar() {
   for (let i = 0; i < startCol; i++) cells += '<span></span>';
   for (let d = 1; d <= days; d++) {
     const isToday = todayJ.jy === jy && todayJ.jm === jm && todayJ.jd === d;
+    const isSel = calSelDay === d;
     const n = dayCount[d] || 0;
-    cells += `<button class="cal-day ${isToday ? 'cal-today' : ''}" data-d="${d}" onclick="calPickDay(${d})">
+    cells += `<button class="cal-day ${isToday ? 'cal-today' : ''} ${isSel ? 'cal-sel' : ''}" data-d="${d}" onclick="calPickDay(${d})" aria-pressed="${isSel ? 'true' : 'false'}">
       <span class="cal-num">${faNum(d)}</span>
       ${n ? `<span class="cal-dot">${faNum(n)}</span>` : ''}
     </button>`;
   }
+  return cells;
+}
+/* repaint only the day grid (keeps the open day detail below intact) */
+function drawCalDays() {
+  const grid = $('#calGrid');
+  if (grid) grid.innerHTML = calCellsHTML();
+}
+function drawCalendar() {
+  if (!$('#calWrap')) return;
+  const { jy, jm } = calState;
+  const cells = calCellsHTML();
   $('#calWrap').innerHTML = `
     <div class="cal-head">
-      <button class="icon-btn" onclick="calShift(-1)">‹</button>
-      <strong id="calHeader">${JAL_MONTHS[jm - 1]} ${faNum(jy)}</strong>
-      <button class="icon-btn" onclick="calShift(1)">›</button>
+      <button class="icon-btn" onclick="calShift(-1)" aria-label="${t('prevMonth')}" title="${t('prevMonth')}">${navArrows().prev}</button>
+      <strong id="calHeader">${jalMonth(jm)} ${faNum(jy)}</strong>
+      <button class="icon-btn" onclick="calShift(1)" aria-label="${t('nextMonth')}" title="${t('nextMonth')}">${navArrows().next}</button>
       <button class="btn btn-ghost btn-sm" onclick="calToday()">${t('today')}</button>
     </div>
     <div class="cal-week">${['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'].map(w => `<span>${w}</span>`).join('')}</div>
@@ -4714,28 +5081,31 @@ function drawCalendar() {
 }
 function calPickDay(d) {
   const { jy, jm } = calState;
-  const start = jalaliToTs(jy, jm, d);
-  const end = start + 86400000;
+  const { from: start, to: end } = jalDayRange(jy, jm, d);
   const svcs = (state.services || []).filter(s => s.date >= start && s.date < end);
   const rems = buildReminders().filter(r => r.due >= start && r.due < end);
+  calSelDay = d;
+  drawCalDays();
   if (!svcs.length && !rems.length) { $('#calDayDetail').innerHTML = `<div class="empty" data-cal="noevents" style="margin-top:12px"><p>${t('calNoEvents')}</p></div>`; return; }
   $('#calDayDetail').innerHTML = `
     <div class="card" style="margin-top:12px">
       <div class="card-title">${fmtJalali(start)}</div>
-      ${svcs.length ? `<div class="sub-title" data-cal="services">${t('calServicesOnDay')}</div>` + svcs.map(s => `<div class="row-item" onclick="openServiceView('${s.id}')"><span>${SVC_META[s.serviceType].icon}</span> ${esc(svcTarget(s))}</div>`).join('') : ''}
-      ${rems.length ? `<div class="sub-title" data-cal="reminders" style="margin-top:10px">${t('calRemindersDue')}</div>` + rems.map(r => `<div class="row-item ${r.overdue ? 'overdue' : ''}"><span>${(REMINDER_META[r.kind] || REMINDER_META.custom).icon}</span> ${esc(r.title)}</div>`).join('') : ''}
+      ${svcs.length ? `<div class="sub-title" data-cal="services">${t('calServicesOnDay')}</div>` + svcs.map(s => `<div class="row-item" onclick="openServiceView('${s.id}')"><span>${svcMeta(s.serviceType).icon}</span> ${esc(svcTarget(s))}</div>`).join('') : ''}
+      ${rems.length ? `<div class="sub-title" data-cal="reminders" style="margin-top:10px">${t('calRemindersDue')}</div>` + rems.map(r => `<div class="row-item ${r.overdue ? 'overdue' : ''}"><span>${remMeta(r.kind).icon}</span> ${esc(r.title)}</div>`).join('') : ''}
     </div>`;
 }
 function drawReminderList(reminders) {
   const el = $('#reminderList');
   if (!el) return;
   if (!reminders.length) { el.innerHTML = `<div class="empty"><p>${t('calNoReminders')}</p><p class="sub">${t('calTapDay')}</p></div>`; return; }
-  el.innerHTML = reminders.map(r => {
-    const m = REMINDER_META[r.kind] || REMINDER_META.custom;
+  el.innerHTML = `<p style="font-size:11.5px;color:var(--text-3);margin-bottom:8px">💡 ${t('reminderEditHint')}</p>` + reminders.map(r => {
+    const m = remMeta(r.kind);
     const label = r.overdue ? t('calOverdue') : (r.soon ? t('calDueSoon') : t('calUpcoming'));
     const cls = r.overdue ? 'b-red' : (r.soon ? 'b-amber' : 'b-gray');
-    const done = r.kind === 'custom' ? `<button class="btn btn-ghost btn-sm" onclick="markReminderDone('${r.reminderId}')">${t('reminderMarkDone')}</button>` : '';
-    return `<div class="row-item" style="justify-content:space-between">
+    /* only manual reminders own a record: they can be edited / completed / deleted */
+    const editable = !!r.reminderId;
+    const done = editable ? `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();markReminderDone('${r.reminderId}')">${t('reminderMarkDone')}</button>` : '';
+    return `<div class="row-item" style="justify-content:space-between${editable ? ';cursor:pointer' : ''}" ${editable ? `onclick="openReminderForm('${r.reminderId}')"` : ''}>
       <div class="row-body"><strong>${m.icon} ${esc(r.title)}</strong><span class="sub">${r.projectId ? esc(projName(r.projectId)) : ''}</span></div>
       <div class="row-side"><span class="badge ${cls}">${label} · ${fmtJalali(r.due)}</span>${done}</div>
     </div>`;
@@ -4752,27 +5122,52 @@ function openReminderForm(id) {
       <div class="field"><label>${t('svcType')}</label><select id="rm_kind">
         ${Object.keys(REMINDER_META).map(k => `<option value="${k}" ${v.kind === k ? 'selected' : ''}>${t(REMINDER_META[k].key)}</option>`).join('')}
       </select></div>
+      <div class="field span2"><label>${t('reminderProject')}</label><select id="rm_project">
+        <option value="">—</option>
+        ${(state.projects || []).map(p => `<option value="${p.id}" ${v.projectId === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}
+      </select></div>
     </form></div>
     <div class="modal-foot">
+      ${r ? `<button class="btn btn-soft-danger" onclick="deleteReminder('${r.id}')">${IC.trash}</button>` : ''}
       <button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button>
       <button class="btn btn-primary" id="rmSave">${r ? t('save') : t('create')}</button>
     </div>`);
-  $('#rmSave').onclick = async () => {
+  $('#rmSave').onclick = guard('#rmSave', async () => {
     const title = $('#rm_title').value.trim();
-    if (!title) { toast(t('reminderTitleReq'), 'err'); return; }
-    const body = { title, due: jdateVal('rm_due') || (Date.now() + 7 * 86400000), kind: $('#rm_kind').value };
+    if (!title) { fieldError('#rm_title', 'reminderTitleReq'); return; }
+    const body = {
+      title, due: jdateVal('rm_due') || (Date.now() + 7 * 86400000),
+      kind: $('#rm_kind').value, projectId: $('#rm_project').value
+    };
     try {
       if (r) { await api('/reminders/' + r.id, { method: 'PUT', body }); }
       else { await api('/reminders', { method: 'POST', body }); }
-      state.reminders = null; await loadAll(true);
-      closeModal(); render();
-    } catch (e) { toast(t('errGeneric'), 'err'); }
-  };
+      await reloadReminders();
+      closeModal(); toast(r ? t('saved') : t('created')); render();
+    } catch (e) { toast(errMsg(e), 'err'); }
+  });
+}
+function deleteReminder(id) {
+  confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteReminderMsg'), async () => {
+    try {
+      await api('/reminders/' + id, { method: 'DELETE' });
+      await reloadReminders();
+      closeModal(); toast(t('reminderDeleted')); render();
+    } catch (e) { closeModal(); toast(errMsg(e), 'err'); }
+  });
+}
+/* refresh just the reminders collection (cheaper & safer than a full reload) */
+async function reloadReminders() {
+  const d = await api('/reminders');
+  state.reminders = d.reminders;
 }
 async function markReminderDone(id) {
-  await api('/reminders/' + id, { method: 'PUT', body: { done: true } });
-  state.reminders = null; await loadAll(true);
-  render();
+  try {
+    await api('/reminders/' + id, { method: 'PUT', body: { done: true } });
+    await reloadReminders();
+    render();
+    toast(t('saved'));
+  } catch (e) { reportError(e, 'markReminderDone'); }
 }
 
 /* ================= PARTS INVENTORY ================= */
@@ -4792,21 +5187,22 @@ function renderParts() {
     </div>
     <div class="card" style="padding:6px 6px 2px"><div class="table-wrap" id="partList"></div></div>`;
   $('#partSearch').oninput = debounce(e => { partFilter.q = e.target.value; drawParts(); }, 200);
-  $$('.chip').forEach(ch => ch.onclick = () => { partFilter.low = ch.dataset.low === '1'; renderParts(); });
+  $$('#content .toolbar .chip[data-low]').forEach(ch => ch.onclick = () => { partFilter.low = ch.dataset.low === '1'; renderParts(); });
   drawParts();
 }
 function drawParts() {
-  const q = partFilter.q.trim().toLowerCase();
+  if (!$('#partList')) return;
+  const q = norm(partFilter.q);
   let list = state.parts;
   if (partFilter.low) list = list.filter(x => x.qty <= x.minQty);
-  if (q) list = list.filter(x => (x.name + ' ' + x.category + ' ' + x.location + ' ' + x.note).toLowerCase().includes(q));
+  if (q) list = list.filter(x => hay(x.name, x.category, x.location, x.note, x.unit).includes(q));
   const el = $('#partList');
   if (!state.parts.length) {
-    el.innerHTML = `<div class="empty" style="border:0"><div class="e-icon">📦</div><strong>${t('noParts')}</strong><p>${t('noPartsSub')}</p><button class="btn btn-primary" onclick="openPartForm()">${IC.plus} ${t('newPart')}</button></div>`;
+    el.innerHTML = `<div class="empty"><div class="e-icon">📦</div><strong>${t('noParts')}</strong><p>${t('noPartsSub')}</p><button class="btn btn-primary" onclick="openPartForm()">${IC.plus} ${t('newPart')}</button></div>`;
     return;
   }
   if (!list.length) {
-    el.innerHTML = `<div class="empty" style="border:0"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p></div>`;
+    el.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p></div>`;
     return;
   }
   el.innerHTML = `<table class="parts-table">
@@ -4831,15 +5227,7 @@ function drawParts() {
 function exportPartsCsv() {
   const head = [t('partName'), t('partCategory'), t('partUnit'), t('partQty'), t('partMin'), t('partPrice'), t('partLocation'), t('partNote')];
   const rows = state.parts.map(x => [x.name, x.category, x.unit, x.qty, x.minQty, x.price, x.location, x.note]);
-  const csvEsc = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-  const csv = '\ufeff' + [head, ...rows].map(r => r.map(csvEsc).join(',')).join('\r\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'zlift-parts-' + new Date().toISOString().slice(0, 10) + '.csv';
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+  downloadCsv('zlift-parts-' + new Date().toISOString().slice(0, 10) + '.csv', head, rows);
   toast(t('saved'));
 }
 function openPartForm(id) {
@@ -4865,7 +5253,7 @@ function openPartForm(id) {
     </div>`);
   $('#partSave').onclick = async () => {
     const name = $('#p_name').value.trim();
-    if (!name) { toast(t('requiredTitle'), 'err'); return; }
+    if (!name) { fieldError('#p_name', 'requiredTitle'); return; }
     const body = {
       name, category: $('#p_cat').value, unit: $('#p_unit').value,
       qty: +$('#p_qty').value, minQty: +$('#p_min').value, price: +$('#p_price').value,
@@ -4883,16 +5271,16 @@ function openPartForm(id) {
         toast(t('created'));
       }
       closeModal(); drawParts();
-    } catch (e) { toast(t('errGeneric'), 'err'); btn.disabled = false; }
+    } catch (e) { toast(errMsg(e), 'err'); btn.disabled = false; }
   };
 }
 function deletePart(id) {
   confirmDialog(t('confirmDeleteTitle'), t('confirmDeletePartMsg'), async () => {
-    const idx = state.parts.findIndex(p => p.id === id);
-    const [removed] = state.parts.splice(idx, 1);
+    const rb = optimisticRemove(state.parts, id);
+    if (!rb) { closeModal(); return; }
     closeModal(); drawParts();
     try { await api('/parts/' + id, { method: 'DELETE' }); toast(t('deleted')); }
-    catch (e) { state.parts.splice(idx, 0, removed); toast(t('errGeneric'), 'err'); drawParts(); }
+    catch (e) { rb.restore(); toast(errMsg(e), 'err'); drawParts(); }
   });
 }
 
@@ -5014,7 +5402,7 @@ function renderChecklistDetail(idWithQuery) {
       const inst2 = getInst();
       if (!inst2) return;
       try { await api('/checklists', { method: 'POST', body: { projectId: selectedProject, templateId: tid, checked: inst2.checked } }); }
-      catch (e) { toast(t('errGeneric'), 'err'); }
+      catch (e) { toast(errMsg(e), 'err'); }
     }, 500);
 
     async function cycle(el) {
@@ -5032,7 +5420,7 @@ function renderChecklistDetail(idWithQuery) {
             inst2 = d.checklist;
             if (!state.checklists.includes(inst2)) state.checklists.push(inst2);
           } catch (e) {
-            toast(t('errGeneric'), 'err');
+            toast(errMsg(e), 'err');
             return;
           }
         }
@@ -5099,6 +5487,8 @@ async function chFailedToIssue(tid) {
 
 /* ================= CALCULATIONS ================= */
 function computeCalc(cal) {
+  const out = $('#calcResult_' + cal.id);
+  if (!cal || !out) return;                       // card not on screen — nothing to do
   const vals = {};
   cal.inputs.forEach(inp => {
     const el = $(`#calc_${cal.id}_${inp.id}`);
@@ -5106,11 +5496,11 @@ function computeCalc(cal) {
   });
   try {
     const rows = cal.compute(vals);
-    $('#calcResult_' + cal.id).innerHTML = `<div class="calc-result">
+    out.innerHTML = `<div class="calc-result">
       ${rows.map(r => `<div class="r-row"><span class="r-label">${esc(r.label[LANG] || r.label.fa || r.label)}</span><span class="r-val">${esc(r.val)}</span></div>`).join('')}
     </div>`;
   } catch (e) {
-    $('#calcResult_' + cal.id).innerHTML = `<div class="error-box" style="padding:10px;margin-top:10px">⚠️</div>`;
+    out.innerHTML = `<div class="error-box" style="padding:10px;margin-top:10px">⚠️ ${t('errGeneric')}</div>`;
   }
 }
 let calcFilter = { cat: 'all', q: '' };
@@ -5140,10 +5530,10 @@ function wireConverters() {
 }
 function renderCalculations() {
   const c = $('#content');
-  const q = calcFilter.q.trim().toLowerCase();
+  const q = norm(calcFilter.q);
   let list = CALCULATORS;
   if (calcFilter.cat !== 'all' && calcFilter.cat !== 'quick') list = list.filter(x => x.cat === calcFilter.cat);
-  if (q) list = list.filter(x => (x.title.fa + ' ' + (x.title.en || '') + ' ' + x.desc.fa + ' ' + x.formula).toLowerCase().includes(q));
+  if (q) list = list.filter(x => hay(x.title.fa, x.title.en, x.desc.fa, x.desc.en, x.formula).includes(q));
   const showConv = calcFilter.cat === 'all' || calcFilter.cat === 'quick';
   const showCalcs = calcFilter.cat !== 'quick';
   c.innerHTML = `
@@ -5191,7 +5581,7 @@ function renderCalculations() {
     }, 300);
   });
   $('#calcSearch').oninput = debounce(e => { calcFilter.q = e.target.value; renderCalculations(); }, 300);
-  $$('.chip[data-cc]').forEach(ch => ch.onclick = () => { calcFilter.cat = ch.dataset.cc; renderCalculations(); });
+  $$('#content .chip[data-cc]').forEach(ch => ch.onclick = () => { calcFilter.cat = ch.dataset.cc; renderCalculations(); });
   wireConverters();
 }
 
@@ -5215,7 +5605,7 @@ function renderDiagnostics() {
     <p style="font-size:13px;color:var(--text-2);margin-bottom:14px">${t('diagPickSymptom')} — ${t('diagIntro')}</p>
     <div id="diagList"></div>`;
   $('#diagSearch').oninput = debounce(e => { diagFilter.q = e.target.value; drawDiagList(); }, 200);
-  $$('.chip').forEach(ch => ch.onclick = () => { diagFilter.type = ch.dataset.t; renderDiagnostics(); });
+  $$('#content .toolbar .chip[data-t]').forEach(ch => ch.onclick = () => { diagFilter.type = ch.dataset.t; renderDiagnostics(); });
   drawDiagList();
 }
 function flowSearchText(f) {
@@ -5226,10 +5616,10 @@ function flowSearchText(f) {
     (n.causes || []).forEach(x => s += ' ' + x.fa);
     (n.parts || []).forEach(x => s += ' ' + x.fa);
   });
-  return s.toLowerCase();
+  return norm(s);
 }
 function drawDiagList() {
-  const q = diagFilter.q.trim().toLowerCase();
+  const q = norm(diagFilter.q);
   let list = DIAG_FLOWS;
   if (diagFilter.type !== 'all') list = list.filter(d => d.type === 'both' || d.type === diagFilter.type);
   if (q) list = list.filter(d => flowSearchText(d).includes(q));
@@ -5264,6 +5654,7 @@ function startDiagFlow(id) {
   window.scrollTo(0, 0);
 }
 function diagAnswer(nodeId) {
+  if (!diagSession) return;                       // stale button after the flow was closed
   const f = DIAG_FLOWS.find(x => x.id === diagSession.flowId);
   if (!f || !f.nodes[nodeId]) return;
   diagSession.path.push(diagSession.current);
@@ -5289,6 +5680,7 @@ function renderDiagFlow(c) {
   const f = DIAG_FLOWS.find(x => x.id === diagSession.flowId);
   if (!f) { diagSession = null; renderDiagnostics(); return; }
   const node = f.nodes[diagSession.current];
+  if (!node) { diagSession = null; renderDiagnostics(); return; }
   const stepNo = diagSession.path.length + 1;
   const isResult = !node.q;
 
@@ -5371,7 +5763,7 @@ function kbSearchText(k) {
   ['what', 'where', 'safety', 'diag'].forEach(f => { if (k[f]) s += ' ' + k[f]; });
   ['symptoms', 'inspect', 'test', 'causes', 'related'].forEach(f => { if (k[f]) s += ' ' + k[f].join(' '); });
   if (k.body) s += ' ' + (k.body.fa || '') + ' ' + (k.body.en || '');
-  return s.toLowerCase();
+  return norm(s);
 }
 function renderKnowledge() {
   const c = $('#content');
@@ -5384,17 +5776,17 @@ function renderKnowledge() {
     </div>
     <div id="kbList" class="grid-2"></div>`;
   $('#kbSearch').oninput = debounce(e => { kbQuery = e.target.value; drawKb(); }, 200);
-  $$('.chip[data-c]').forEach(ch => ch.onclick = () => { kbCat = ch.dataset.c; renderKnowledge(); });
+  $$('#content .chip[data-c]').forEach(ch => ch.onclick = () => { kbCat = ch.dataset.c; renderKnowledge(); });
   drawKb();
 }
 function drawKb() {
-  const q = kbQuery.trim().toLowerCase();
+  const q = norm(kbQuery);
   let list = KNOWLEDGE;
   if (kbCat !== 'all') list = list.filter(k => k.cat === kbCat);
   if (q) list = list.filter(k => kbSearchText(k).includes(q));
   const el = $('#kbList');
   if (!list.length) {
-    el.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p></div>`;
+    el.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p></div>`;
     return;
   }
   el.innerHTML = list.map(k => `
@@ -5412,8 +5804,8 @@ function kbSection(icon, titleKey, content) {
   return `<h4 style="display:flex;align-items:center;gap:7px">${icon} ${t(titleKey)}</h4>${body}`;
 }
 function kbOpenRelated(name) {
-  const q = name.toLowerCase();
-  const hit = KNOWLEDGE.find(k => (k.title.fa + ' ' + (k.title.en || '')).toLowerCase().includes(q)) ||
+  const q = norm(name);
+  const hit = KNOWLEDGE.find(k => hay(k.title.fa, k.title.en).includes(q)) ||
               KNOWLEDGE.find(k => kbSearchText(k).includes(q));
   if (hit) { openKbArticle(hit.id); }
   else { closeModal(); kbQuery = name; navigate('/knowledge'); }
@@ -5431,7 +5823,7 @@ function openKbArticle(id) {
       ${kbSection('👁️', 'kbInspect', k.inspect)}
       ${kbSection('🧪', 'kbTest', k.test)}
       ${kbSection('💥', 'kbCauses', k.causes)}
-      ${k.related && k.related.length ? `<h4>🔗 ${t('kbRelated')}</h4><div style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0">${k.related.map(r => `<span class="badge b-blue" style="cursor:pointer" title="${t('kbRelClick')}" onclick="kbOpenRelated('${esc(r).replace(/'/g, '')}')">${esc(r)} ←</span>`).join('')}</div>` : ''}
+      ${k.related && k.related.length ? `<h4>🔗 ${t('kbRelated')}</h4><div style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0">${k.related.map(r => `<span class="badge b-blue" style="cursor:pointer" title="${t('kbRelClick')}" onclick="kbOpenRelated('${jsAttr(r)}')">${esc(r)} ←</span>`).join('')}</div>` : ''}
       ${k.safety ? `<div class="safety-banner" style="margin-top:14px"><span style="font-size:17px">⚠️</span><span>${esc(k.safety)}</span></div>` : ''}
       ${k.diag ? `<div class="note-block" style="margin-top:10px">🧭 <b>${t('kbDiag')}:</b> ${esc(k.diag)} — <a href="#/diagnostics" onclick="closeModal()">${t('diagnostics')} ←</a></div>` : ''}
     </div>`;
@@ -5786,7 +6178,7 @@ let stdCat = 'all';
 function stdSearchText(s) {
   let str = s.title.fa + ' ' + (s.title.en || '') + ' ' + s.clause + ' ' + (s.note ? s.note.fa + ' ' + s.note.en : '');
   s.vals.forEach(v => { str += ' ' + v.fa + ' ' + (v.en || '') + ' ' + v.v + ' ' + (v.unit || ''); });
-  return str.toLowerCase();
+  return norm(str);
 }
 function renderStandards() {
   const c = $('#content');
@@ -5803,17 +6195,17 @@ function renderStandards() {
     <div id="stdList" class="grid-2"></div>
     <p class="calc-note" style="margin-top:16px">📖 ${t('stdDisclaimer')}</p>`;
   $('#stdSearch').oninput = debounce(e => { stdQuery = e.target.value; drawStd(); }, 200);
-  $$('.chip[data-sc]').forEach(ch => ch.onclick = () => { stdCat = ch.dataset.sc; renderStandards(); });
+  $$('#content .chip[data-sc]').forEach(ch => ch.onclick = () => { stdCat = ch.dataset.sc; renderStandards(); });
   drawStd();
 }
 function drawStd() {
-  const q = stdQuery.trim().toLowerCase();
+  const q = norm(stdQuery);
   let list = STD81;
   if (stdCat !== 'all') list = list.filter(s => s.cat === stdCat);
   if (q) list = list.filter(s => stdSearchText(s).includes(q));
   const el = $('#stdList');
   if (!list.length) {
-    el.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('stdNoMatch')}</p></div>`;
+    el.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('stdNoMatch')}</p></div>`;
     return;
   }
   el.innerHTML = list.map(s => `
@@ -5864,16 +6256,16 @@ function renderNotes() {
   drawNotes();
 }
 function drawNotes() {
-  const q = noteQuery.trim().toLowerCase();
+  const q = norm(noteQuery);
   let list = state.notes;
-  if (q) list = list.filter(n => (n.title + ' ' + n.content + ' ' + n.tags.join(' ')).toLowerCase().includes(q));
+  if (q) list = list.filter(n => hay(n.title, n.content, (n.tags || []).join(' ')).includes(q));
   const el = $('#noteList');
   if (!state.notes.length) {
-    el.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="e-icon">📝</div><strong>${t('noNotes')}</strong><p>${t('noNotesSub')}</p><button class="btn btn-primary" onclick="openNoteForm()">${IC.plus} ${t('newNote')}</button></div>`;
+    el.innerHTML = `<div class="empty"><div class="e-icon">📝</div><strong>${t('noNotes')}</strong><p>${t('noNotesSub')}</p><button class="btn btn-primary" onclick="openNoteForm()">${IC.plus} ${t('newNote')}</button></div>`;
     return;
   }
   if (!list.length) {
-    el.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p></div>`;
+    el.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p></div>`;
     return;
   }
   el.innerHTML = list.map(n => `
@@ -5903,7 +6295,7 @@ function openNoteForm(id) {
     </div>`);
   $('#noteSave').onclick = async () => {
     const title = $('#n_title').value.trim();
-    if (!title) { toast(t('requiredTitle'), 'err'); return; }
+    if (!title) { fieldError('#n_title', 'requiredTitle'); return; }
     const body = {
       title, content: $('#n_content').value,
       tags: $('#n_tags').value.split(/[,،]/).map(x => x.trim()).filter(Boolean)
@@ -5920,16 +6312,16 @@ function openNoteForm(id) {
         toast(t('created'));
       }
       closeModal(); drawNotes();
-    } catch (e) { toast(t('errGeneric'), 'err'); btn.disabled = false; }
+    } catch (e) { toast(errMsg(e), 'err'); btn.disabled = false; }
   };
 }
 function deleteNote(id) {
   confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteNoteMsg'), async () => {
-    const idx = state.notes.findIndex(n => n.id === id);
-    const [removed] = state.notes.splice(idx, 1);
+    const rb = optimisticRemove(state.notes, id);
+    if (!rb) { closeModal(); return; }
     closeModal(); drawNotes();
     try { await api('/notes/' + id, { method: 'DELETE' }); toast(t('deleted')); }
-    catch (e) { state.notes.splice(idx, 0, removed); toast(t('errGeneric'), 'err'); drawNotes(); }
+    catch (e) { rb.restore(); toast(errMsg(e), 'err'); drawNotes(); }
   });
 }
 
@@ -5939,9 +6331,9 @@ let vvvfSel = { brand: 0, q: '' };
 function renderVVVF() {
   const c = $('#content');
   const drive = VVVF_DB[vvvfSel.brand] || VVVF_DB[0];
-  const q = vvvfSel.q.trim().toLowerCase();
+  const q = norm(vvvfSel.q);
   let codes = drive.codes;
-  if (q) codes = codes.filter(x => (x.code + ' ' + x.meaning + ' ' + x.causes.join(' ')).toLowerCase().includes(q));
+  if (q) codes = codes.filter(x => hay(x.code, x.meaning, (x.causes || []).join(' ')).includes(q));
   c.innerHTML = `
     <div class="safety-banner" style="background:var(--warn-soft);border-color:var(--warn);color:var(--warn)">
       <span style="font-size:18px">⚠️</span><span>${t('vvvfWarn')}</span>
@@ -5971,7 +6363,7 @@ function renderVVVF() {
       </div>`).join('')
     : `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p></div>`}`;
   $('#vvvfSearch').oninput = debounce(e => { vvvfSel.q = e.target.value; renderVVVF(); }, 250);
-  $$('.chip[data-b]').forEach(ch => ch.onclick = () => { vvvfSel.brand = +ch.dataset.b; vvvfSel.q = ''; renderVVVF(); });
+  $$('#content .chip[data-b]').forEach(ch => ch.onclick = () => { vvvfSel.brand = +ch.dataset.b; vvvfSel.q = ''; renderVVVF(); });
 }
 
 /* ================= OPEN ISSUES ================= */
@@ -5993,7 +6385,7 @@ function renderIssues() {
     ${closed.length ? `<div class="section-title"><h3>✔️ ${t('issueClosed')}</h3></div>` + closed.map(issueRow).join('') : ''}`;
 }
 function issueRow(i) {
-  const m = ISSUE_META[i.kind] || ISSUE_META.open;
+  const m = issueMeta(i.kind);
   return `<div class="row-item" style="${i.closed ? 'opacity:.55' : ''}" onclick="openIssueForm('${i.id}')">
     <div class="row-icon" style="background:var(--bg-soft);border:1px solid var(--border);font-size:18px">${i.closed ? '✔️' : m.icon}</div>
     <div class="row-body">
@@ -6030,26 +6422,26 @@ function openIssueForm(id, presetProject) {
       const d = await api('/issues/' + i.id, { method: 'PUT', body: { closed: !i.closed } });
       Object.assign(i, d.item);
       closeModal(); toast(t('saved')); render();
-    } catch (e) { toast(t('errGeneric'), 'err'); }
+    } catch (e) { toast(errMsg(e), 'err'); }
   };
   $('#isSave').onclick = guard('#isSave', async () => {
     const title = $('#is_title').value.trim();
-    if (!title) { toast(t('requiredTitle'), 'err'); return; }
+    if (!title) { fieldError('#is_title', 'requiredTitle'); return; }
     const body = { title, kind: $('#is_kind').value, projectId: $('#is_project').value, note: $('#is_note').value, closed: i ? i.closed : false };
     try {
       if (i) { const d = await api('/issues/' + i.id, { method: 'PUT', body }); Object.assign(i, d.item); }
       else { const d = await api('/issues', { method: 'POST', body }); state.issues.unshift(d.item); }
       closeModal(); toast(t('saved')); render();
-    } catch (e) { toast(t('errGeneric'), 'err'); }
+    } catch (e) { toast(errMsg(e), 'err'); }
   });
 }
 function deleteIssue(id) {
   confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteIssueMsg'), async () => {
-    const idx = state.issues.findIndex(x => x.id === id);
-    const [rm] = state.issues.splice(idx, 1);
+    const rb = optimisticRemove(state.issues, id);
+    if (!rb) { closeModal(); return; }
     closeModal(); render();
     try { await api('/issues/' + id, { method: 'DELETE' }); toast(t('deleted')); }
-    catch (e) { state.issues.splice(idx, 0, rm); toast(t('errGeneric'), 'err'); render(); }
+    catch (e) { rb.restore(); toast(errMsg(e), 'err'); render(); }
   });
 }
 
@@ -6071,7 +6463,7 @@ function renderToolsPage() {
     : `<div class="empty"><div class="e-icon">🧰</div><strong>${t('noTools')}</strong></div>`}
     ${suggestions.length ? `<div class="section-title"><h3>💡 ${t('toolSuggest')}</h3></div>
     <div style="display:flex;flex-wrap:wrap;gap:8px">
-      ${suggestions.map(s => `<button class="chip" onclick="quickAddTool('${esc(s)}')">${IC.plus} ${esc(s)}</button>`).join('')}
+      ${suggestions.map(s => `<button class="chip" onclick="quickAddTool('${jsAttr(s)}')">${IC.plus} ${esc(s)}</button>`).join('')}
     </div>` : ''}`;
 }
 async function quickAddTool(name) {
@@ -6079,7 +6471,7 @@ async function quickAddTool(name) {
     const d = await api('/tools', { method: 'POST', body: { name, note: '' } });
     state.tools.unshift(d.item);
     toast(t('created')); renderToolsPage();
-  } catch (e) { toast(t('errGeneric'), 'err'); }
+  } catch (e) { toast(errMsg(e), 'err'); }
 }
 function openToolForm(id) {
   const x = id ? state.tools.find(y => y.id === id) : null;
@@ -6098,16 +6490,16 @@ function openToolForm(id) {
   if (x) $('#tlDel').onclick = () => confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteToolMsg'), async () => {
     state.tools = state.tools.filter(y => y.id !== x.id);
     closeModal(); renderToolsPage();
-    try { await api('/tools/' + x.id, { method: 'DELETE' }); toast(t('deleted')); } catch (e) { toast(t('errGeneric'), 'err'); }
+    try { await api('/tools/' + x.id, { method: 'DELETE' }); toast(t('deleted')); } catch (e) { toast(errMsg(e), 'err'); }
   });
   $('#tlSave').onclick = guard('#tlSave', async () => {
     const name = $('#tl_name').value.trim();
-    if (!name) { toast(t('requiredTitle'), 'err'); return; }
+    if (!name) { fieldError('#tl_name', 'requiredTitle'); return; }
     try {
       if (x) { const d = await api('/tools/' + x.id, { method: 'PUT', body: { name, note: $('#tl_note').value } }); Object.assign(x, d.item); }
       else { const d = await api('/tools', { method: 'POST', body: { name, note: $('#tl_note').value } }); state.tools.unshift(d.item); }
       closeModal(); toast(t('saved')); renderToolsPage();
-    } catch (e) { toast(t('errGeneric'), 'err'); }
+    } catch (e) { toast(errMsg(e), 'err'); }
   });
 }
 
@@ -6226,7 +6618,7 @@ function openDiagSaveForm(flowId, resultNodeId) {
       toast(t('diagSaved'));
       // offer transfer to service report
       diagToServicePrompt(d.item);
-    } catch (e) { toast(t('errGeneric'), 'err'); }
+    } catch (e) { toast(errMsg(e), 'err'); }
   });
 }
 function diagToServicePrompt(sess) {
@@ -6286,7 +6678,7 @@ function openCalcSaveForm(calId) {
       } });
       state.calcSaves.unshift(d.item);
       closeModal(); toast(t('calcSaved'));
-    } catch (e) { toast(t('errGeneric'), 'err'); }
+    } catch (e) { toast(errMsg(e), 'err'); }
   });
 }
 
@@ -6312,13 +6704,19 @@ function openConsumeForm(partId) {
       <button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button>
       <button class="btn btn-primary" id="cnSave">📉 ${t('consume')}</button>
     </div>`);
+  let overStockConfirmed = false;
   $('#cnSave').onclick = guard('#cnSave', async () => {
-    const qty = Math.max(1, +$('#cn_qty').value || 1);
+    const qty = Math.max(1, Math.round(+$('#cn_qty').value || 1));
+    if (qty > (+part.qty || 0) && !overStockConfirmed) {
+      overStockConfirmed = true;                 // second tap confirms
+      toast(t('consumeOverStock'), 'err');
+      return;
+    }
     try {
       const d = await api('/parts-consume', { method: 'POST', body: { partId: part.id, qty, projectId: $('#cn_project').value, note: $('#cn_note').value } });
       Object.assign(part, d.part);
       closeModal(); toast(t('consumeDone') + ' — ' + faNum(part.qty) + ' ' + part.unit); drawParts();
-    } catch (e) { toast(t('errGeneric'), 'err'); }
+    } catch (e) { toast(errMsg(e), 'err'); }
   });
 }
 
@@ -6352,6 +6750,8 @@ function openPhotoForm(presetProject) {
     if (!file) return;
     const img = new Image();
     const fr = new FileReader();
+    fr.onerror = () => toast(t('photoReadFailed'), 'err');
+    img.onerror = () => { dataUrl = ''; $('#phSave').disabled = true; toast(t('photoReadFailed'), 'err'); };
     fr.onload = () => {
       img.onload = () => {
         // downscale to max 1280px to keep storage sane
@@ -6376,7 +6776,7 @@ function openPhotoForm(presetProject) {
       const d = await api('/photos', { method: 'POST', body: { data: dataUrl, cat: $('#ph_cat').value, projectId: $('#ph_project').value, note: $('#ph_note').value } });
       state.photos.unshift(d.item);
       closeModal(); toast(t('saved')); render();
-    } catch (e) { toast(e.code === 'too_large' ? t('photoTooLarge') : t('errGeneric'), 'err'); }
+    } catch (e) { toast(errMsg(e), 'err'); }
   });
 }
 function viewPhoto(id) {
@@ -6395,11 +6795,11 @@ function viewPhoto(id) {
 }
 function deletePhoto(id) {
   confirmDialog(t('confirmDeleteTitle'), t('confirmDeletePhotoMsg'), async () => {
-    const idx = state.photos.findIndex(x => x.id === id);
-    const [rm] = state.photos.splice(idx, 1);
+    const rb = optimisticRemove(state.photos, id);
+    if (!rb) { closeModal(); return; }
     closeModal(); render();
     try { await api('/photos/' + id, { method: 'DELETE' }); toast(t('deleted')); }
-    catch (e) { state.photos.splice(idx, 0, rm); toast(t('errGeneric'), 'err'); render(); }
+    catch (e) { rb.restore(); toast(errMsg(e), 'err'); render(); }
   });
 }
 
@@ -6448,11 +6848,12 @@ function renderInvoices() {
     </div>
     <div id="invList"></div>`;
   $('#invSearch').oninput = debounce(e => { invFilter.q = e.target.value; drawInvList(); }, 200);
-  $$('.chip[data-s]').forEach(ch => ch.onclick = () => { invFilter.status = ch.dataset.s; renderInvoices(); });
+  $$('#content .chip[data-s]').forEach(ch => ch.onclick = () => { invFilter.status = ch.dataset.s; renderInvoices(); });
   drawInvList();
 }
 function drawInvList() {
-  const q = invFilter.q.trim().toLowerCase();
+  if (!$('#invList')) return;
+  const q = norm(invFilter.q);
   let list = state.invoices;
   if (invFilter.status !== 'all') {
     list = list.filter(inv => {
@@ -6462,7 +6863,7 @@ function drawInvList() {
              (invFilter.status === 'unpaid' && m.key === 'invUnpaid');
     });
   }
-  if (q) list = list.filter(inv => (inv.customer + ' ' + (inv.note || '') + ' ' + (inv.projectId ? projName(inv.projectId) : '') + ' ' + (inv.items || []).map(i => i.desc).join(' ')).toLowerCase().includes(q));
+  if (q) list = list.filter(inv => hay(inv.customer, inv.note, inv.projectId ? projName(inv.projectId) : '', (inv.items || []).map(i => i.desc).join(' ')).includes(q));
   const el = $('#invList');
   if (!state.invoices.length) {
     el.innerHTML = `<div class="empty"><div class="e-icon">🧾</div><strong>${t('noInvoices')}</strong><p>${t('noInvoicesSub')}</p><button class="btn btn-primary" onclick="openInvoiceForm()">${IC.plus} ${t('newInvoice')}</button></div>`;
@@ -6472,7 +6873,7 @@ function drawInvList() {
     el.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p></div>`;
     return;
   }
-  el.innerHTML = list.map(inv => {
+  paintList(el, list, inv => {
     const tt = invTotals(inv);
     const m = invStatusMeta(inv);
     return `<div class="row-item" onclick="openInvoiceForm('${inv.id}')">
@@ -6486,7 +6887,7 @@ function drawInvList() {
         <span class="date">${fmtDate(inv.date || inv.createdAt)} · #${esc((inv.id || '').slice(0, 6).toUpperCase())}</span>
       </div>
     </div>`;
-  }).join('');
+  });
 }
 
 function invItemsHTML() {
@@ -6518,16 +6919,26 @@ function invWireItems() {
   });
 }
 function invDelItem(i) {
+  if (!invDraft) return;
   const it = invDraft.items[i];
-  if (it && it.partId) invDraft.releasedParts.push({ partId: it.partId, qty: +it.qty || 0 });
+  if (it && it.partId) {
+    /* a row added in THIS editing session was never taken from stock yet —
+       just cancel its pending consumption. Rows that came from the saved
+       invoice did consume stock, so removing them gives the parts back. */
+    const pend = it.rowKey ? invDraft.consumedParts.findIndex(c => c.rowKey === it.rowKey) : -1;
+    if (pend >= 0) invDraft.consumedParts.splice(pend, 1);
+    else if (+it.qty > 0) invDraft.releasedParts.push({ partId: it.partId, qty: Math.round(+it.qty) });
+  }
   invDraft.items.splice(i, 1);
   invRefreshItems();
 }
 function invAddItem(item) {
+  if (!invDraft) return;
   invDraft.items.push(item || { desc: '', qty: 1, price: 0 });
   invRefreshItems();
 }
 function invRefreshTotals() {
+  if (!invDraft) return;
   const items = invDraft.items.reduce((a, it) => a + (+it.qty || 0) * (+it.price || 0), 0);
   const labor = +($('#inv_labor') && $('#inv_labor').value) || 0;
   const disc = +($('#inv_discount') && $('#inv_discount').value) || 0;
@@ -6545,6 +6956,7 @@ function invRefreshTotals() {
     </div>`;
 }
 function invPickPart() {
+  invSyncDraftFromForm();
   const opts = state.parts.map(p => `
     <div class="row-item" style="margin-bottom:7px" onclick="invUsePart('${p.id}')">
       <div class="row-body"><strong style="font-size:13.5px">${esc(p.name)}</strong>
@@ -6557,12 +6969,30 @@ function invPickPart() {
 }
 function invUsePart(partId) {
   const p = state.parts.find(x => x.id === partId);
-  if (!p) return;
-  invDraft.items.push({ desc: p.name, qty: 1, price: p.price || 0, partId: p.id });
-  invDraft.consumedParts.push({ partId: p.id });
+  if (!p || !invDraft) return;
+  const rowKey = 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  invDraft.items.push({ desc: p.name, qty: 1, price: p.price || 0, partId: p.id, rowKey });
+  invDraft.consumedParts.push({ partId: p.id, rowKey });
   invBackToForm();
 }
-function invBackToForm() { openInvoiceForm(invDraft.editingId, null, true); }
+function invBackToForm() {
+  if (!invDraft) { closeModal(); return; }
+  openInvoiceForm(invDraft.editingId, null, true);
+}
+/* copy the values currently typed in the form into the draft, so they survive
+   a round-trip through the part-picker / payment sub-modal */
+function invSyncDraftFromForm() {
+  if (!invDraft) return;
+  const g = id => $('#' + id);
+  if (g('inv_customer')) invDraft.customerOverride = g('inv_customer').value;
+  if (g('inv_project')) invDraft.projectOverride = g('inv_project').value;
+  if (g('inv_service')) invDraft.serviceOverride = g('inv_service').value;
+  if (g('inv_note')) invDraft.noteOverride = g('inv_note').value;
+  if (g('inv_labor')) invDraft.laborOverride = Math.max(0, Math.round(+g('inv_labor').value || 0));
+  if (g('inv_discount')) invDraft.discountOverride = Math.max(0, Math.round(+g('inv_discount').value || 0));
+  const dt = jdateVal('inv_date');
+  if (dt) invDraft.dateOverride = dt;
+}
 
 function openInvoiceForm(id, presetProject, keepDraft) {
   const inv = id ? state.invoices.find(x => x.id === id) : null;
@@ -6643,6 +7073,7 @@ function openInvoiceForm(id, presetProject, keepDraft) {
   $('#inv_date').addEventListener('change', () => { invDraft.dateOverride = jdateVal('inv_date') || Date.now(); });
 
   $('#invPayBtn').onclick = () => {
+    invSyncDraftFromForm();
     openModal(`
       <div class="modal-head"><h3>💵 ${t('invAddPay')}</h3><button class="icon-btn" onclick="invBackToForm()">✕</button></div>
       <div class="modal-body">
@@ -6658,11 +7089,11 @@ function openInvoiceForm(id, presetProject, keepDraft) {
       const btn = $('#payOk');
       if (btn.disabled) return;
       const amount = Math.round(+$('#pay_amount').value || 0);
-      if (amount <= 0) { toast(t('errGeneric'), 'err'); return; }
+      if (amount <= 0) { fieldError('#pay_amount', 'invPayInvalid'); return; }
       // overpayment guard: compute balance from current draft
       const items = invDraft.items.reduce((a, it) => a + (Math.round(+it.qty || 0) * Math.round(+it.price || 0)), 0);
-      const labor = Math.round(invDraft.laborOverride !== undefined ? +invDraft.laborOverride : 0);
-      const disc = Math.round(invDraft.discountOverride !== undefined ? +invDraft.discountOverride : 0);
+      const labor = Math.round(invDraft.laborOverride !== undefined ? +invDraft.laborOverride : (inv ? +inv.labor || 0 : 0));
+      const disc = Math.round(invDraft.discountOverride !== undefined ? +invDraft.discountOverride : (inv ? +inv.discount || 0 : 0));
       const grand = Math.max(0, items + labor - disc);
       const paid = invDraft.payments.reduce((a, p) => a + (Math.round(+p.amount) || 0), 0);
       if (grand > 0 && paid + amount > grand && !payConfirmedOver) {
@@ -6678,7 +7109,7 @@ function openInvoiceForm(id, presetProject, keepDraft) {
 
   $('#invSave').onclick = async () => {
     const customer = $('#inv_customer').value.trim();
-    if (!customer) { toast(t('requiredCustomer'), 'err'); return; }
+    if (!customer) { fieldError('#inv_customer', 'requiredCustomer'); return; }
     const body = {
       customer,
       projectId: $('#inv_project').value,
@@ -6703,51 +7134,55 @@ function openInvoiceForm(id, presetProject, keepDraft) {
         const d = await api('/invoices', { method: 'POST', body });
         state.invoices.unshift(d.item); saved = d.item;
       }
-      // consume newly-added inventory parts (only once, on save)
-      for (const cp of invDraft.consumedParts) {
-        const it = body.items.find(x => x.partId === cp.partId);
-        if (!it) continue;
+      // 1) give stock back for inventory rows removed from a saved invoice
+      for (const rp of invDraft.releasedParts) {
+        if (!(+rp.qty > 0)) continue;
+        const local = state.parts.find(x => x.id === rp.partId);
+        if (!local) continue;
         try {
-          const d = await api('/parts-consume', { method: 'POST', body: { partId: cp.partId, qty: +it.qty || 1, projectId: body.projectId, note: t('invoice') + ' #' + saved.id.slice(0, 6).toUpperCase() } });
+          const d = await api('/parts/' + rp.partId, { method: 'PUT', body: { qty: (+local.qty || 0) + Math.round(+rp.qty || 0) } });
+          Object.assign(local, d.part);
+        } catch (e) {}
+      }
+      invDraft.releasedParts = [];
+      // 2) consume newly-added inventory parts (only once, on save)
+      for (const cp of invDraft.consumedParts) {
+        const it = invDraft.items.find(x => x.rowKey && x.rowKey === cp.rowKey);
+        if (!it) continue;
+        const qty = Math.max(1, Math.round(+it.qty || 1));
+        try {
+          const d = await api('/parts-consume', { method: 'POST', body: { partId: cp.partId, qty, projectId: body.projectId, note: t('invoice') + ' #' + saved.id.slice(0, 6).toUpperCase() } });
           const local = state.parts.find(x => x.id === cp.partId);
           if (local) Object.assign(local, d.part);
         } catch (e) {}
       }
+      invDraft.consumedParts = [];
       invDraft = null;
       closeModal(); toast(t('saved')); render();
-    } catch (e) { toast(t('errGeneric'), 'err'); btn.disabled = false; }
+    } catch (e) { toast(errMsg(e), 'err'); btn.disabled = false; }
   };
 }
 function invDelPay(i) {
+  if (!invDraft) return;
   invDraft.payments.splice(i, 1);
   invBackToForm();
 }
 function deleteInvoice(id) {
   confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteInvMsg'), async () => {
-    const idx = state.invoices.findIndex(x => x.id === id);
-    const [rm] = state.invoices.splice(idx, 1);
+    const rb = optimisticRemove(state.invoices, id);
     invDraft = null;
+    if (!rb) { closeModal(); return; }
     closeModal(); render();
     try { await api('/invoices/' + id, { method: 'DELETE' }); toast(t('deleted')); }
-    catch (e) { state.invoices.splice(idx, 0, rm); toast(t('errGeneric'), 'err'); render(); }
+    catch (e) { rb.restore(); toast(errMsg(e), 'err'); render(); }
   });
 }
 function printInvoice(id) {
   const inv = state.invoices.find(x => x.id === id);
   if (!inv) return;
-  const st = state.settings || {};
   const tt = invTotals(inv);
-  let sheet = document.getElementById('printSheet');
-  if (!sheet) {
-    sheet = document.createElement('div');
-    sheet.id = 'printSheet';
-    sheet.className = 'print-sheet';
-    document.body.appendChild(sheet);
-  }
-  sheet.dir = I18N[LANG].dir;
-  sheet.innerHTML = `
-    <h1>🛗 ${esc(st.company || 'Z Lift')}</h1>
-    <div class="ph-sub">${t('invoice')} — ${esc(st.phone || '')} ${st.address ? '· ' + esc(st.address) : ''}</div>
+  printDoc(`
+    ${printHeader(t('invoice'))}
     <table>
       <tr><th>${t('invNo')}</th><td>${esc(inv.id.slice(0, 8).toUpperCase())}</td></tr>
       <tr><th>${t('invDate')}</th><td>${fmtDate(inv.date || inv.createdAt)}</td></tr>
@@ -6767,8 +7202,7 @@ function printInvoice(id) {
     <div class="sig-row">
       <div class="sig">${t('signTech')}</div>
       <div class="sig">${t('signCustomer')}</div>
-    </div>`;
-  window.print();
+    </div>`);
 }
 
 
@@ -6793,34 +7227,34 @@ function gsRow(icon, title, sub, onclick) {
   </div>`;
 }
 function drawGlobalSearch(qRaw) {
-  const q = qRaw.trim().toLowerCase();
+  const q = norm(qRaw);
   const out = $('#gsOut');
   if (q.length < 2) { out.innerHTML = `<p style="font-size:12.5px;color:var(--text-3)">…</p>`; return; }
   const S = [];
   const grp = (label, rows) => { if (rows.length) S.push(`<div class="nav-section" style="margin:10px 2px 6px">${label} (${faNum(rows.length)})</div>` + rows.join('')); };
 
   grp(t('srProjects'), state.projects
-    .filter(p => (p.name + ' ' + p.customer + ' ' + p.location + ' ' + p.controller + ' ' + p.motor).toLowerCase().includes(q))
+    .filter(p => hay(p.name, p.customer, p.location, p.controller, p.motor).includes(q))
     .slice(0, 5).map(p => gsRow(p.elevatorType === 'hydraulic' ? '🛢️' : '⚙️', esc(p.name), esc(p.customer || p.location || ''), `closeModal();navigate('/projects/${p.id}')`)));
 
   grp(t('srServices'), state.services
-    .filter(s => (svcTarget(s) + ' ' + (s.problem || '') + ' ' + (s.diagnosis || '') + ' ' + (s.workDone || '') + ' ' + (s.partsReplaced || '')).toLowerCase().includes(q))
+    .filter(s => hay(svcTarget(s), s.problem, s.diagnosis, s.workDone, s.partsReplaced).includes(q))
     .slice(0, 5).map(s => gsRow('🔧', esc(svcTarget(s)), esc(s.problem || s.complaint || fmtDate(s.date)), `closeModal();openServiceView('${s.id}')`)));
 
   grp(t('srParts'), state.parts
-    .filter(x => (x.name + ' ' + x.category + ' ' + x.location + ' ' + (x.note || '')).toLowerCase().includes(q))
+    .filter(x => hay(x.name, x.category, x.location, x.note).includes(q))
     .slice(0, 5).map(x => gsRow('📦', esc(x.name), faNum(x.qty) + ' ' + esc(x.unit) + (x.qty <= x.minQty ? ' ⚠️' : ''), `closeModal();navigate('/parts');setTimeout(()=>openPartForm('${x.id}'),120)`)));
 
   grp(t('srInv'), state.invoices
-    .filter(i => (i.customer + ' ' + (i.note || '') + ' ' + (i.items || []).map(x => x.desc).join(' ')).toLowerCase().includes(q))
+    .filter(i => hay(i.customer, i.note, (i.items || []).map(x => x.desc).join(' ')).includes(q))
     .slice(0, 5).map(i => gsRow('🧾', esc(i.customer || '—'), money(invTotals(i).grand) + ' ' + t('rial'), `closeModal();navigate('/invoices');setTimeout(()=>openInvoiceForm('${i.id}'),120)`)));
 
   grp(t('srContracts'), state.contracts
-    .filter(ct => (ct.building + ' ' + (ct.note || '')).toLowerCase().includes(q))
+    .filter(ct => hay(ct.building, ct.note).includes(q))
     .slice(0, 5).map(ct => gsRow('📄', esc(ct.building), money(ct.amount) + ' ' + t('rial'), `closeModal();navigate('/contracts');setTimeout(()=>openContractForm('${ct.id}'),120)`)));
 
   grp(t('srNotes'), state.notes
-    .filter(n => (n.title + ' ' + n.content + ' ' + n.tags.join(' ')).toLowerCase().includes(q))
+    .filter(n => hay(n.title, n.content, (n.tags || []).join(' ')).includes(q))
     .slice(0, 5).map(n => gsRow('📝', esc(n.title), esc((n.content || '').slice(0, 60)), `closeModal();navigate('/notes');setTimeout(()=>openNoteForm('${n.id}'),120)`)));
 
   grp(t('srKb'), KNOWLEDGE
@@ -6832,22 +7266,24 @@ function drawGlobalSearch(qRaw) {
     .slice(0, 5).map(f => gsRow(f.icon || '🔩', esc(f.symptom.fa), esc((f.first && f.first.fa) || ''), `closeModal();navigate('/diagnostics');setTimeout(()=>startDiagFlow('${f.id}'),120)`)));
 
   grp(t('srCalc'), CALCULATORS
-    .filter(c2 => (c2.title.fa + ' ' + (c2.title.en || '') + ' ' + c2.desc.fa + ' ' + c2.formula).toLowerCase().includes(q))
-    .slice(0, 5).map(c2 => gsRow('🧮', esc(c2.title.fa), esc(c2.desc.fa), `closeModal();calcFilter={cat:'all',q:'${esc(qRaw).replace(/'/g, '')}'} ;navigate('/calculations')`)));
+    .filter(c2 => hay(c2.title.fa, c2.title.en, c2.desc.fa, c2.formula).includes(q))
+    .slice(0, 5).map(c2 => gsRow('🧮', esc(c2.title.fa), esc(c2.desc.fa), `closeModal();calcFilter={cat:'all',q:'${jsAttr(qRaw)}'};navigate('/calculations')`)));
 
-  out.innerHTML = S.length ? S.join('') : `<div class="empty" style="padding:26px"><div class="e-icon">🔍</div><strong>${t('noResults')}</strong></div>`;
+  out.innerHTML = S.length ? S.join('') : `<div class="empty"><div class="e-icon">🔍</div><strong>${t('noResults')}</strong></div>`;
 }
 
 
 
 /* ================= CONTRACTS (monthly maintenance) ================= */
 /* contract: { id, building, amount, startTs, months, projectId, note, paid: { 'jy-jm': true } } */
+function ctStartTs(ct) { return +ct.startTs || +ct.createdAt || Date.now(); }
 function ctMonthList(ct) {
   // list of {jy,jm,key,ts} for the contract duration
   const out = [];
-  let { jy, jm } = tsToJalali(ct.startTs || ct.createdAt || Date.now());
-  for (let i = 0; i < (ct.months || 12); i++) {
-    out.push({ jy, jm, key: jy + '-' + jm, ts: jalaliToTs(jy, jm, 1) });
+  let { jy, jm } = tsToJalali(ctStartTs(ct));
+  const months = Math.max(1, Math.min(120, Math.round(+ct.months || 12)));
+  for (let i = 0; i < months; i++) {
+    out.push({ jy, jm, key: jy + '-' + jm, ts: jalDayStart(jy, jm, 1) });
     jm++; if (jm > 12) { jm = 1; jy++; }
   }
   return out;
@@ -6858,9 +7294,12 @@ function ctStats(ct) {
   const started = list.filter(m => m.ts <= now);
   const paidCount = list.filter(m => ct.paid && ct.paid[m.key]).length;
   const overdue = started.filter(m => !(ct.paid && ct.paid[m.key])).length;
-  const active = list.length && list[list.length - 1].ts >= now && (list[0].ts <= now);
-  const expired = list.length && list[list.length - 1].ts < now;
-  return { list, paidCount, overdue, active, expired, total: list.length };
+  /* a contract runs until the END of its last month, not its first day */
+  const last = list[list.length - 1];
+  const endTs = last ? jalMonthRange(last.jy, last.jm).to : 0;
+  const active = !!list.length && endTs > now && list[0].ts <= now;
+  const expired = !!list.length && endTs <= now;
+  return { list, paidCount, overdue, active, expired, total: list.length, endTs };
 }
 function renderContracts() {
   const c = $('#content');
@@ -6879,7 +7318,7 @@ function renderContracts() {
     <div class="grid-2" style="margin-bottom:16px">
       <div class="card stat-card"><div class="stat-icon" style="background:var(--accent-soft);font-size:21px">📄</div>
         <div class="stat-body"><div class="stat-value" style="font-size:17px">${money(expect)} <span style="font-size:11px;color:var(--text-3)">${t('rial')}</span></div>
-        <div class="stat-label">${t('ctExpectMonth')} (${JAL_MONTHS[nowJ.jm - 1]})</div></div></div>
+        <div class="stat-label">${t('ctExpectMonth')} (${jalMonth(nowJ.jm)})</div></div></div>
       <div class="card stat-card"><div class="stat-icon" style="background:var(--ok-soft);font-size:21px">💰</div>
         <div class="stat-body"><div class="stat-value" style="font-size:17px">${money(collected)} <span style="font-size:11px;color:var(--text-3)">${t('rial')}</span></div>
         <div class="stat-label">${t('ctCollected')}</div></div></div>
@@ -6894,7 +7333,7 @@ function renderContracts() {
         <div class="row-icon" style="background:${st.overdue ? 'var(--danger-soft)' : 'var(--ok-soft)'};font-size:18px">${st.overdue ? '🔴' : '📄'}</div>
         <div class="row-body">
           <strong>${esc(ct.building)}</strong>
-          <span class="sub">${money(ct.amount)} ${t('rial')} / ${JAL_MONTHS[tsToJalali(ct.startTs).jm - 1]} ${faNum(tsToJalali(ct.startTs).jy)} · ${faNum(st.total)} ${LANG === 'fa' ? 'ماه' : 'months'}</span>
+          <span class="sub">${money(ct.amount)} ${t('rial')} / ${jalMonth(tsToJalali(ctStartTs(ct)).jm)} ${faNum(tsToJalali(ctStartTs(ct)).jy)} · ${faNum(st.total)} ${LANG === 'fa' ? 'ماه' : 'months'}</span>
         </div>
         <div class="row-side">
           ${st.overdue ? `<span class="badge b-red">${faNum(st.overdue)} ${t('ctOverdueMonths')}</span>` : `<span class="badge b-green">${st.expired ? t('ctExpired') : t('ctActive')}</span>`}
@@ -6905,12 +7344,13 @@ function renderContracts() {
 }
 function openContractForm(id) {
   const ct = id ? state.contracts.find(x => x.id === id) : null;
-  const v = ct || { building: '', amount: 0, startTs: Date.now(), months: 12, projectId: '', note: '', paid: {} };
+  const v = ct ? Object.assign({}, ct, { startTs: ctStartTs(ct) })
+              : { building: '', amount: 0, startTs: Date.now(), months: 12, projectId: '', note: '', paid: {} };
   openModal(`
     <div class="modal-head"><h3>${ct ? '✏️ ' + t('editContract') : '📄 ' + t('newContract')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body">
       <div class="form-grid">
-        <div class="field span2"><label>${t('ctBuilding')}</label><input id="ct_building" value="${esc(v.building)}" /></div>
+        <div class="field span2"><label>${t('ctBuilding')} *</label><input id="ct_building" value="${esc(v.building)}" /></div>
         <div class="field"><label>${t('ctAmount')}</label><input id="ct_amount" type="number" min="0" value="${v.amount || 0}" /></div>
         <div class="field"><label>${t('ctMonths')}</label><input id="ct_months" type="number" min="1" max="36" value="${v.months || 12}" /></div>
         <div class="field"><label>${t('ctStart')}</label>${jdateInput('ct_start', v.startTs)}</div>
@@ -6932,7 +7372,7 @@ function openContractForm(id) {
     </div>`, { size: 'lg' });
   $('#ctSave').onclick = guard('#ctSave', async () => {
     const building = $('#ct_building').value.trim();
-    if (!building) { toast(t('requiredTitle'), 'err'); return; }
+    if (!building) { fieldError('#ct_building', 'requiredTitle'); return; }
     const body = {
       building, amount: +$('#ct_amount').value || 0,
       months: Math.max(1, Math.min(36, +$('#ct_months').value || 12)),
@@ -6944,7 +7384,7 @@ function openContractForm(id) {
       if (ct) { const d = await api('/contracts/' + ct.id, { method: 'PUT', body }); Object.assign(ct, d.item); }
       else { const d = await api('/contracts', { method: 'POST', body }); state.contracts.unshift(d.item); }
       closeModal(); toast(t('saved')); render();
-    } catch (e) { toast(t('errGeneric'), 'err'); }
+    } catch (e) { toast(errMsg(e), 'err'); }
   });
 }
 function ctMonthsHTML(ct) {
@@ -6955,7 +7395,7 @@ function ctMonthsHTML(ct) {
     return `<button onclick="ctTogglePaid('${ct.id}','${m.key}')" style="border:1.5px solid ${paid ? 'var(--ok)' : due ? 'var(--danger)' : 'var(--border)'};
       background:${paid ? 'var(--ok-soft)' : due ? 'var(--danger-soft)' : 'var(--bg-soft)'};
       border-radius:11px;padding:9px 4px;font-family:inherit;font-size:12px;cursor:pointer;color:var(--text);line-height:1.5">
-      ${paid ? '✅' : due ? '🔴' : '⬜'}<br><b>${JAL_MONTHS[m.jm - 1]}</b><br><span style="font-size:10px;color:var(--text-3)">${faNum(m.jy)}</span>
+      ${paid ? '✅' : due ? '🔴' : '⬜'}<br><b>${jalMonth(m.jm)}</b><br><span style="font-size:10px;color:var(--text-3)">${faNum(m.jy)}</span>
     </button>`;
   }).join('');
 }
@@ -6968,15 +7408,15 @@ async function ctTogglePaid(ctId, key) {
   const box = $('#ctMonths');
   if (box) box.innerHTML = ctMonthsHTML(ct);
   try { await api('/contracts/' + ct.id, { method: 'PUT', body: { paid: ct.paid } }); }
-  catch (e) { toast(t('errGeneric'), 'err'); }
+  catch (e) { toast(errMsg(e), 'err'); }
 }
 function deleteContract(id) {
   confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteCtMsg'), async () => {
-    const idx = state.contracts.findIndex(x => x.id === id);
-    const [rm] = state.contracts.splice(idx, 1);
+    const rb = optimisticRemove(state.contracts, id);
+    if (!rb) { closeModal(); return; }
     closeModal(); render();
     try { await api('/contracts/' + id, { method: 'DELETE' }); toast(t('deleted')); }
-    catch (e) { state.contracts.splice(idx, 0, rm); toast(t('errGeneric'), 'err'); render(); }
+    catch (e) { rb.restore(); toast(errMsg(e), 'err'); render(); }
   });
 }
 
@@ -6987,22 +7427,14 @@ function renderMonthlyReport() {
   if (!mrMonth) { const j = tsToJalali(Date.now()); mrMonth = { jy: j.jy, jm: j.jm }; }
   const c = $('#content');
   const { jy, jm } = mrMonth;
-  const from = jalaliToTs(jy, jm, 1);
-  const to = from + jalDaysInMonth(jy, jm) * 86400000;
+  const { from, to } = jalMonthRange(jy, jm);
   const inMonth = ts => ts >= from && ts < to;
 
   const svcs = state.services.filter(s => inMonth(s.date));
   const byType = {};
   svcs.forEach(s => { byType[s.serviceType] = (byType[s.serviceType] || 0) + 1; });
-  // fault words
-  const words = {};
-  svcs.forEach(s => {
-    const txt = (s.problem || '') + ' ' + (s.diagnosis || '');
-    [['درب', 'درب'], ['فتوسل', 'فتوسل'], ['ترمز', 'ترمز'], ['انکودر', 'انکودر'], ['درایو', 'درایو'], ['موتور', 'موتور'], ['بکسل', 'بکسل'], ['قفل', 'قفل درب'], ['روغن', 'روغن'], ['سیل', 'سیل جک'], ['شیر', 'شیرها'], ['پمپ', 'پمپ'], ['ریزش', 'ریزش'], ['همسطح', 'همسطح‌سازی'], ['برق', 'برق'], ['کنتاکتور', 'کنتاکتور'], ['لیمیت', 'لیمیت'], ['صدا', 'صدا'], ['لرزش', 'لرزش']].forEach(([w, lbl]) => {
-      if (txt.includes(w)) words[lbl] = (words[lbl] || 0) + 1;
-    });
-  });
-  const topFaults = Object.entries(words).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  // fault words (shared keyword list — see FAULT_WORDS)
+  const topFaults = faultTally(svcs).slice(0, 6);
   // money
   let invIncome = 0, ctIncome = 0, openBalance = 0;
   state.invoices.forEach(inv => {
@@ -7027,9 +7459,9 @@ function renderMonthlyReport() {
   c.innerHTML = `
     <div class="card" style="margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-        <button class="icon-btn" onclick="_mrNext()">‹</button>
-        <strong style="font-size:16.5px">📈 ${JAL_MONTHS[jm - 1]} ${faNum(jy)}</strong>
-        <button class="icon-btn" onclick="_mrPrev()">›</button>
+        <button class="icon-btn" onclick="_mrPrev()" aria-label="${t('prevMonth')}" title="${t('prevMonth')}">${navArrows().prev}</button>
+        <strong style="font-size:16.5px">📈 ${jalMonth(jm)} ${faNum(jy)}</strong>
+        <button class="icon-btn" onclick="_mrNext()" aria-label="${t('nextMonth')}" title="${t('nextMonth')}">${navArrows().next}</button>
       </div>
     </div>
     ${!hasData ? `<div class="empty"><div class="e-icon">📭</div><strong>${t('mrEmpty')}</strong></div>` : `
@@ -7044,7 +7476,7 @@ function renderMonthlyReport() {
         <div class="card-title">🔧 ${t('mrByType')}</div>
         ${Object.keys(byType).length ? Object.keys(byType).map(k => `
           <div class="sb-row" style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-            <span style="font-size:12.5px;color:var(--text-2);flex:1">${SVC_META[k].icon} ${t(SVC_META[k].key)}</span>
+            <span style="font-size:12.5px;color:var(--text-2);flex:1">${svcMeta(k).icon} ${t(svcMeta(k).key)}</span>
             <span class="badge b-blue">${faNum(byType[k])}</span>
           </div>`).join('') : `<p style="font-size:12.5px;color:var(--text-3)">—</p>`}
         ${newProjects ? `<div class="sb-row" style="display:flex;align-items:center;gap:10px"><span style="font-size:12.5px;color:var(--text-2);flex:1">🏗️ ${t('mrNewProjects')}</span><span class="badge b-purple">${faNum(newProjects)}</span></div>` : ''}
@@ -7069,8 +7501,7 @@ function renderMonthlyReport() {
 }
 function buildMonthlyText() {
   const { jy, jm } = mrMonth;
-  const from = jalaliToTs(jy, jm, 1);
-  const to = from + jalDaysInMonth(jy, jm) * 86400000;
+  const { from, to } = jalMonthRange(jy, jm);
   const inMonth = ts => ts >= from && ts < to;
   const svcs = state.services.filter(s => inMonth(s.date));
   let invIncome = 0;
@@ -7079,12 +7510,11 @@ function buildMonthlyText() {
   const mk = jy + '-' + jm;
   state.contracts.forEach(ct => { if (ct.paid && ct.paid[mk]) ctIncome += +ct.amount || 0; });
   const co = (state.settings || {}).company || 'Z Lift';
-  return `📈 ${t('mrTitle')} — ${JAL_MONTHS[jm - 1]} ${faNum(jy)}\n🏢 ${co}\n\n🔧 ${t('mrServices')}: ${faNum(svcs.length)}\n💰 ${t('mrIncome')}: ${money(invIncome)} ${t('rial')}\n📄 ${t('mrContracts')}: ${money(ctIncome)} ${t('rial')}\n\n🛗 Z Lift`;
+  return `📈 ${t('mrTitle')} — ${jalMonth(jm)} ${faNum(jy)}\n🏢 ${co}\n\n🔧 ${t('mrServices')}: ${faNum(svcs.length)}\n💰 ${t('mrIncome')}: ${money(invIncome)} ${t('rial')}\n📄 ${t('mrContracts')}: ${money(ctIncome)} ${t('rial')}\n\n🛗 Z Lift`;
 }
 function printMonthlyReport() {
   const { jy, jm } = mrMonth;
-  const from = jalaliToTs(jy, jm, 1);
-  const to = from + jalDaysInMonth(jy, jm) * 86400000;
+  const { from, to } = jalMonthRange(jy, jm);
   const inMonth = ts => ts >= from && ts < to;
   const svcs = state.services.filter(s => inMonth(s.date));
   let invIncome = 0, ctIncome = 0;
@@ -7093,13 +7523,8 @@ function printMonthlyReport() {
   state.contracts.forEach(ct => { if (ct.paid && ct.paid[mk]) ctIncome += +ct.amount || 0; });
   const partsUsed = [];
   state.parts.forEach(p => (p.history || []).forEach(h => { if (inMonth(h.date)) partsUsed.push({ name: p.name, qty: h.qty }); }));
-  const st = state.settings || {};
-  let sheet = document.getElementById('printSheet');
-  if (!sheet) { sheet = document.createElement('div'); sheet.id = 'printSheet'; sheet.className = 'print-sheet'; document.body.appendChild(sheet); }
-  sheet.dir = I18N[LANG].dir;
-  sheet.innerHTML = `
-    <h1>🛗 ${esc(st.company || 'Z Lift')}</h1>
-    <div class="ph-sub">${t('mrTitle')} — ${JAL_MONTHS[jm - 1]} ${faNum(jy)} ${st.phone ? '· ' + esc(st.phone) : ''}</div>
+  printDoc(`
+    ${printHeader(t('mrTitle') + ' — ' + jalMonth(jm) + ' ' + faNum(jy))}
     <table>
       <tr><th>${t('mrServices')}</th><td>${faNum(svcs.length)}</td></tr>
       <tr><th>${t('mrIncome')}</th><td>${money(invIncome)} ${t('rial')}</td></tr>
@@ -7108,10 +7533,9 @@ function printMonthlyReport() {
     </table>
     <table>
       <tr><th style="width:90px">${t('svcDate')}</th><th>${t('svcCustomer')}</th><th>${t('svcProblem')}</th><th style="width:80px">${t('svcFinal')}</th></tr>
-      ${svcs.map(s => `<tr><td>${fmtJalali(s.date)}</td><td>${esc(svcTarget(s))}</td><td>${esc(s.problem || s.complaint || '—')}</td><td>${t(FINAL_META[s.finalStatus].key)}</td></tr>`).join('')}
+      ${svcs.map(s => `<tr><td>${fmtJalali(s.date)}</td><td>${esc(svcTarget(s))}</td><td>${esc(s.problem || s.complaint || '—')}</td><td>${t(finalMeta(s.finalStatus).key)}</td></tr>`).join('')}
     </table>
-    <div class="sig-row"><div class="sig">${t('signTech')}</div></div>`;
-  window.print();
+    <div class="sig-row"><div class="sig">${t('signTech')}</div></div>`);
 }
 
 /* ================= SHARE (Telegram / system) ================= */
@@ -7160,13 +7584,13 @@ function buildServiceText(s) {
   L.push('👤 ' + (s.customer || (p && p.customer) || '—'));
   if (p) L.push('🏢 ' + p.name);
   L.push('📅 ' + fmtJalali(s.date));
-  L.push('🔧 ' + t(SVC_META[s.serviceType].key));
+  L.push('🔧 ' + t(svcMeta(s.serviceType).key));
   if (s.problem) L.push('❗ ' + t('svcProblem') + ': ' + s.problem);
   if (s.diagnosis) L.push('🔎 ' + t('svcDiagnosis') + ': ' + s.diagnosis);
   if (s.workDone) L.push('✅ ' + t('svcWork') + ': ' + s.workDone);
   if (s.partsReplaced && s.partsReplaced !== '—') L.push('📦 ' + t('svcParts') + ': ' + s.partsReplaced);
   if (s.recommendations) L.push('💡 ' + t('svcRecommend') + ': ' + s.recommendations);
-  L.push('🏁 ' + t('svcFinal') + ': ' + t(FINAL_META[s.finalStatus].key));
+  L.push('🏁 ' + t('svcFinal') + ': ' + t(finalMeta(s.finalStatus).key));
   L.push('👨‍🔧 ' + s.technician);
   return L.join('\n');
 }
@@ -9545,18 +9969,14 @@ function printQrLabel(projectId) {
   if (!p) return;
   const st = state.settings || {};
   const url = location.origin + location.pathname + '#/projects/' + p.id;
-  let sheet = document.getElementById('printSheet');
-  if (!sheet) { sheet = document.createElement('div'); sheet.id = 'printSheet'; sheet.className = 'print-sheet'; document.body.appendChild(sheet); }
-  sheet.dir = I18N[LANG].dir;
-  sheet.innerHTML = `
+  printDoc(`
     <div style="text-align:center;padding-top:30px">
       <h1 style="font-size:22px">🛗 ${esc(st.company || 'Z Lift')}</h1>
       <div class="ph-sub">${esc(st.phone || '')}</div>
       <div style="margin:24px auto;display:inline-block;border:2px solid #000;border-radius:12px;padding:16px">${qrSvg(url, 260)}</div>
       <h2 style="font-size:17px;margin-top:4px">${esc(p.name)}</h2>
       <p style="font-size:12px;color:#444;margin-top:8px">${t('qrScanHint')}</p>
-    </div>`;
-  window.print();
+    </div>`);
 }
 
 /* ================= JALALI DATE INPUT ================= */
@@ -9586,6 +10006,7 @@ function openJdatePicker(targetId, allowEmpty) {
   root.innerHTML = `<div id="jdBox" style="background:var(--bg-card);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow-lg);width:100%;max-width:330px;padding:16px"></div>`;
   root.addEventListener('mousedown', e => { if (e.target.id === 'jdOverlay') closeJdatePicker(); });
   document.body.appendChild(root);
+  _lockScroll(true);
   pushUiLayer('jdate', _closeJdateDom);
   drawJdate();
 }
@@ -9593,6 +10014,7 @@ function _closeJdateDom() {
   const o = document.getElementById('jdOverlay');
   if (o) o.remove();
   _jdCur = null;
+  if (!document.getElementById('modalOverlay')) _lockScroll(false);
 }
 function closeJdatePicker() {
   const had = !!document.getElementById('jdOverlay');
@@ -9642,9 +10064,9 @@ function drawJdate() {
   }
   box.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <button class="icon-btn" style="width:34px;height:34px" onclick="jdShift(1)">‹</button>
-      <strong style="font-size:14.5px">${JAL_MONTHS[jm - 1]} ${faNum(jy)}</strong>
-      <button class="icon-btn" style="width:34px;height:34px" onclick="jdShift(-1)">›</button>
+      <button class="icon-btn" style="width:34px;height:34px" onclick="jdShift(-1)" aria-label="${t('prevMonth')}" title="${t('prevMonth')}">${navArrows().prev}</button>
+      <strong style="font-size:14.5px">${jalMonth(jm)} ${faNum(jy)}</strong>
+      <button class="icon-btn" style="width:34px;height:34px" onclick="jdShift(1)" aria-label="${t('nextMonth')}" title="${t('nextMonth')}">${navArrows().next}</button>
     </div>
     <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;font-size:10.5px;color:var(--text-3);margin-bottom:5px">
       <span>ش</span><span>ی</span><span>د</span><span>س</span><span>چ</span><span>پ</span><span>ج</span>
@@ -9684,8 +10106,14 @@ function openBackupModal() {
           const raw = localStorage.getItem('zlift_db') || '';
           const mb = (raw.length * 2 / 1048576).toFixed(1);
           const pct = Math.min(100, Math.round(raw.length * 2 / (5 * 1048576) * 100));
+          const lastBk = +localStorage.getItem('zlift_last_backup') || 0;
+          const days = lastBk ? Math.floor((Date.now() - lastBk) / 86400000) : -1;
+          const lastTxt = lastBk
+            ? fmtDate(lastBk) + (days > 0 ? ' · ' + faNum(days) + ' ' + t('daysAgo') : ' · ' + t('today'))
+            : t('backupNever');
           return `<div class="kv-cell" style="margin-bottom:14px"><div class="k">📊 ${t('storageUsage')}</div>
             <div class="v" style="font-weight:600;font-size:13px">${faNum(mb)} MB · ${faNum((state.photos || []).length)} ${t('storagePhotos')}</div>
+            <div class="k" style="margin-top:6px">🕓 ${t('backupLast')}: <b style="color:${lastBk && days <= 7 ? 'var(--ok)' : 'var(--danger)'}">${lastTxt}</b></div>
             <div class="mini-progress" style="height:7px;margin-top:6px"><div class="fill" style="width:${pct}%;background:${pct > 75 ? 'var(--danger)' : 'var(--accent)'}"></div></div></div>`;
         } catch (e) { return ''; }
       })()}
@@ -9712,21 +10140,16 @@ function openBackupModal() {
       } });
       state.settings = d.settings;
       toast(t('saved'));
-    } catch (e) { toast(t('errGeneric'), 'err'); }
+    } catch (e) { toast(errMsg(e), 'err'); }
   });
   $('#bkExport').onclick = async () => {
     try {
       localStorage.setItem('zlift_last_backup', String(Date.now()));
       const d = await api('/backup');
-      const blob = new Blob([JSON.stringify(d.backup, null, 2)], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'zlift-backup-' + new Date().toISOString().slice(0, 10) + '.json';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+      downloadBlob(new Blob([JSON.stringify(d.backup, null, 2)], { type: 'application/json' }),
+        'zlift-backup-' + new Date().toISOString().slice(0, 10) + '.json');
       toast(t('backupDone'));
-    } catch (e) { toast(t('errGeneric'), 'err'); }
+    } catch (e) { toast(errMsg(e), 'err'); }
   };
   $('#bkImport').onclick = () => $('#bkFile').click();
   $('#bkFile').onchange = () => {
@@ -9790,9 +10213,13 @@ async function init() {
     LANG = LANG === 'fa' ? 'en' : 'fa';
     localStorage.setItem('zlift_lang', LANG);
     applyLang();
+    updateOnlineBadge();
     if (state.user) { renderNav(); render(); $('#userName').textContent = state.user.name; }
     setAuthMode(authMode);
   };
+  updateOnlineBadge();
+  window.addEventListener('online', updateOnlineBadge);
+  window.addEventListener('offline', updateOnlineBadge);
   $('#menuBtn').onclick = () => {
     $('#sidebar').classList.add('open');
     $('#backdrop').classList.add('show');
@@ -9939,8 +10366,22 @@ function _lsLoad() {
   if (!_lsDB.settings) _lsDB.settings = { company: 'Z Lift', phone: '', address: '' };
   ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders'].forEach(k => { if (!Array.isArray(_lsDB[k])) _lsDB[k] = []; });
   if (!_lsDB.schemaVersion) _lsDB.schemaVersion = 1;
+  if (!_lsDB.sessions || typeof _lsDB.sessions !== 'object') _lsDB.sessions = {};
+  _lsPruneSessions();
   _lsMigrateServices();
   return _lsDB;
+}
+
+/* drop login sessions older than 180 days (and the current token is always kept) */
+function _lsPruneSessions() {
+  const db = _lsDB, keep = Date.now() - 180 * 86400000;
+  let changed = false;
+  Object.keys(db.sessions).forEach(tok => {
+    const ss = db.sessions[tok];
+    const alive = ss && (+ss.createdAt || 0) >= keep;
+    if (!alive && tok !== state.token) { delete db.sessions[tok]; changed = true; }
+  });
+  return changed;
 }
 
 /* Migration: services = independent collection. Idempotent, no deletes, no duplicates. */
@@ -9976,21 +10417,32 @@ function _lsMigrateServices() {
 
 let _lsMirrorTick = 0;
 function _lsSave() {
+  let raw;
+  try { raw = JSON.stringify(_lsDB); }
+  catch (e) { console.error('[ZLift] serialize failed', e); return false; }
   try {
-    const raw = JSON.stringify(_lsDB);
     localStorage.setItem('zlift_db', raw);
     window._lsSaveFailed = false;
     // mirror copy every ~10th save (cheap data-loss protection against partial corruption)
     if (++_lsMirrorTick % 10 === 1) {
       try { localStorage.setItem('zlift_db_mirror', raw); } catch (e2) {}
     }
-  }
-  catch (e) {
+    return true;
+  } catch (e) {
+    /* quota exceeded — free the mirror (it is only a safety copy) and retry once
+       before telling the user, so a single big photo can't block all writes */
+    try {
+      localStorage.removeItem('zlift_db_mirror');
+      localStorage.setItem('zlift_db', raw);
+      window._lsSaveFailed = false;
+      return true;
+    } catch (e2) {}
     // storage full — warn loudly instead of silent data loss
     if (!window._lsSaveFailed) {
       window._lsSaveFailed = true;
-      try { toast(t('storageFull'), 'err'); } catch (e2) { alert('Storage full! حافظه پر است — عکس‌های قدیمی را حذف و بکاپ بگیرید.'); }
+      try { toast(t('storageFull'), 'err'); } catch (e3) { alert('Storage full! حافظه پر است — عکس‌های قدیمی را حذف و بکاپ بگیرید.'); }
     }
+    return false;
   }
 }
 function _lsUsage() {
@@ -10281,10 +10733,11 @@ init();
 </script>
   <script>
     /* PWA: service worker + install prompt */
+    let _swReloading = false;
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').then(reg => {
-          function offer() { showUpdateBanner(); }
+          const offer = () => showUpdateBanner();
           if (reg.waiting && navigator.serviceWorker.controller) offer();
           reg.addEventListener('updatefound', () => {
             const nw = reg.installing;
@@ -10293,24 +10746,53 @@ init();
               if ((nw.state === 'installed' || nw.state === 'activated') && navigator.serviceWorker.controller) offer();
             });
           });
+          /* look for a new release when the app comes back to the foreground
+             (installed PWAs are rarely reloaded by hand) */
+          let lastCheck = Date.now();
+          document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState !== 'visible') return;
+            if (Date.now() - lastCheck < 60 * 60 * 1000) return;
+            lastCheck = Date.now();
+            reg.update().catch(() => {});
+          });
         }).catch(() => {});
+        /* the new worker took over → load the fresh shell exactly once */
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (_swReloading) return;
+          _swReloading = true;
+          location.reload();
+        });
       });
     }
     function showUpdateBanner() {
       if (document.getElementById('updBanner')) return;
+      const fa = (document.documentElement.lang || 'fa') === 'fa';
       const b = document.createElement('div');
       b.id = 'updBanner';
       b.style.cssText = 'position:fixed;bottom:14px;inset-inline:14px;z-index:500;background:#2563eb;color:#fff;padding:12px 16px;border-radius:14px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 30px rgba(0,0,0,.35);font-size:13.5px;font-weight:600';
-      b.innerHTML = '<span style="flex:1">🔄 نسخه جدید Z Lift آماده است</span>';
+      const span = document.createElement('span');
+      span.style.flex = '1';
+      span.textContent = fa ? '🔄 نسخه جدید Z Lift آماده است' : '🔄 A new version of Z Lift is ready';
+      b.appendChild(span);
       const btn = document.createElement('button');
-      btn.textContent = 'بروزرسانی';
+      btn.textContent = fa ? 'بروزرسانی' : 'Update';
       btn.style.cssText = 'background:#fff;color:#2563eb;border:0;border-radius:9px;padding:8px 14px;font-weight:700;font-family:inherit;cursor:pointer';
       btn.onclick = () => {
+        btn.disabled = true;
         navigator.serviceWorker.getRegistration().then(reg => {
           if (reg && reg.waiting) reg.waiting.postMessage('SKIP_WAITING');
-        }).finally(() => setTimeout(() => location.reload(), 400));
+        }).catch(() => {}).finally(() => {
+          // controllerchange normally reloads; this is the safety net
+          setTimeout(() => { if (!_swReloading) { _swReloading = true; location.reload(); } }, 1500);
+        });
       };
       b.appendChild(btn);
+      const later = document.createElement('button');
+      later.textContent = '✕';
+      later.setAttribute('aria-label', fa ? 'بستن' : 'Dismiss');
+      later.style.cssText = 'background:transparent;color:#fff;border:0;font-size:15px;cursor:pointer;padding:4px 6px';
+      later.onclick = () => b.remove();
+      b.appendChild(later);
       document.body.appendChild(b);
     }
     let _deferredInstall = null;
