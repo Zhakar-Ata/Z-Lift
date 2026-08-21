@@ -80,7 +80,7 @@ async function T(name, cond, info) {
       const errs = windowErrors.length;
       await T('route renders without error: ' + route, errs === 0, 'window errors: ' + errs);
     }
-    await T('page title for /standards', () => ev(`document.querySelector('#pageTitle').textContent === 'استاندارد EN 81-20'`), await ev(`document.querySelector('#pageTitle').textContent`));
+    await T('page title for /standards', () => ev(`document.querySelector('#pageTitle').textContent === 'استانداردها'`), await ev(`document.querySelector('#pageTitle').textContent`));
 
     /* ---------- standards module interactions ---------- */
     await ev(`navigate('/standards')`); await waitLoaded();
@@ -629,6 +629,41 @@ async function T(name, cond, info) {
              ids.indexOf('f_controller') < ids.indexOf('f_status') && ids[ids.length - 1] === 'f_notes';
     })()`));
     await ev(`closeModal()`);
+
+    /* ================= v23 signatures, standards library, report numbers ================= */
+
+    /* -- standards library: 4 selectable standard sets -- */
+    await T('standards library exposes 4 standard sets', () => ev(`STD_SETS.length === 4 && STD_SETS.map(s => s.id).join(',') === 'en81-20,en81-50,en81-28,en13015'`));
+    await ev(`stdSet = 'en81-50'; stdCat = 'all'; stdQuery = ''; navigate('/standards');`); await waitLoaded();
+    await T('switching to EN 81-50 shows its test rules', () => ev(`document.querySelector('#stdList').innerHTML.includes('s50-gov') && !document.querySelector('#stdList').innerHTML.includes('s-ucmp')`));
+    await ev(`openStdArticle('s50-gov');`);
+    await T('EN 81-50 article badge shows the standard name', () => ev(`document.querySelector('#modalRoot').innerHTML.includes('EN 81-50')`));
+    await ev(`closeModal(); stdSet = 'en81-20'; stdCat = 'all'; stdQuery = '';`);
+
+    /* -- service report numbers are sequential & human-friendly -- */
+    const rn1 = await ev(`api('/services', { method: 'POST', body: { customer: 'مشتری شماره QA', technician: 'QA', serviceType: 'maintenance', problem: 'x', workDone: 'y', finalStatus: 'ok' } })`);
+    const rn2 = await ev(`api('/services', { method: 'POST', body: { customer: 'مشتری شماره ۲ QA', technician: 'QA', serviceType: 'maintenance', problem: 'x', workDone: 'y', finalStatus: 'ok' } })`);
+    await T('service report numbers are sequential (SR-XXXX)', /^SR-\d{4}$/.test(rn1.service.reportNo) && rn2.service.reportNo === 'SR-' + String(parseInt(rn1.service.reportNo.slice(3), 10) + 1).padStart(4, '0'), JSON.stringify([rn1.service.reportNo, rn2.service.reportNo]));
+    await ev(`api('/services/${rn1.service.id}', { method: 'DELETE' }); api('/services/${rn2.service.id}', { method: 'DELETE' }); state.services = null; loadAll(true);`);
+
+    /* -- parts: supplier & code fields + inventory value summary -- */
+    const partSup = await ev(`api('/parts', { method: 'POST', body: { name: 'قطعه با تأمین‌کننده QA', category: 'QA', unit: 'عدد', qty: 5, minQty: 2, price: 10000, supplier: 'شرکت قطعات برتر', code: 'P-123' } })`);
+    await T('part supplier & code persisted', partSup.part.supplier === 'شرکت قطعات برتر' && partSup.part.code === 'P-123');
+    await ev(`state.parts = null; loadAll(true);`);
+    await ev(`navigate('/parts')`); await waitLoaded();
+    await T('parts page shows inventory value summary', () => ev(`document.querySelector('#content').innerHTML.includes('ارزش کل موجودی') && document.querySelector('#content').innerHTML.includes('اقلام')`));
+    await ev(`api('/parts/${partSup.part.id}', { method: 'DELETE' }); state.parts = null; loadAll(true);`);
+
+    /* -- service form includes digital signature pads that degrade gracefully -- */
+    await ev(`navigate('/services')`); await waitLoaded();
+    await ev(`openServiceForm()`);
+    await T('service form includes two signature pads', () => ev(`!!document.getElementById('sig_tech_cv') && !!document.getElementById('sig_cust_cv')`));
+    await T('signature pad degrades gracefully without a canvas', () => ev(`wireSignaturePad('sig_tech', null) === null && readSignature('sig_tech') === ''`));
+    await ev(`closeModal()`);
+
+    /* -- dashboard shows financial KPIs -- */
+    await ev(`navigate('/dashboard')`); await waitLoaded();
+    await T('dashboard shows financial KPIs (income, balance, stock value)', () => ev(`document.querySelector('#content').innerHTML.includes('درآمد این ماه') && document.querySelector('#content').innerHTML.includes('مانده وصول‌نشده') && document.querySelector('#content').innerHTML.includes('ارزش انبار')`));
 
     /* ---------- legacy regressions ---------- */
     await ev(`navigate('/checklists/traction-install')`); await waitLoaded();

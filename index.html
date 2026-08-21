@@ -870,7 +870,7 @@ const I18N = {
     dashboard: 'داشبورد', projects: 'پروژه‌های نصب', services: 'سرویس‌ها',
     checklists: 'چک‌لیست‌ها', calculations: 'محاسبات فنی', diagnostics: 'عیب‌یابی',
     knowledge: 'دانش فنی', notes: 'یادداشت‌ها',
-    standards: 'استاندارد EN 81-20', stdSearch: 'جستجوی الزام، مقدار یا بند استاندارد…',
+    standards: 'استانداردها', stdSearch: 'جستجوی الزام، مقدار یا بند استاندارد…',
     stdBanner: 'مرجع سریع الزامات کلیدی EN 81-20:2020 (مطابق استاندارد ملی ISIRI 6303-20). برای تصمیم‌گیری سریع تکنسین در محل؛ در بازرسی رسمی، متن مصوب استاندارد ملاک است.',
     stdClause: 'بند', stdExpand: 'جزئیات کامل', stdNoMatch: 'الزامی با این عبارت یافت نشد',
     stdDisclaimer: 'خلاصه کاربردی الزامات — جایگزین متن کامل استاندارد نیست.',
@@ -1077,7 +1077,11 @@ const I18N = {
     reminderTitle: 'عنوان یادآوری', reminderDate: 'تاریخ سررسید', reminderMarkDone: 'انجام شد',
     reminderPeriodic: 'سرویس دوره‌ای', reminderFollowup: 'پیگیری', reminderCustom: 'یادآوری دستی',
     reminderDone: 'انجام شده', reminderOverdue: 'گذشته', reminderSoon: 'تا ۷ روز', reminderUpcoming: 'آینده',
-    reminderTitleReq: 'عنوان یادآوری الزامی است', reminderDays: 'روز تا سررسید', reminderInDays: 'روز'
+    reminderTitleReq: 'عنوان یادآوری الزامی است', reminderDays: 'روز تا سررسید', reminderInDays: 'روز',
+    // v23 — signatures, standards library, inventory value
+    signHint: 'با انگشت یا ماوس اینجا امضا کنید', signClear: 'پاک کردن امضا', noSignature: 'امضا ثبت نشده',
+    partSupplier: 'تأمین‌کننده', partCode: 'کد فنی / شماره فابریک',
+    stockValue: 'ارزش کل موجودی', stockItems: 'اقلام', stInvValue: 'ارزش انبار'
   },
   en: {
     dir: 'ltr',
@@ -1100,7 +1104,7 @@ const I18N = {
     dashboard: 'Dashboard', projects: 'Installation projects', services: 'Services',
     checklists: 'Checklists', calculations: 'Calculations', diagnostics: 'Diagnostics',
     knowledge: 'Knowledge base', notes: 'Notes',
-    standards: 'EN 81-20 standard', stdSearch: 'Search requirement, value or clause…',
+    standards: 'Standards', stdSearch: 'Search requirement, value or clause…',
     stdBanner: 'Quick reference of key EN 81-20:2020 requirements (mirrored by ISIRI 6303-20). For quick on-site decisions; the approved standard text prevails in official inspection.',
     stdClause: 'Clause', stdExpand: 'Full details', stdNoMatch: 'No requirement found for this term',
     stdDisclaimer: 'Practical summary — not a substitute for the full standard text.',
@@ -1285,7 +1289,10 @@ const I18N = {
     reminderTitle: 'Reminder title', reminderDate: 'Due date', reminderMarkDone: 'Mark done',
     reminderPeriodic: 'Periodic service', reminderFollowup: 'Follow-up', reminderCustom: 'Custom reminder',
     reminderDone: 'Done', reminderOverdue: 'Overdue', reminderSoon: 'Within 7 days', reminderUpcoming: 'Upcoming',
-    reminderTitleReq: 'Reminder title is required', reminderDays: 'Days to due', reminderInDays: 'days'
+    reminderTitleReq: 'Reminder title is required', reminderDays: 'Days to due', reminderInDays: 'days',
+    signHint: 'Sign here with finger or mouse', signClear: 'Clear signature', noSignature: 'No signature recorded',
+    partSupplier: 'Supplier', partCode: 'Part no. / code',
+    stockValue: 'Total stock value', stockItems: 'Items', stInvValue: 'Stock value'
   }
 };
 
@@ -4347,6 +4354,12 @@ function renderDashboard() {
       <span class="sb-val">${faNum(n)}</span></div>`;
   }).join('')}</div>`;
 
+  /* financial KPIs */
+  const monthStart = Date.now() - 30 * 86400000;
+  const invIncome = state.invoices.reduce((a, inv) => a + (inv.payments || []).reduce((b, p) => b + (p.date >= monthStart ? +p.amount || 0 : 0), 0), 0);
+  const openBalance = state.invoices.reduce((a, inv) => a + invTotals(inv).balance, 0);
+  const stockValue = state.parts.reduce((a, x) => a + (+x.price || 0) * (+x.qty || 0), 0);
+
   c.innerHTML = `
     ${hero}
     <div class="grid-4" style="margin-top:18px">
@@ -4354,6 +4367,11 @@ function renderDashboard() {
       ${statCard('⚡', 'var(--warn-soft)', stats.active, 'stActive')}
       ${statCard('🔧', 'var(--teal-soft)', stats.services, 'stServices')}
       ${statCard('📅', 'var(--ok-soft)', stats.month, 'stMonth')}
+    </div>
+    <div class="grid-3" style="margin-top:14px">
+      ${statCard('💰', 'var(--ok-soft)', money(invIncome), 'invTotalsMonth')}
+      ${statCard('🧾', 'var(--danger-soft)', money(openBalance), 'invOpenBalance')}
+      ${statCard('📦', 'var(--teal-soft)', money(stockValue), 'stInvValue')}
     </div>
     <div class="grid-2" style="margin-top:16px">
       <div class="card">
@@ -4807,6 +4825,7 @@ function openServiceView(id) {
   if (!s) return;
   const m = svcMeta(s.serviceType);
   const rows = [
+    [t('reportNo'), s.reportNo || s.id.slice(0, 8).toUpperCase()],
     [t('svcCustomer'), s.customer || (s.projectId ? (state.projects.find(p => p.id === s.projectId) || {}).customer : '')],
     [t('svcElevator'), s.elevatorInfo],
     [t('svcLinkProject'), s.projectId ? projName(s.projectId) : ''],
@@ -4838,6 +4857,78 @@ function openServiceView(id) {
       <button class="btn btn-primary" onclick="closeModal()">${t('close')}</button>
     </div>`);
 }
+/* ================= DIGITAL SIGNATURE ================= */
+function _sigInk() { return document.documentElement.getAttribute('data-theme') === 'dark' ? '#e5e7eb' : '#0b1220'; }
+function sigPadMarkup(prefix, label, existing) {
+  const prev = existing ? `<img class="sig-preview" src="${existing}" alt="${esc(t('signCustomer') || '')}" style="max-height:64px;margin:6px 0 0;border:1px solid var(--border);border-radius:8px" />` : '';
+  return `
+    <div class="field span2" style="margin-bottom:10px">
+      <label>🖊️ ${esc(label)}</label>
+      <div class="sigpad">
+        <canvas id="${prefix}_cv" width="640" height="180" style="display:block;width:100%;height:120px;background:var(--bg-soft);border:1.5px solid var(--border);border-radius:10px;touch-action:none;cursor:crosshair"></canvas>
+        ${prev}
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px">
+          <span style="font-size:11.5px;color:var(--text-3)">${t('signHint')}</span>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="clearSignature('${prefix}')">✕ ${t('signClear')}</button>
+        </div>
+      </div>
+    </div>`;
+}
+function wireSignaturePad(prefix, existing) {
+  const cv = document.getElementById(prefix + '_cv');
+  if (!cv) return null;
+  /* feature-detect 2D canvas without invoking getContext (which logs a
+     "not implemented" error in headless/jsdom environments) */
+  if (typeof CanvasRenderingContext2D === 'undefined') return null;
+  const ctx = cv.getContext && cv.getContext('2d');
+  if (!ctx) return null;                       // canvas unsupported → signature feature disabled
+  cv.__hasData = !!existing;
+  cv.__drawn = false;
+  let drawing = false, last = null;
+  const pos = e => {
+    const r = cv.getBoundingClientRect();
+    const px = (e.touches && e.touches.length) ? e.touches[0] : e;
+    return { x: (px.clientX - r.left) * (cv.width / Math.max(1, r.width)),
+             y: (px.clientY - r.top) * (cv.height / Math.max(1, r.height)) };
+  };
+  const seg = p => {
+    ctx.strokeStyle = _sigInk(); ctx.lineWidth = 2.6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+    last = p;
+  };
+  const down = e => {
+    drawing = true; last = pos(e); cv.__drawn = true; cv.__hasData = false;
+    if (cv.setPointerCapture && e.pointerId != null) { try { cv.setPointerCapture(e.pointerId); } catch (e2) {} }
+    e.preventDefault();
+  };
+  const move = e => { if (drawing) seg(pos(e)); };
+  const up = () => { drawing = false; last = null; };
+  cv.addEventListener('pointerdown', down);
+  cv.addEventListener('pointermove', move);
+  cv.addEventListener('pointerup', up);
+  cv.addEventListener('pointercancel', up);
+  if (existing) {
+    const im = new Image();
+    im.onload = () => { try { ctx.drawImage(im, 0, 0, cv.width, cv.height); } catch (e) {} };
+    im.src = existing;
+  }
+  return cv;
+}
+function clearSignature(prefix) {
+  const cv = document.getElementById(prefix + '_cv');
+  if (!cv) return;
+  if (typeof CanvasRenderingContext2D !== 'undefined') {
+    const ctx = cv.getContext && cv.getContext('2d');
+    if (ctx) ctx.clearRect(0, 0, cv.width, cv.height);
+  }
+  cv.__drawn = false; cv.__hasData = false;
+}
+function readSignature(prefix) {
+  const cv = document.getElementById(prefix + '_cv');
+  if (!cv || !(cv.__drawn || cv.__hasData)) return '';
+  try { return cv.toDataURL('image/png'); } catch (e) { return ''; }
+}
+
 function openServiceForm(id, presetProject) {
   const s = id ? state.services.find(x => x.id === id) : null;
   const v = s || { projectId: presetProject || '', customer: '', elevatorInfo: '', date: Date.now(), technician: state.user.name, serviceType: 'maintenance', complaint: '', problem: '', diagnosis: '', measurements: '', workDone: '', partsReplaced: '', recommendations: '', followUpDate: 0, finalStatus: 'ok' };
@@ -4872,11 +4963,15 @@ function openServiceForm(id, presetProject) {
         ${Object.keys(FINAL_META).map(k => `<option value="${k}" ${v.finalStatus === k ? 'selected' : ''}>${t(FINAL_META[k].key)}</option>`).join('')}
       </select></div>
       <div class="field"><label>${t('svcFollowUp')}</label>${jdateInput('s_followup', v.followUpDate || 0, true)}</div>
+      ${sigPadMarkup('sig_tech', t('signTech'), s && s.signTech)}
+      ${sigPadMarkup('sig_cust', t('signCustomer'), s && s.signCustomer)}
     </form></div>
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button>
       <button class="btn btn-primary" id="svcSave">${s ? t('save') : t('create')}</button>
     </div>`, { size: 'lg' });
+  wireSignaturePad('sig_tech', s && s.signTech);
+  wireSignaturePad('sig_cust', s && s.signCustomer);
   $('#svcSave').onclick = async () => {
     const projectId = $('#s_project').value;
     const customer = $('#s_customer').value.trim();
@@ -4887,7 +4982,8 @@ function openServiceForm(id, presetProject) {
       technician: $('#s_tech').value, serviceType: $('#s_type').value, finalStatus: $('#s_final').value,
       complaint: $('#s_complaint').value, problem: $('#s_problem').value, diagnosis: $('#s_diag').value,
       measurements: $('#s_meas').value, workDone: $('#s_work').value, partsReplaced: $('#s_parts').value,
-      recommendations: $('#s_recommend').value, followUpDate: jdateVal('s_followup')
+      recommendations: $('#s_recommend').value, followUpDate: jdateVal('s_followup'),
+      signTech: readSignature('sig_tech'), signCustomer: readSignature('sig_cust')
     };
     const btn = $('#svcSave'); btn.disabled = true;
     try {
@@ -4910,7 +5006,7 @@ function printServiceReport(id) {
   if (!s) return;
   const p = state.projects.find(x => x.id === s.projectId) || {};
   const rows = [
-    [t('reportNo'), s.id.slice(0, 8).toUpperCase()],
+    [t('reportNo'), s.reportNo || s.id.slice(0, 8).toUpperCase()],
     [t('svcDate'), fmtDateTime(s.date)],
     [t('customer'), s.customer || (p.customer ? p.customer + (p.phone ? ' — ' + p.phone : '') : '—')],
     [t('svcElevator'), s.elevatorInfo || (p.name ? [p.name, p.location].filter(Boolean).join(' — ') : '—')],
@@ -4927,12 +5023,17 @@ function printServiceReport(id) {
     [t('svcFinal'), t(finalMeta(s.finalStatus).key)],
     [t('svcFollowUp'), s.followUpDate ? fmtDate(s.followUpDate) : '']
   ].filter(r => r && r[1]);
+  const sigBox = (sig, label) => `
+    <div class="sig" style="padding-top:0;border-top:0">
+      <div style="min-height:76px">${sig ? `<img src="${sig}" alt="" style="max-width:100%;max-height:76px;display:block;margin:0 auto">` : `<span style="font-size:11px;color:#999">${t('noSignature')}</span>`}</div>
+      <div style="border-top:1px solid #666;margin-top:6px;padding-top:6px">${esc(label)}</div>
+    </div>`;
   printDoc(`
     ${printHeader(t('reportTitle'))}
     <table>${rows.map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(v || '—')}</td></tr>`).join('')}</table>
     <div class="sig-row">
-      <div class="sig">${t('signTech')}</div>
-      <div class="sig">${t('signCustomer')}</div>
+      ${sigBox(s.signTech, t('signTech'))}
+      ${sigBox(s.signCustomer, t('signCustomer'))}
     </div>`);
 }
 
@@ -5175,7 +5276,16 @@ let partFilter = { q: '', low: false };
 function renderParts() {
   const c = $('#content');
   const lowCount = state.parts.filter(x => x.qty <= x.minQty).length;
+  const stockValue = state.parts.reduce((a, x) => a + (+x.price || 0) * (+x.qty || 0), 0);
   c.innerHTML = `
+    <div class="grid-3" style="margin-bottom:16px">
+      <div class="card stat-card"><div class="stat-icon" style="background:var(--accent-soft);font-size:21px">📦</div>
+        <div class="stat-body"><div class="stat-value" style="font-size:18px">${faNum(state.parts.length)}</div><div class="stat-label">${t('stockItems')}</div></div></div>
+      <div class="card stat-card"><div class="stat-icon" style="background:var(--ok-soft);font-size:21px">💰</div>
+        <div class="stat-body"><div class="stat-value" style="font-size:18px">${money(stockValue)} <span style="font-size:11px;color:var(--text-3)">${t('rial')}</span></div><div class="stat-label">${t('stockValue')}</div></div></div>
+      <div class="card stat-card"><div class="stat-icon" style="background:${lowCount ? 'var(--danger-soft)' : 'var(--ok-soft)'};font-size:21px">${lowCount ? '⚠️' : '✅'}</div>
+        <div class="stat-body"><div class="stat-value" style="font-size:18px">${faNum(lowCount)}</div><div class="stat-label">${t('lowStock')}</div></div></div>
+    </div>
     <div class="toolbar">
       <div class="search">${IC.search}<input id="partSearch" placeholder="${t('searchParts')}" value="${esc(partFilter.q)}" /></div>
       <div class="chip-row">
@@ -5195,7 +5305,7 @@ function drawParts() {
   const q = norm(partFilter.q);
   let list = state.parts;
   if (partFilter.low) list = list.filter(x => x.qty <= x.minQty);
-  if (q) list = list.filter(x => hay(x.name, x.category, x.location, x.note, x.unit).includes(q));
+  if (q) list = list.filter(x => hay(x.name, x.category, x.location, x.note, x.unit, x.supplier, x.code).includes(q));
   const el = $('#partList');
   if (!state.parts.length) {
     el.innerHTML = `<div class="empty"><div class="e-icon">📦</div><strong>${t('noParts')}</strong><p>${t('noPartsSub')}</p><button class="btn btn-primary" onclick="openPartForm()">${IC.plus} ${t('newPart')}</button></div>`;
@@ -5225,8 +5335,8 @@ function drawParts() {
     }).join('')}</tbody></table>`;
 }
 function exportPartsCsv() {
-  const head = [t('partName'), t('partCategory'), t('partUnit'), t('partQty'), t('partMin'), t('partPrice'), t('partLocation'), t('partNote')];
-  const rows = state.parts.map(x => [x.name, x.category, x.unit, x.qty, x.minQty, x.price, x.location, x.note]);
+  const head = [t('partName'), t('partCategory'), t('partUnit'), t('partQty'), t('partMin'), t('partPrice'), t('partSupplier'), t('partCode'), t('partLocation'), t('partNote')];
+  const rows = state.parts.map(x => [x.name, x.category, x.unit, x.qty, x.minQty, x.price, x.supplier, x.code, x.location, x.note]);
   downloadCsv('zlift-parts-' + new Date().toISOString().slice(0, 10) + '.csv', head, rows);
   toast(t('saved'));
 }
@@ -5244,6 +5354,8 @@ function openPartForm(id) {
       <div class="field"><label>${t('partMin')}</label><input id="p_min" type="number" min="0" value="${v.minQty}" /></div>
       <div class="field"><label>${t('partPrice')}</label><input id="p_price" type="number" min="0" value="${v.price}" /></div>
       <div class="field"><label>${t('partLocation')}</label><input id="p_loc" value="${esc(v.location)}" /></div>
+      <div class="field"><label>${t('partSupplier')}</label><input id="p_supplier" value="${esc(v.supplier || '')}" /></div>
+      <div class="field"><label>${t('partCode')}</label><input id="p_code" value="${esc(v.code || '')}" style="direction:ltr" /></div>
       <div class="field span2"><label>${t('partNote')}</label><input id="p_note" value="${esc(v.note)}" /></div>
     </form></div>
     <div class="modal-foot">
@@ -5257,7 +5369,8 @@ function openPartForm(id) {
     const body = {
       name, category: $('#p_cat').value, unit: $('#p_unit').value,
       qty: +$('#p_qty').value, minQty: +$('#p_min').value, price: +$('#p_price').value,
-      location: $('#p_loc').value, note: $('#p_note').value
+      location: $('#p_loc').value, note: $('#p_note').value,
+      supplier: $('#p_supplier').value, code: $('#p_code').value
     };
     const btn = $('#partSave'); btn.disabled = true;
     try {
@@ -6173,6 +6286,184 @@ const STD81 = [
     ],
     note: { fa: 'برچسب‌ها باید در داخل کابین، قابل خواندن و دائمی باشند.', en: 'Plates must be inside the car, legible and permanent.' } }
 ];
+
+/* ================= EN 81-50 — آزمون‌ها و آزمایش اجزاء ایمنی =================
+   قوانین آزمون (Test rules) — شامل آزمون‌های نوع (Type Examination) اجزاء ایمنی و
+   آزمون‌های پذیرش/به‌ره‌برداری. مقادیر، خلاصه‌ی راهنما هستند (مطابق EN 81-20). */
+const STD8150_CATS = [
+  { id: 'all', fa: 'همه', en: 'All' },
+  { id: 'safety', fa: '🛡️ آزمون اجزاء ایمنی', en: 'Safety-component tests' },
+  { id: 'field', fa: '🧪 آزمون‌های پذیرش', en: 'Acceptance tests' },
+  { id: 'elec', fa: '⚡ آزمون‌های الکتریکی', en: 'Electrical tests' }
+];
+const STD8150 = [
+  { id: 's50-gov', cat: 'safety', icon: '⚙️', title: { fa: 'آزمون تریپ گاورنر', en: 'Governor tripping test' }, clause: '§5.6.2.2.2', kind: 'test',
+    vals: [
+      { fa: 'پاراشوت پیشرونده → سرعت تریپ حداقل ۱۱۵٪ سرعت نامی', en: 'Progressive safety gear → trip ≥ 115% rated speed', v: '≥ 1.15·v', unit: '' },
+      { fa: 'پاراشوت لحظه‌ای (فقط تا سرعت ≤ ۰.۶۳ m/s) → سقف تریپ', en: 'Instantaneous (only ≤ 0.63 m/s) → trip cap', v: '≤ 0.8', unit: 'm/s' },
+      { fa: 'تست با قطع موتور و حرکت کابین به سمت پایین', en: 'Tested with motor off, car descending', v: '—', unit: '' }
+    ],
+    note: { fa: 'سرعت تریپ روی پلاک گاورنر حک شده و باید با پروژه مطابقت داده شود.', en: 'Tripping speed is stamped on the governor and must match the project.' } },
+  { id: 's50-sgear', cat: 'safety', icon: '🛑', title: { fa: 'آزمون پاراشوت (Safety Gear)', en: 'Safety gear test' }, clause: '§6.3.7', kind: 'test',
+    vals: [
+      { fa: 'با بار اسمی، کابین رو به پایین و تریپ گاورنر', en: 'With rated load, car descending, governor tripped', v: 'الزامی', unit: '' },
+      { fa: 'توقف کامل و نگه‌داشتن کابین روی ریل‌ها', en: 'Full stop and hold on the guide rails', v: 'الزامی', unit: '' },
+      { fa: 'بررسی اثر گیره‌ها روی ریل پس از آزمون', en: 'Inspect grip marks on rails after the test', v: '—', unit: '' }
+    ],
+    note: { fa: 'برای وزنه تعادل (وقتی زیر چاهک فضای قابل دسترس است) نیز پاراشوت باید آزمون شود.', en: 'Counterweight safety gear must also be tested where occupied space exists below.' } },
+  { id: 's50-brake', cat: 'field', icon: '🛑', title: { fa: 'آزمون ترمز ۱۲۵٪', en: '125% brake test' }, clause: '§5.9.2.2 / §6.3', kind: 'test',
+    vals: [
+      { fa: 'توقف و نگه‌داشتن کابین با ۱۲۵٪ بار اسمی در ایستگاه پایین‌ترین طبقه', en: 'Stop and hold with 125% rated load at the lowest landing', v: '125%', unit: '' },
+      { fa: 'بدون لغزش محسوس روی فلکه کشش', en: 'No significant slip on the traction sheave', v: '—', unit: '' }
+    ],
+    note: { fa: 'این آزمون پرکاربردترین مورد در بازرسی بهره‌برداری است.', en: 'This is the most common commissioning test.' } },
+  { id: 's50-buffer', cat: 'safety', icon: '🛞', title: { fa: 'آزمون بافر', en: 'Buffer test' }, clause: '§6.3.8', kind: 'test',
+    vals: [
+      { fa: 'فرورفتن کامل بافر (کابین با سرعت نامی + اضافه‌بار) و برگشت کامل', en: 'Full compression (car at rated speed + overload) and full recovery', v: 'الزامی', unit: '' },
+      { fa: 'ضربه‌گیر روغنی: کنترل سطح روغن پس از آزمون', en: 'Oil buffer: check oil level after test', v: '—', unit: '' }
+    ],
+    note: { fa: 'تست دینامیکی روی بافر برای آسانسورهای با سرعت بالاتر حیاتی است.', en: 'Dynamic buffer tests are critical on higher-speed lifts.' } },
+  { id: 's50-ucm', cat: 'field', icon: '🛑', title: { fa: 'آزمون UCMP (حرکت ناخواسته)', en: 'UCM protection test' }, clause: '§5.6.7 / §6.3.13', kind: 'test',
+    vals: [
+      { fa: 'با درب طبقه باز و درب کابین باز، تحریک حرکت ناخواسته', en: 'With landing & car doors open, induce unintended movement', v: 'الزامی', unit: '' },
+      { fa: 'توقف کابین قبل از خروج از ناحیه باز شدن درب (حداکثر ۱.۲ متر)', en: 'Car stops before leaving the unlocking zone (max 1.2 m)', v: '≤ 1.2', unit: 'm' },
+      { fa: 'ریست فقط به صورت دستی توسط تکنسین', en: 'Reset only manually by an authorised person', v: '—', unit: '' }
+    ],
+    note: { fa: 'بعد از هر توقف UCMP باید علت ثبت و سیستم ریست دستی شود.', en: 'After each UCM stop, log the cause and reset manually.' } },
+  { id: 's50-lock', cat: 'safety', icon: '🔒', title: { fa: 'آزمون قفل درب طبقه', en: 'Door lock test' }, clause: '§5.3.9.1', kind: 'test',
+    vals: [
+      { fa: 'درگیری حداقل ۷ میلی‌متر لنگه و زبانه قفل', en: 'Min 7 mm engagement of the locking element', v: '≥ 7', unit: 'mm' },
+      { fa: 'کنتاکت ایمنی قفل: حرکت با قفل باز ممکن نباشد', en: 'Safety contact: no travel with an unlocked door', v: 'الزامی', unit: '' }
+    ],
+    note: { fa: 'برای هر طبقه جداگانه تست شود.', en: 'Test on every landing separately.' } },
+  { id: 's50-door', cat: 'field', icon: '🚪', title: { fa: 'آزمون نیروی بستن درب', en: 'Door closing force test' }, clause: '§5.3.6.2', kind: 'test',
+    vals: [
+      { fa: 'نیروی بستن درب (پیک، بیش از ۵۰ میلی‌متر مانده به بسته‌شدن)', en: 'Closing force (peak, before final 50 mm)', v: '≤ 150', unit: 'N' },
+      { fa: 'انرژی جنبشی درب', en: 'Kinetic energy of the door', v: '≤ 10', unit: 'J' }
+    ],
+    note: { fa: 'نیروی بازشدن مجدد (reopening) نیز باید در محدوده ایمن باشد.', en: 'Reopening force must also stay within safe limits.' } },
+  { id: 's50-hyd', cat: 'field', icon: '🛢️', title: { fa: 'آزمون فشار هیدرولیک', en: 'Hydraulic pressure test' }, clause: '§6.3.10', kind: 'test',
+    vals: [
+      { fa: 'تست فشار سیلندر و لوله‌ها با ۲۰۰٪ فشار کاری به مدت ۵ دقیقه', en: 'Pressure test at 200% working pressure for 5 minutes', v: '200% / 5', unit: 'min' },
+      { fa: 'شیر رلیف (فشارشکن) حداکثر ۱۴۰٪ فشار کاری', en: 'Relief valve ≤ 140% working pressure', v: '≤ 140%', unit: '' }
+    ],
+    note: { fa: 'هیچ نشتی یا تغییر شکل دائمی در طول تست نباید دیده شود.', en: 'No leakage or permanent deformation during the test.' } },
+  { id: 's50-level', cat: 'field', icon: '🎯', title: { fa: 'آزمون دقت همسطحی', en: 'Levelling accuracy test' }, clause: '§6.3.11', kind: 'test',
+    vals: [
+      { fa: 'خطای همسطحی در حالت عادی (دقت نگهداری)', en: 'Levelling error in normal operation', v: '≤ ±20', unit: 'mm' },
+      { fa: 'در حالت تخلیه/بارگیری صفر تا بار اسمی', en: 'From empty to rated load', v: '—', unit: '' }
+    ],
+    note: { fa: 'مقدار دقیق بسته به طراحی ممکن است کمتر باشد.', en: 'Exact value may be tighter depending on the design.' } },
+  { id: 's50-elec', cat: 'elec', icon: '⚡', title: { fa: 'آزمون‌های الکتریکی', en: 'Electrical tests' }, clause: '§6.3 / Annex', kind: 'test',
+    vals: [
+      { fa: 'تست تداوم و مقاومت ارت (PE)', en: 'Continuity & earth (PE) resistance test', v: 'الزامی', unit: '' },
+      { fa: 'تست عایق مدارهای قدرت و فرمان با میگر', en: 'Insulation test of power/control circuits (megger)', v: 'الزامی', unit: '' },
+      { fa: 'عملکرد مدار ایمنی (Safety Chain) با باز کردن تک‌تک کنتاکت‌ها', en: 'Safety chain verification by opening each contact', v: '—', unit: '' }
+    ],
+    note: { fa: 'تست عایق با درایو/بردهای حساس جدا شده انجام شود تا آسیب نبیند.', en: 'Isolate drives/sensitive boards before megger testing to avoid damage.' } }
+];
+
+/* ================= EN 81-28 — آلارم اضطراری و ارتباط دوسویه ================= */
+const STD8128_CATS = [
+  { id: 'all', fa: 'همه', en: 'All' },
+  { id: 'alarm', fa: '🔔 آلارم و دستگاه', en: 'Alarm & device' },
+  { id: 'comm', fa: '📞 ارتباط دوسویه', en: 'Two-way communication' },
+  { id: 'power', fa: '🔋 تغذیه و پشتیبان', en: 'Power & backup' }
+];
+const STD8128 = [
+  { id: 's28-device', cat: 'alarm', icon: '🔔', title: { fa: 'الزام آلارم اضطراری', en: 'Remote alarm requirement' }, clause: '§4.1', kind: 'req',
+    vals: [
+      { fa: 'هر آسانسور باید آلارم اضطراری داشته باشد که در صورت گیر کردن فعال شود', en: 'Every lift must have a remote alarm activatable when trapped', v: 'الزامی', unit: '' },
+      { fa: 'قابل فعال‌سازی از داخل کابین (دکمه آلارم با علامت زنگوله)', en: 'Activatable from the car (bell-symbol button)', v: 'الزامی', unit: '' }
+    ],
+    note: { fa: 'آلارم باید بدون توجه به وضعیت درایو/تابلو کار کند.', en: 'The alarm must work regardless of drive/controller state.' } },
+  { id: 's28-2way', cat: 'comm', icon: '📞', title: { fa: 'ارتباط دوسویه (صوتی)', en: 'Two-way voice communication' }, clause: '§4.3', kind: 'req',
+    vals: [
+      { fa: 'مکالمه صوتی دوسویه بین سرنشین و سرویس نجات', en: 'Two-way voice between trapped user and rescue service', v: 'الزامی', unit: '' },
+      { fa: 'کیفیت صدا قابل فهم در شرایط اضطراری', en: 'Audible, intelligible audio in an emergency', v: '—', unit: '' }
+    ],
+    note: { fa: 'سیستم‌های فقط-زنگ بدون مکالمه، الزامات EN 81-28 را کامل نمی‌کنند.', en: 'Bell-only systems without voice do not fully meet EN 81-28.' } },
+  { id: 's28-power', cat: 'power', icon: '🔋', title: { fa: 'تغذیه آلارم', en: 'Alarm power supply' }, clause: '§4.4', kind: 'req',
+    vals: [
+      { fa: 'تغذیه از شبکه «فیلترشده» (قبل از کلید اصلی) + باتری قابل شارژ', en: 'Filtered mains supply (before the main switch) + rechargeable battery', v: 'الزامی', unit: '' },
+      { fa: 'کارکرد آلارم در قطع برق حداقل ۱ ساعت', en: 'Alarm works for ≥ 1 hour during a power failure', v: '≥ 1', unit: 'h' }
+    ],
+    note: { fa: 'باتری باید به‌طور خودکار شارژ و سلامت آن دوره‌ای چک شود.', en: 'The battery must auto-charge and be checked periodically.' } },
+  { id: 's28-info', cat: 'alarm', icon: '🆔', title: { fa: 'اطلاعات ارسالی آلارم', en: 'Transmitted alarm info' }, clause: '§4.5', kind: 'req',
+    vals: [
+      { fa: 'شناسه ساختمان، شماره آسانسور و موقعیت/آدرس', en: 'Building ID, lift number and location/address', v: 'الزامی', unit: '' },
+      { fa: 'شماره‌گیری/ارسال خودکار به مرکز پاسخ‌گویی', en: 'Automatic dial/transmission to the receiving centre', v: 'الزامی', unit: '' }
+    ],
+    note: { fa: 'مرکز پاسخ‌گویی باید ۲۴/۷ در دسترس باشد.', en: 'The receiving centre must be reachable 24/7.' } },
+  { id: 's28-ack', cat: 'alarm', icon: '✅', title: { fa: 'تأیید دریافت آلارم', en: 'Alarm acknowledgement' }, clause: '§4.6', kind: 'req',
+    vals: [
+      { fa: 'نشانگر دیداری/شنیداری داخل کابین که آلارم دریافت شده است', en: 'Visual/audible indication in the car that the alarm was received', v: 'الزامی', unit: '' }
+    ],
+    note: { fa: 'نشانگر باید تا پایان عملیات نجات روشن بماند.', en: 'The indication stays on until rescue completes.' } },
+  { id: 's28-test', cat: 'power', icon: '🧪', title: { fa: 'آزمون و نگهداری آلارم', en: 'Alarm test & maintenance' }, clause: '§5', kind: 'test',
+    vals: [
+      { fa: 'دکمه تست / خودآزمایی برای بررسی کل مسیر آلارم', en: 'Test button / self-test covering the whole alarm path', v: 'الزامی', unit: '' },
+      { fa: 'آزمون دوره‌ای در سرویس (حداقل ماهانه پیشنهادی)', en: 'Periodic test during service (monthly recommended)', v: '—', unit: '' }
+    ],
+    note: { fa: 'نتیجه تست آلارم در گزارش سرویس ثبت شود.', en: 'Record the alarm test result in the service report.' } }
+];
+
+/* ================= EN 13015 — قوانین سرویس و نگهداری ================= */
+const STD13015_CATS = [
+  { id: 'all', fa: 'همه', en: 'All' },
+  { id: 'program', fa: '🗓️ برنامه سرویس', en: 'Maintenance program' },
+  { id: 'records', fa: '📒 مدارک و سوابق', en: 'Records' },
+  { id: 'safety', fa: '🦺 ایمنی نگهداری', en: 'Maintenance safety' }
+];
+const STD13015 = [
+  { id: 's15-program', cat: 'program', icon: '🗓️', title: { fa: 'برنامه نگهداری مدون', en: 'Documented maintenance program' }, clause: '§4', kind: 'req',
+    vals: [
+      { fa: 'برنامه مکتوب بازدید، تمیزکاری، روانکاری، تنظیم و بازرسی', en: 'Written schedule of checks, cleaning, lubrication, adjustment & inspection', v: 'الزامی', unit: '' },
+      { fa: 'مطابق دستور کارخانه و نوع/کاربری آسانسور', en: 'Per manufacturer instructions, lift type & usage', v: '—', unit: '' }
+    ],
+    note: { fa: 'برنامه سرویس باید در دسترس تکنسین‌ها قرار گیرد.', en: 'The program must be available to technicians.' } },
+  { id: 's15-interval', cat: 'program', icon: '⏱️', title: { fa: 'فواصل سرویس', en: 'Maintenance intervals' }, clause: '§5', kind: 'req',
+    vals: [
+      { fa: 'بازدید دوره‌ای پیشگیرانه (معمولاً ماهانه برای آسانسورهای پرتردد)', en: 'Periodic preventive visits (commonly monthly for high-traffic lifts)', v: '≥ 1/ماه', unit: '' },
+      { fa: 'تنظیم فاصله بر اساس تعداد استارت و ساعت کار', en: 'Adjust interval by starts and running hours', v: '—', unit: '' }
+    ],
+    note: { fa: 'آسانسورهای عمومی/پرتغییرمصرف به بازدید کوتاه‌تر نیاز دارند.', en: 'Public/heavily-used lifts need shorter intervals.' } },
+  { id: 's15-log', cat: 'records', icon: '📒', title: { fa: 'دفترچه سرویس (Logbook)', en: 'Service logbook' }, clause: '§6', kind: 'req',
+    vals: [
+      { fa: 'ثبت تاریخ، نام تکنسین، اقدامات و قطعات تعویضی در هر بازدید', en: 'Record date, technician, work done & replaced parts each visit', v: 'الزامی', unit: '' },
+      { fa: 'ثبت خرابی‌ها، آلارم‌ها و نتایج آزمون‌های دوره‌ای', en: 'Log faults, alarms and periodic test results', v: '—', unit: '' }
+    ],
+    note: { fa: 'دفترچه نزد مالک نگهداری و برای بازرس ارائه می‌شود.', en: 'The logbook is kept by the owner and shown to inspectors.' } },
+  { id: 's15-safety', cat: 'safety', icon: '🦺', title: { fa: 'قوانین ایمنی حین سرویس', en: 'Safety rules during maintenance' }, clause: '§7', kind: 'req',
+    vals: [
+      { fa: 'قطع برق اصلی و Lockout/Tagout قبل از کار روی تابلو', en: 'Main switch off + lockout/tagout before panel work', v: 'الزامی', unit: '' },
+      { fa: 'استفاده از کلید استپ چاهک/بالاسری و ممنوعیت کار روی کابین متحرک', en: 'Use pit/top stop switch; never work on a moving car', v: 'الزامی', unit: '' }
+    ],
+    note: { fa: 'کار در چاه/بالای کابین فقط با حالت بازرسی (Inspection) مجاز است.', en: 'Shaft/car-top work is only allowed in inspection mode.' } },
+  { id: 's15-rescue', cat: 'safety', icon: '🆘', title: { fa: 'روش نجات اضطراری', en: 'Emergency rescue procedure' }, clause: '§8', kind: 'req',
+    vals: [
+      { fa: 'روش مدون آزادسازی سرنشینان گیر افتاده + آموزش پرسنل', en: 'Documented trapped-passenger release procedure + trained staff', v: 'الزامی', unit: '' },
+      { fa: 'بازکردن دستی درب فقط با ابزار استاندارد و با رعایت ایمنی', en: 'Manual door release only with standard tools, safely', v: '—', unit: '' }
+    ],
+    note: { fa: 'زمان رسیدن سرویس نجات باید مستند و محدود باشد.', en: 'Rescue response time must be documented and bounded.' } },
+  { id: 's15-owner', cat: 'records', icon: '🏢', title: { fa: 'وظایف مالک / بهره‌بردار', en: 'Owner obligations' }, clause: '§9', kind: 'req',
+    vals: [
+      { fa: 'نگهداری دفترچه، پاسخ به خرابی و هماهنگی سرویس دوره‌ای', en: 'Keep logbook, respond to faults, arrange periodic service', v: 'الزامی', unit: '' },
+      { fa: 'انجام بازرسی سالانه توسط مرجع/بازرس ذی‌صلاح', en: 'Annual inspection by a competent authority', v: '—', unit: '' }
+    ],
+    note: { fa: 'قرارداد سرویس، مسئولیت نگهداری را به شرکت سرویس منتقل می‌کند.', en: 'A service contract transfers maintenance responsibility to the service company.' } }
+];
+
+/* unified standards library (selectable via tabs) */
+const STD_SETS = [
+  { id: 'en81-20', name: { fa: 'EN 81-20', en: 'EN 81-20' }, short: { fa: 'الزامات ایمنی ساخت و نصب', en: 'Safety rules for construction & installation' }, cats: STD81_CATS, list: STD81 },
+  { id: 'en81-50', name: { fa: 'EN 81-50', en: 'EN 81-50' }, short: { fa: 'آزمون‌ها و آزمایش اجزاء ایمنی', en: 'Test rules for safety components' }, cats: STD8150_CATS, list: STD8150 },
+  { id: 'en81-28', name: { fa: 'EN 81-28', en: 'EN 81-28' }, short: { fa: 'آلارم اضطراری و ارتباط دوسویه', en: 'Remote alarm & two-way communication' }, cats: STD8128_CATS, list: STD8128 },
+  { id: 'en13015', name: { fa: 'EN 13015', en: 'EN 13015' }, short: { fa: 'قوانین سرویس و نگهداری', en: 'Rules for maintenance instructions' }, cats: STD13015_CATS, list: STD13015 }
+];
+let stdSet = 'en81-20';
+function stdCur() { return STD_SETS.find(x => x.id === stdSet) || STD_SETS[0]; }
+
 let stdQuery = '';
 let stdCat = 'all';
 function stdSearchText(s) {
@@ -6182,25 +6473,31 @@ function stdSearchText(s) {
 }
 function renderStandards() {
   const c = $('#content');
+  const set = stdCur();
   c.innerHTML = `
     <div class="safety-banner" style="background:var(--accent-soft);border-color:var(--accent-2);color:var(--accent-2)">
-      <span style="font-size:18px">🛡️</span><span>${t('stdBanner')}</span>
+      <span style="font-size:18px">🛡️</span><span>${esc(set.short[LANG] || set.short.fa)} — ${t('stdBanner')}</span>
+    </div>
+    <div class="chip-row" style="margin-bottom:14px">
+      ${STD_SETS.map(st => `<button class="chip ${stdSet === st.id ? 'active' : ''}" data-ss="${st.id}">${esc(st.name[LANG] || st.name.fa)}</button>`).join('')}
     </div>
     <div class="toolbar">
       <div class="search">${IC.search}<input id="stdSearch" placeholder="${t('stdSearch')}" value="${esc(stdQuery)}" /></div>
       <div class="chip-row">
-        ${STD81_CATS.map(ct => `<button class="chip ${stdCat === ct.id ? 'active' : ''}" data-sc="${ct.id}">${esc(ct[LANG] || ct.fa)}</button>`).join('')}
+        ${set.cats.map(ct => `<button class="chip ${stdCat === ct.id ? 'active' : ''}" data-sc="${ct.id}">${esc(ct[LANG] || ct.fa)}</button>`).join('')}
       </div>
     </div>
     <div id="stdList" class="grid-2"></div>
     <p class="calc-note" style="margin-top:16px">📖 ${t('stdDisclaimer')}</p>`;
   $('#stdSearch').oninput = debounce(e => { stdQuery = e.target.value; drawStd(); }, 200);
+  $$('#content .chip[data-ss]').forEach(ch => ch.onclick = () => { stdSet = ch.dataset.ss; stdCat = 'all'; stdQuery = ''; renderStandards(); });
   $$('#content .chip[data-sc]').forEach(ch => ch.onclick = () => { stdCat = ch.dataset.sc; renderStandards(); });
   drawStd();
 }
 function drawStd() {
+  const set = stdCur();
   const q = norm(stdQuery);
-  let list = STD81;
+  let list = set.list;
   if (stdCat !== 'all') list = list.filter(s => s.cat === stdCat);
   if (q) list = list.filter(s => stdSearchText(s).includes(q));
   const el = $('#stdList');
@@ -6222,13 +6519,14 @@ function drawStd() {
     </div>`).join('');
 }
 function openStdArticle(id) {
-  const s = STD81.find(x => x.id === id);
+  const set = stdCur();
+  const s = set.list.find(x => x.id === id);
   if (!s) return;
   openModal(`
     <div class="modal-head"><h3>${s.icon} ${esc(s.title[LANG] || s.title.fa)}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body kb-article">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-        <span class="badge b-blue" style="direction:ltr;font-size:13px">EN 81-20 ${esc(s.clause)}</span>
+        <span class="badge b-blue" style="direction:ltr;font-size:13px">${esc(set.name[LANG] || set.name.fa)} ${esc(s.clause)}</span>
         <span style="font-size:11.5px;color:var(--text-3)">${t('stdClause')}</span>
       </div>
       <div class="calc-result" style="margin-bottom:12px">
@@ -10543,14 +10841,19 @@ async function api(path, opts = {}) {
   if (path === '/services' && method === 'POST') {
     const projectId = b.projectId && db.projects.find(x => x.id === b.projectId) ? b.projectId : '';
     if (!projectId && !String(b.customer || '').trim()) throw _lsErr('customer_required');
+    /* sequential, human-friendly report number (stored in settings so it survives backup/restore) */
+    db.settings = db.settings || {};
+    const seq = Math.max(1, (+db.settings.reportSeq || 0) + 1);
+    db.settings.reportSeq = seq;
     const s = {
-      id: _lsUid(), projectId, customer: String(b.customer || ''), elevatorInfo: String(b.elevatorInfo || ''), date: +b.date || Date.now(),
+      id: _lsUid(), reportNo: 'SR-' + String(seq).padStart(4, '0'), projectId, customer: String(b.customer || ''), elevatorInfo: String(b.elevatorInfo || ''), date: +b.date || Date.now(),
       technician: String(b.technician || (me && me.name) || ''),
       serviceType: ['maintenance', 'repair', 'emergency', 'inspection'].includes(b.serviceType) ? b.serviceType : 'maintenance',
       complaint: String(b.complaint || ''), problem: String(b.problem || ''), diagnosis: String(b.diagnosis || ''),
       measurements: String(b.measurements || ''), workDone: String(b.workDone || ''), partsReplaced: String(b.partsReplaced || ''),
       recommendations: String(b.recommendations || ''), followUpDate: +b.followUpDate || 0,
       finalStatus: ['ok', 'followup', 'outoforder'].includes(b.finalStatus) ? b.finalStatus : 'ok',
+      signTech: String(b.signTech || ''), signCustomer: String(b.signCustomer || ''),
       createdAt: Date.now()
     };
     db.services.push(s); _lsSave();
@@ -10566,6 +10869,8 @@ async function api(path, opts = {}) {
       if (b.date !== undefined) s.date = +b.date || s.date;
       if (b.serviceType && ['maintenance', 'repair', 'emergency', 'inspection'].includes(b.serviceType)) s.serviceType = b.serviceType;
       if (b.finalStatus && ['ok', 'followup', 'outoforder'].includes(b.finalStatus)) s.finalStatus = b.finalStatus;
+      if (b.signTech !== undefined) s.signTech = String(b.signTech || '');
+      if (b.signCustomer !== undefined) s.signCustomer = String(b.signCustomer || '');
       _lsSave();
       return { service: s };
     }
@@ -10608,7 +10913,7 @@ async function api(path, opts = {}) {
   if (path === '/parts' && method === 'GET') return { parts: [...db.parts].sort((a, c) => a.name.localeCompare(c.name, 'fa')) };
   if (path === '/parts' && method === 'POST') {
     if (!b.name || !String(b.name).trim()) throw _lsErr('name_required');
-    const part = { id: _lsUid(), name: String(b.name).trim(), category: String(b.category || 'عمومی'), unit: String(b.unit || 'عدد'), qty: +b.qty || 0, minQty: +b.minQty || 0, price: +b.price || 0, location: String(b.location || ''), note: String(b.note || ''), updatedAt: Date.now() };
+    const part = { id: _lsUid(), name: String(b.name).trim(), category: String(b.category || 'عمومی'), unit: String(b.unit || 'عدد'), qty: +b.qty || 0, minQty: +b.minQty || 0, price: +b.price || 0, location: String(b.location || ''), note: String(b.note || ''), supplier: String(b.supplier || ''), code: String(b.code || ''), updatedAt: Date.now() };
     db.parts.push(part); _lsSave();
     return { part };
   }
@@ -10616,7 +10921,7 @@ async function api(path, opts = {}) {
     const part = db.parts.find(x => x.id === parts[1]);
     if (!part) throw _lsErr('not_found', 404);
     if (method === 'PUT') {
-      ['name', 'category', 'unit', 'location', 'note'].forEach(f => { if (b[f] !== undefined) part[f] = String(b[f]); });
+      ['name', 'category', 'unit', 'location', 'note', 'supplier', 'code'].forEach(f => { if (b[f] !== undefined) part[f] = String(b[f]); });
       const prevQty = part.qty;
       ['qty', 'minQty', 'price'].forEach(f => { if (b[f] !== undefined) part[f] = Math.max(0, +b[f] || 0); });
       if (b.qty !== undefined && part.qty !== prevQty) {
