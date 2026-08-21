@@ -38,6 +38,7 @@
   --sidebar-w: 264px;
 }
 html[data-theme="light"] {
+  color-scheme: light;
   --bg: #f1f5f9;
   --bg-card: #ffffff;
   --bg-soft: #f8fafc;
@@ -50,14 +51,15 @@ html[data-theme="light"] {
   --shadow-lg: 0 8px 32px rgba(15, 23, 42, .14);
 }
 html[data-theme="dark"] {
+  color-scheme: dark;
   --bg: #0b1220;
   --bg-card: #131c2e;
   --bg-soft: #182339;
   --bg-hover: #1d2a44;
   --border: #253550;
-  --text: #e6edf7;
-  --text-2: #9fb0c9;
-  --text-3: #64748b;
+  --text: #e8eefa;
+  --text-2: #aab9d0;
+  --text-3: #8598b4;
   --shadow: 0 1px 3px rgba(0, 0, 0, .35), 0 6px 20px rgba(0, 0, 0, .25);
   --shadow-lg: 0 12px 40px rgba(0, 0, 0, .5);
   --accent-soft: rgba(59, 130, 246, .18);
@@ -66,6 +68,8 @@ html[data-theme="dark"] {
 html, body { height: 100%; }
 body {
   font-family: var(--font);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
   background: var(--bg);
   color: var(--text);
   font-size: 14.5px;
@@ -80,10 +84,30 @@ body.scroll-lock { overflow: hidden; }
 .btn:focus-visible, .icon-btn:focus-visible, .chip:focus-visible { outline-offset: 3px; }
 button { font-family: inherit; cursor: pointer; }
 input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+::placeholder { color: var(--text-3); opacity: 1; }
 a { color: var(--accent-2); text-decoration: none; }
+a:hover { text-decoration: underline; }
+::selection { background: var(--accent-soft); color: var(--text); }
 ::-webkit-scrollbar { width: 9px; height: 9px; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
 ::-webkit-scrollbar-track { background: transparent; }
+* { scrollbar-color: var(--border) transparent; scrollbar-width: thin; }
+/* touch devices: no sticky hover effects after a tap — use a press state instead */
+@media (hover: none) {
+  .row-item:hover, .tile:hover, .kb-card:hover, .btn-primary:hover { transform: none; }
+  .row-item:hover, .diag-q:hover, .check-item:hover, .parts-table tr:hover td { background: inherit; }
+  .chip:hover { border-color: var(--border); color: var(--text-2); }
+}
+.row-item:active, .tile:active, .kb-card:active { transform: scale(.995); }
+.btn:active { transform: translateY(1px); }
+/* respect the OS "reduce motion" setting */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important; scroll-behavior: auto !important;
+  }
+}
 
 /* ============ auth ============ */
 .auth-wrap {
@@ -301,7 +325,6 @@ a { color: var(--accent-2); text-decoration: none; }
 /* quick access tiles */
 .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 @media (max-width: 900px) { .tiles { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 520px) { .tiles { grid-template-columns: repeat(2, 1fr); } }
 .tile {
   background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 18px 16px; text-align: center; box-shadow: var(--shadow);
@@ -327,6 +350,7 @@ a { color: var(--accent-2); text-decoration: none; }
 .badge.b-purple { background: var(--purple-soft); color: var(--purple); }
 .badge.b-teal { background: var(--teal-soft); color: var(--teal); }
 .badge.b-gray { background: var(--bg-soft); color: var(--text-2); border: 1px solid var(--border); }
+.badge.badge-sm { font-size: 10.5px; padding: 2px 8px; vertical-align: middle; }
 
 /* list rows */
 .row-item {
@@ -371,7 +395,11 @@ html[dir="ltr"] .toolbar .search svg { inset-inline-end: auto; inset-inline-star
 .empty {
   text-align: center; padding: 54px 20px; color: var(--text-2);
   border: 2px dashed var(--border); border-radius: var(--radius); background: var(--bg-card);
+  grid-column: 1 / -1;                      /* always full width inside a grid */
 }
+/* nested inside a card or a modal the dashed frame is noise */
+.card .empty, .modal-body .empty, #calDayDetail .empty { border: 0; background: transparent; padding: 30px 14px; }
+.empty .btn { margin-top: 2px; }
 .empty .e-icon { font-size: 40px; margin-bottom: 10px; opacity: .9; }
 .empty strong { display: block; font-size: 16px; color: var(--text); margin-bottom: 4px; }
 .empty p { font-size: 13.5px; margin-bottom: 16px; }
@@ -421,7 +449,7 @@ html[dir="ltr"] .toolbar .search svg { inset-inline-end: auto; inset-inline-star
 
 /* ============ toast ============ */
 .toast-root {
-  position: fixed; bottom: 20px; inset-inline-start: 50%; transform: translateX(-50%);
+  position: fixed; bottom: calc(20px + env(safe-area-inset-bottom)); inset-inline-start: 50%; transform: translateX(-50%);
   z-index: 200; display: flex; flex-direction: column; gap: 9px; align-items: center; pointer-events: none;
 }
 html[dir="rtl"] .toast-root { transform: translateX(50%); }
@@ -465,11 +493,12 @@ html[dir="rtl"] .toast-root { transform: translateX(50%); }
   padding: 9px 11px; border-radius: 10px; transition: background .12s; cursor: pointer;
 }
 .check-item:hover { background: var(--bg-hover); }
+.check-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--bg-hover); }
 .check-item input { margin-top: 5px; width: 17px; height: 17px; accent-color: var(--ok); flex-shrink: 0; cursor: pointer; }
 .check-item.done .ci-text { text-decoration: line-through; color: var(--text-3); }
 .ci-text { font-size: 13.8px; }
 .ci-ref { font-size: 11px; color: var(--text-3); display: block; }
-.check-progress-wrap { position: sticky; top: 68px; z-index: 5; background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 13px 18px; box-shadow: var(--shadow); margin-bottom: 16px; }
+.check-progress-wrap { position: sticky; top: calc(66px + env(safe-area-inset-top)); z-index: 5; background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 13px 18px; box-shadow: var(--shadow); margin-bottom: 16px; }
 
 /* ============ calculators ============ */
 .calc-result {
@@ -553,7 +582,9 @@ mark { background: color-mix(in srgb, var(--warn) 35%, transparent); color: inhe
 
 /* ============ print report ============ */
 .print-sheet { display: none; }
+@page { size: A4; margin: 14mm; }
 @media print {
+  html, body { background: #fff !important; }
   body * { visibility: hidden; }
   .print-sheet, .print-sheet * { visibility: visible; }
   .print-sheet {
@@ -565,8 +596,12 @@ mark { background: color-mix(in srgb, var(--warn) 35%, transparent); color: inhe
   .print-sheet table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
   .print-sheet th, .print-sheet td { border: 1px solid #999; padding: 7px 10px; text-align: start; }
   .print-sheet th { background: #f0f0f0; width: 160px; }
-  .print-sheet .sig-row { display: flex; gap: 40px; margin-top: 50px; }
+  .print-sheet thead { display: table-header-group; }          /* repeat headers across pages */
+  .print-sheet tr, .print-sheet .sig-row { page-break-inside: avoid; break-inside: avoid; }
+  .print-sheet h1, .print-sheet h2 { page-break-after: avoid; }
+  .print-sheet .sig-row { display: flex; gap: 40px; margin-top: 50px; page-break-inside: avoid; }
   .print-sheet .sig { flex: 1; text-align: center; border-top: 1px solid #666; padding-top: 8px; font-size: 12px; }
+  #updBanner, .toast-root, .modal-overlay { display: none !important; }
 }
 
 /* timeline for services in project detail */
@@ -621,6 +656,7 @@ mark { background: color-mix(in srgb, var(--warn) 35%, transparent); color: inhe
   /* modals become bottom sheets */
   .modal-overlay { padding: 0; align-items: flex-end; }
   .modal { max-width: 100% !important; max-height: 93vh; border-radius: 22px 22px 0 0; animation: sheetIn .25s ease; }
+  .modal::before { content: ''; display: block; width: 38px; height: 4px; border-radius: 99px; background: var(--border); margin: 8px auto 0; flex-shrink: 0; }
   @keyframes sheetIn { from { transform: translateY(48px); opacity: .5; } }
   .modal-body { padding: 16px 16px; }
   .modal-head { padding: 15px 16px 12px; }
@@ -635,7 +671,7 @@ mark { background: color-mix(in srgb, var(--warn) 35%, transparent); color: inhe
   .section-title { margin: 20px 0 10px; }
   .card { padding: 15px 14px; }
   .kb-article { font-size: 13.5px; }
-  .check-progress-wrap { top: 62px; }
+  .check-progress-wrap { top: calc(60px + env(safe-area-inset-top)); }
   /* bigger touch targets */
   .btn { padding: 11px 16px; min-height: 44px; }
   .btn-sm { min-height: 38px; padding: 8px 13px; }
@@ -4741,7 +4777,7 @@ function serviceRow(s) {
   return `<div class="row-item" onclick="openServiceView('${s.id}')">
     <div class="row-icon" style="background:var(--bg-soft);border:1px solid var(--border);font-size:19px">${m.icon}</div>
     <div class="row-body">
-      <strong>${esc(svcTarget(s))} ${s.projectId ? '' : '<span class="badge b-gray" style="font-size:10px;vertical-align:middle">🔧</span>'}</strong>
+      <strong>${esc(svcTarget(s))} ${s.projectId ? '' : '<span class="badge b-gray badge-sm">🔧</span>'}</strong>
       <span class="sub">${esc(s.problem || s.complaint || '—')}</span>
     </div>
     <div class="row-side">
@@ -5140,11 +5176,11 @@ function drawParts() {
   if (q) list = list.filter(x => hay(x.name, x.category, x.location, x.note, x.unit).includes(q));
   const el = $('#partList');
   if (!state.parts.length) {
-    el.innerHTML = `<div class="empty" style="border:0"><div class="e-icon">📦</div><strong>${t('noParts')}</strong><p>${t('noPartsSub')}</p><button class="btn btn-primary" onclick="openPartForm()">${IC.plus} ${t('newPart')}</button></div>`;
+    el.innerHTML = `<div class="empty"><div class="e-icon">📦</div><strong>${t('noParts')}</strong><p>${t('noPartsSub')}</p><button class="btn btn-primary" onclick="openPartForm()">${IC.plus} ${t('newPart')}</button></div>`;
     return;
   }
   if (!list.length) {
-    el.innerHTML = `<div class="empty" style="border:0"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p></div>`;
+    el.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p></div>`;
     return;
   }
   el.innerHTML = `<table class="parts-table">
@@ -5728,7 +5764,7 @@ function drawKb() {
   if (q) list = list.filter(k => kbSearchText(k).includes(q));
   const el = $('#kbList');
   if (!list.length) {
-    el.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p></div>`;
+    el.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p></div>`;
     return;
   }
   el.innerHTML = list.map(k => `
@@ -6147,7 +6183,7 @@ function drawStd() {
   if (q) list = list.filter(s => stdSearchText(s).includes(q));
   const el = $('#stdList');
   if (!list.length) {
-    el.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('stdNoMatch')}</p></div>`;
+    el.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('stdNoMatch')}</p></div>`;
     return;
   }
   el.innerHTML = list.map(s => `
@@ -6203,11 +6239,11 @@ function drawNotes() {
   if (q) list = list.filter(n => hay(n.title, n.content, (n.tags || []).join(' ')).includes(q));
   const el = $('#noteList');
   if (!state.notes.length) {
-    el.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="e-icon">📝</div><strong>${t('noNotes')}</strong><p>${t('noNotesSub')}</p><button class="btn btn-primary" onclick="openNoteForm()">${IC.plus} ${t('newNote')}</button></div>`;
+    el.innerHTML = `<div class="empty"><div class="e-icon">📝</div><strong>${t('noNotes')}</strong><p>${t('noNotesSub')}</p><button class="btn btn-primary" onclick="openNoteForm()">${IC.plus} ${t('newNote')}</button></div>`;
     return;
   }
   if (!list.length) {
-    el.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p></div>`;
+    el.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p></div>`;
     return;
   }
   el.innerHTML = list.map(n => `
@@ -7211,7 +7247,7 @@ function drawGlobalSearch(qRaw) {
     .filter(c2 => hay(c2.title.fa, c2.title.en, c2.desc.fa, c2.formula).includes(q))
     .slice(0, 5).map(c2 => gsRow('🧮', esc(c2.title.fa), esc(c2.desc.fa), `closeModal();calcFilter={cat:'all',q:'${jsAttr(qRaw)}'};navigate('/calculations')`)));
 
-  out.innerHTML = S.length ? S.join('') : `<div class="empty" style="padding:26px"><div class="e-icon">🔍</div><strong>${t('noResults')}</strong></div>`;
+  out.innerHTML = S.length ? S.join('') : `<div class="empty"><div class="e-icon">🔍</div><strong>${t('noResults')}</strong></div>`;
 }
 
 

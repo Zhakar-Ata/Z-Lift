@@ -564,6 +564,31 @@ async function T(name, cond, info) {
       return n <= 3;
     })()`));
 
+    /* ================= v21 visual consistency ================= */
+    await T('empty states carry no ad-hoc inline styles', () => {
+      const src = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+      return !/class="empty"[^>]*style=/.test(src.replace(/class="empty" data-cal="noevents" style="margin-top:12px"/g, ''));
+    });
+    await T('dark theme drives native controls (color-scheme)', () => {
+      const src = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+      return /html\[data-theme="dark"\] \{\s*color-scheme: dark;/.test(src) && /html\[data-theme="light"\] \{\s*color-scheme: light;/.test(src);
+    });
+    await T('reduced-motion and touch-hover rules are present', () => {
+      const src = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+      return src.includes('prefers-reduced-motion: reduce') && src.includes('@media (hover: none)');
+    });
+    await T('print stylesheet sets page margins and avoids broken rows', () => {
+      const src = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+      return src.includes('@page { size: A4; margin: 14mm; }') && src.includes('display: table-header-group');
+    });
+    await T('theme toggle updates the browser theme colour', () => ev(`(() => {
+      localStorage.setItem('zlift_theme', 'dark'); applyTheme();
+      const dark = document.getElementById('metaTheme').getAttribute('content');
+      localStorage.setItem('zlift_theme', 'light'); applyTheme();
+      const light = document.getElementById('metaTheme').getAttribute('content');
+      return dark === '#0b1220' && light === '#2563eb' && document.documentElement.getAttribute('data-theme') === 'light';
+    })()`));
+
     /* ---------- legacy regressions ---------- */
     await ev(`navigate('/checklists/traction-install')`); await waitLoaded();
     await T('traction install checklist still renders (30 items)', () => ev(`document.querySelectorAll('#content .check-item[data-item]').length === 30`));
