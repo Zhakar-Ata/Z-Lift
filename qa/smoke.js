@@ -469,6 +469,101 @@ async function T(name, cond, info) {
       return /const CACHE = 'zlift-pwa-v(\d+)'/.test(sw) && sw.includes("req.mode === 'navigate'");
     });
 
+    /* ================= v20 polish regressions ================= */
+
+    /* -- Persian-aware search: Arabic ي/ك, Persian digits, ZWNJ -- */
+    await T('norm() folds Arabic letters, Persian digits and ZWNJ', () => ev(`(() => {
+      return norm('کلـيد ۱۲') === norm('كليد 12') && norm('می\\u200cشود') === norm('میشود') && norm('  Aا  ') === 'aا';
+    })()`));
+    const noteQa = await ev(`api('/notes', { method: 'POST', body: { title: 'تنظیم کلید ۱۲ ولت', content: 'یادداشت تست جست‌وجو', tags: ['تست'] } })`);
+    await ev(`(() => { state.notes = null; return loadAll(true); })()`);
+    await ev(`navigate('/notes')`); await waitLoaded();
+    await T('search with Arabic «كليد» finds Persian «کلید»', () => ev(`(() => { noteQuery = 'كليد'; drawNotes(); return document.querySelector('#noteList').innerHTML.includes('تنظیم کلید'); })()`));
+    await T('search with Latin digits finds Persian digits', () => ev(`(() => { noteQuery = '12'; drawNotes(); return document.querySelector('#noteList').innerHTML.includes('تنظیم کلید'); })()`));
+    await T('search ignoring ZWNJ still matches', () => ev(`(() => { noteQuery = 'جستوجو'; drawNotes(); return document.querySelector('#noteList').innerHTML.includes('تنظیم کلید'); })()`));
+    await ev(`(() => { noteQuery = ''; drawNotes(); return api('/notes/${noteQa.note.id}', { method: 'DELETE' }); })()`);
+    await ev(`(() => { state.notes = null; return loadAll(true); })()`);
+
+    /* -- modal is a real dialog: aria, scroll lock, focus, Enter = save -- */
+    await ev(`navigate('/notes')`); await waitLoaded();
+    await ev(`openNoteForm()`);
+    await T('modal exposes dialog semantics', () => ev(`(() => {
+      const box = document.querySelector('#modalRoot .modal');
+      return box.getAttribute('role') === 'dialog' && box.getAttribute('aria-modal') === 'true' && !!box.getAttribute('aria-labelledby');
+    })()`));
+    await T('page behind the modal is scroll-locked', () => ev(`document.body.classList.contains('scroll-lock')`));
+    await T('focus moves inside the dialog', () => ev(`document.querySelector('#modalRoot .modal').contains(document.activeElement)`));
+    await ev(`closeModal()`);
+    await T('scroll lock released after closing', () => ev(`!document.body.classList.contains('scroll-lock')`));
+
+    await ev(`openServiceForm(); document.querySelector('#s_customer').value = 'مشتری اینتر QA';`);
+    await ev(`document.querySelector('#modalRoot form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))`);
+    await waitUntil(() => ev(`(state.services || []).some(x => x.customer === 'مشتری اینتر QA')`), 8000, 'Enter submits the form');
+    await T('Enter inside a form runs the primary action (no page reload)', true);
+    await ev(`(() => { const s = state.services.find(x => x.customer === 'مشتری اینتر QA'); return s ? api('/services/' + s.id, { method: 'DELETE' }) : null; })()`);
+    await ev(`(() => { state.services = null; return loadAll(true); })()`);
+
+    /* -- validation marks and focuses the offending field -- */
+    await ev(`navigate('/projects')`); await waitLoaded();
+    await ev(`openProjectForm(); document.querySelector('#f_name').value = '   '; document.querySelector('#projSave').onclick();`);
+    await T('empty required field is highlighted and focused', () => ev(`(() => {
+      const el = document.querySelector('#f_name');
+      return el.classList.contains('input-error') && document.activeElement === el;
+    })()`));
+    await T('the error clears as soon as the user types', () => ev(`(() => {
+      const el = document.querySelector('#f_name');
+      el.value = 'x'; el.dispatchEvent(new Event('input', { bubbles: true }));
+      return !el.classList.contains('input-error');
+    })()`));
+    await ev(`closeModal()`);
+
+    /* -- API error codes become readable messages -- */
+    await T('error codes map to specific messages', () => ev(`(() => {
+      return errMsg({ code: 'not_found' }) === t('errNotFound') &&
+             errMsg({ code: 'too_large' }) === t('photoTooLarge') &&
+             errMsg({ code: 'nope' }) === t('errGeneric');
+    })()`));
+
+    /* -- printing pipeline builds a sheet and cleans it up -- */
+    await T('printDoc renders a sheet and clears it afterwards', () => ev(`(() => {
+      window.print = () => {};
+      printDoc('<h1>QA print</h1>');
+      const filled = document.getElementById('printSheet').innerHTML.includes('QA print');
+      window.dispatchEvent(new Event('afterprint'));
+      return filled && document.getElementById('printSheet').innerHTML === '';
+    })()`));
+
+    /* -- Jalali month names follow the interface language -- */
+    await T('Jalali months are transliterated in English mode', () => ev(`(() => {
+      LANG = 'en'; const en = jalMonth(6) + ' ' + fmtJalali(Date.now());
+      LANG = 'fa'; const fa = jalMonth(6);
+      return en.startsWith('Shahrivar') && !/[\\u0600-\\u06FF]/.test(en) && fa === 'شهریور';
+    })()`));
+
+    /* -- scroll position: new page starts at top, back restores -- */
+    await T('scroll position is remembered per route', () => ev(`(() => {
+      Object.defineProperty(window, 'scrollY', { value: 240, configurable: true });
+      state.route = '/projects';
+      _saveScroll();
+      Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
+      return _scrollPos['/projects'] === 240;
+    })()`));
+
+    /* -- navigation menu keeps its handlers and marks the current page -- */
+    await ev(`navigate('/parts')`); await waitLoaded();
+    await T('nav marks the active route for assistive tech', () => ev(`(() => {
+      const btn = [...document.querySelectorAll('#mainNav .nav-item')].find(b => b.dataset.route === '/parts');
+      return btn.classList.contains('active') && btn.getAttribute('aria-current') === 'page' && typeof btn.onclick === 'function';
+    })()`));
+
+    /* -- toasts never pile up -- */
+    await T('at most 3 toasts are shown at once', () => ev(`(() => {
+      for (let i = 0; i < 6; i++) toast('t' + i);
+      const n = document.querySelector('#toastRoot').children.length;
+      document.querySelector('#toastRoot').innerHTML = '';
+      return n <= 3;
+    })()`));
+
     /* ---------- legacy regressions ---------- */
     await ev(`navigate('/checklists/traction-install')`); await waitLoaded();
     await T('traction install checklist still renders (30 items)', () => ev(`document.querySelectorAll('#content .check-item[data-item]').length === 30`));

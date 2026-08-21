@@ -74,6 +74,10 @@ body {
 }
 html[dir="ltr"] body { letter-spacing: .1px; }
 .hidden { display: none !important; }
+body.scroll-lock { overflow: hidden; }
+.input-error, .input-error:focus { border-color: var(--danger) !important; box-shadow: 0 0 0 3px var(--danger-soft); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn:focus-visible, .icon-btn:focus-visible, .chip:focus-visible { outline-offset: 3px; }
 button { font-family: inherit; cursor: pointer; }
 input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
 a { color: var(--accent-2); text-decoration: none; }
@@ -713,7 +717,7 @@ html, body { overflow-x: hidden; max-width: 100%; }
       <form id="authForm" autocomplete="off">
         <div id="nameField" class="field hidden">
           <label data-i18n="fullName">نام و نام خانوادگی</label>
-          <input type="text" id="authName" placeholder="مثلاً رضا محمدی" />
+          <input type="text" id="authName" placeholder="رضا محمدی" data-i18n-ph="phFullName" />
         </div>
         <div class="field">
           <label data-i18n="username">نام کاربری</label>
@@ -755,10 +759,10 @@ html, body { overflow-x: hidden; max-width: 100%; }
             <strong id="userName">—</strong>
             <span data-i18n="roleTech">تکنسین آسانسور</span>
           </div>
-          <button class="icon-btn" id="backupBtn" title="پشتیبان‌گیری">
+          <button class="icon-btn" id="backupBtn" aria-label="پشتیبان‌گیری" title="پشتیبان‌گیری">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           </button>
-          <button class="icon-btn" id="logoutBtn" title="خروج">
+          <button class="icon-btn" id="logoutBtn" aria-label="خروج" title="خروج">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           </button>
         </div>
@@ -774,17 +778,17 @@ html, body { overflow-x: hidden; max-width: 100%; }
         <h2 class="page-title" id="pageTitle">داشبورد</h2>
         <span id="offlineBadge" class="badge b-amber hidden" style="flex-shrink:0"></span>
         <div class="topbar-actions">
-          <button class="icon-btn" id="tgChannelBtn" title="کانال تلگرام Z Lift" style="color:#2AABEE">
+          <button class="icon-btn" id="tgChannelBtn" aria-label="کانال تلگرام Z Lift" title="کانال تلگرام Z Lift" style="color:#2AABEE">
             <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
           </button>
-          <button class="icon-btn" id="gSearchBtn" title="جستجوی سراسری">
+          <button class="icon-btn" id="gSearchBtn" aria-label="جستجوی سراسری" title="جستجوی سراسری">
             <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </button>
-          <button class="icon-btn hidden" id="installBtn" onclick="promptInstall()" title="نصب اپلیکیشن" style="color:var(--accent-2);border-color:var(--accent-2)">
+          <button class="icon-btn hidden" id="installBtn" aria-label="نصب اپلیکیشن" onclick="promptInstall()" title="نصب اپلیکیشن" style="color:var(--accent-2);border-color:var(--accent-2)">
             <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           </button>
-          <button class="icon-btn" id="langBtn" title="English / فارسی"><span id="langLabel">EN</span></button>
-          <button class="icon-btn" id="themeBtn" title="حالت تیره/روشن">
+          <button class="icon-btn" id="langBtn" aria-label="English / فارسی" title="English / فارسی"><span id="langLabel">EN</span></button>
+          <button class="icon-btn" id="themeBtn" aria-label="حالت تیره/روشن" title="حالت تیره/روشن">
             <svg id="iconMoon" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
             <svg id="iconSun" class="hidden" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
           </button>
@@ -812,6 +816,12 @@ const I18N = {
     demoHint: 'حساب آزمایشی:', roleTech: 'تکنسین آسانسور', logout: 'خروج',
     errInvalidCred: 'نام کاربری یا رمز عبور اشتباه است', errUserTaken: 'این نام کاربری قبلاً ثبت شده',
     errWeakPass: 'رمز عبور باید حداقل ۶ کاراکتر باشد', errBadUser: 'نام کاربری حداقل ۳ کاراکتر', errGeneric: 'خطایی رخ داد؛ دوباره تلاش کنید',
+    errNotFound: 'این مورد پیدا نشد؛ شاید قبلاً حذف شده است', errSessionExpired: 'نشست شما منقضی شد؛ دوباره وارد شوید',
+    photoReadFailed: 'خواندن این تصویر ممکن نشد؛ فایل دیگری انتخاب کنید', invPayInvalid: 'مبلغ پرداخت باید بزرگ‌تر از صفر باشد',
+    phFullName: 'مثلاً رضا محمدی', phCustomer: 'مثلاً آقای احمدی — ساختمان نگین', phElevator: 'مثلاً کششی ۶ نفره، سعادت‌آباد',
+    phMeasure: 'مثلاً: V=382/379/381 · I=13.8A · P=34bar',
+    backupLast: 'آخرین پشتیبان‌گیری', backupNever: 'تا کنون پشتیبان نگرفته‌اید', daysAgo: 'روز پیش',
+    errSaveFailed: 'ذخیره نشد؛ دوباره تلاش کنید', errOffline: 'برای این کار به اینترنت نیاز است',
     // nav
     navMain: 'اصلی', navTools: 'ابزار فنی', navKnowledge: 'دانش فنی',
     dashboard: 'داشبورد', projects: 'پروژه‌های نصب', services: 'سرویس‌ها',
@@ -1035,6 +1045,12 @@ const I18N = {
     demoHint: 'Demo account:', roleTech: 'Elevator Technician', logout: 'Logout',
     errInvalidCred: 'Invalid username or password', errUserTaken: 'Username already taken',
     errWeakPass: 'Password must be at least 6 characters', errBadUser: 'Username must be at least 3 characters', errGeneric: 'Something went wrong; try again',
+    errNotFound: 'Not found — it may already have been deleted', errSessionExpired: 'Your session expired; please sign in again',
+    photoReadFailed: 'This image could not be read; pick another file', invPayInvalid: 'Payment amount must be greater than zero',
+    phFullName: 'e.g. Reza Mohammadi', phCustomer: 'e.g. Mr. Ahmadi — Negin building', phElevator: 'e.g. traction, 6 persons, Saadatabad',
+    phMeasure: 'e.g. V=382/379/381 · I=13.8A · P=34bar',
+    backupLast: 'Last backup', backupNever: 'No backup taken yet', daysAgo: 'days ago',
+    errSaveFailed: 'Could not save; please try again', errOffline: 'This action needs an internet connection',
     navMain: 'Main', navTools: 'Technical Tools', navKnowledge: 'Knowledge',
     dashboard: 'Dashboard', projects: 'Installation Projects', services: 'Services',
     checklists: 'Checklists', calculations: 'Calculations', diagnostics: 'Diagnostics',
@@ -1337,10 +1353,13 @@ function tsToJalali(ts) {
   return d2j(g2d(d.getFullYear(), d.getMonth() + 1, d.getDate()));
 }
 const JAL_MONTHS = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+const JAL_MONTHS_EN = ['Farvardin', 'Ordibehesht', 'Khordad', 'Tir', 'Mordad', 'Shahrivar', 'Mehr', 'Aban', 'Azar', 'Dey', 'Bahman', 'Esfand'];
+/* Jalali month name in the active interface language (1-based) */
+function jalMonth(jm) { return (LANG === 'fa' ? JAL_MONTHS : JAL_MONTHS_EN)[(jm - 1 + 12) % 12]; }
 function jalDaysInMonth(jy, jm) { return jm <= 6 ? 31 : (jm <= 11 ? 30 : (jalCal(jy).leap === 0 ? 30 : 29)); }
 function fmtJalali(ts) {
   const j = tsToJalali(ts);
-  return faNum(j.jd) + ' ' + JAL_MONTHS[j.jm - 1] + ' ' + faNum(j.jy);
+  return faNum(j.jd) + ' ' + jalMonth(j.jm) + ' ' + faNum(j.jy);
 }
 
 /* Z Lift — technical content: checklists, diagnostics, knowledge base, calculators
@@ -3480,11 +3499,31 @@ const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 function toast(msg, type = 'ok') {
+  const root = $('#toastRoot');
+  if (!root) return;
+  while (root.children.length >= 3) root.firstElementChild.remove();   // never cover the screen
   const el = document.createElement('div');
   el.className = 'toast ' + type;
+  el.setAttribute('role', type === 'ok' ? 'status' : 'alert');
+  el.setAttribute('aria-live', type === 'ok' ? 'polite' : 'assertive');
   el.innerHTML = (type === 'ok' ? '✅' : '⚠️') + ' <span>' + esc(msg) + '</span>';
-  $('#toastRoot').appendChild(el);
-  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 320); }, 2600);
+  const hide = () => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 320); };
+  el.onclick = hide;                                                   // tap to dismiss
+  root.appendChild(el);
+  setTimeout(hide, 2600);
+}
+/* inline validation: say what is wrong, mark the field and put the cursor in it
+   (a toast alone leaves the user hunting for the empty box) */
+function fieldError(sel, msgKey) {
+  toast(t(msgKey), 'err');
+  const el = $(sel);
+  if (!el) return false;
+  el.classList.add('input-error');
+  el.addEventListener('input', () => el.classList.remove('input-error'), { once: true });
+  el.addEventListener('change', () => el.classList.remove('input-error'), { once: true });
+  try { el.focus({ preventScroll: true }); } catch (e) { try { el.focus(); } catch (e2) {} }
+  try { el.scrollIntoView({ block: 'center' }); } catch (e) {}
+  return false;
 }
 function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 /* wrap an async save handler: disables the button during the call and
@@ -3498,6 +3537,18 @@ function guard(btnSel, fn) {
     catch (e) { reportError(e, 'guard:' + btnSel); }
     finally { const b2 = $(btnSel); if (b2) b2.disabled = false; }
   };
+}
+/* turn an API error code into a message the technician can act on */
+const ERR_KEYS = {
+  name_required: 'requiredTitle', customer_required: 'requiredCustomer',
+  not_found: 'errNotFound', too_large: 'photoTooLarge', bad_backup: 'restoreBad',
+  unauthorized: 'errSessionExpired', invalid_credentials: 'errInvalidCred',
+  username_taken: 'errUserTaken', weak_password: 'errWeakPass', bad_username: 'errBadUser'
+};
+function errMsg(e) {
+  if (e && e.code && ERR_KEYS[e.code]) return t(ERR_KEYS[e.code]);
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return t('errOffline');
+  return t('errGeneric');
 }
 /* central error handler */
 function reportError(e, ctx) {
@@ -3543,6 +3594,30 @@ function remMeta(k) { return REMINDER_META[k] || REMINDER_META.custom; }
 function jsAttr(s) {
   return esc(String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, '\\n'));
 }
+/* ---- Persian-aware text normalisation for every search box ----
+   Arabic ي/ك typed by many keyboards must match Persian ی/ک, Persian & Arabic
+   digits must match Latin ones, and ZWNJ / diacritics / tatweel must be ignored,
+   otherwise «کليد» never finds «کلید» and «۱۲» never finds «12». */
+const _NORM_MAP = {
+  'ي': 'ی', 'ﻱ': 'ی', 'ﻲ': 'ی', 'ی': 'ی', 'ئ': 'ی', 'ى': 'ی',
+  'ك': 'ک', 'ﻙ': 'ک', 'ﻚ': 'ک',
+  'أ': 'ا', 'إ': 'ا', 'آ': 'ا', 'ٱ': 'ا', 'ا': 'ا',
+  'ؤ': 'و', 'ة': 'ه', 'ۀ': 'ه',
+  '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9',
+  '۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4', '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9'
+};
+function norm(s) {
+  return String(s == null ? '' : s)
+    .toLowerCase()
+    .replace(/[\u200c\u200f\u200e\u0640]/g, '')          // ZWNJ, bidi marks, tatweel
+    .replace(/[\u064b-\u0652]/g, '')                      // harakat
+    .replace(/[يﻱﻲیئىكﻙﻚأإآٱاؤةۀ٠-٩۰-۹]/g, c => _NORM_MAP[c] || c)
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+/* join any number of fields into one normalised haystack */
+function hay(...parts) { return norm(parts.filter(v => v != null && v !== '').join(' ')); }
+
 /* optimistic list removal with rollback — safe when the id is already gone
    (a stale button / double tap must never delete a random last row) */
 function optimisticRemove(list, id) {
@@ -3611,6 +3686,7 @@ function applyLang() {
   document.documentElement.dir = I18N[LANG].dir;
   $('#langLabel').textContent = LANG === 'fa' ? 'EN' : 'فا';
   $$('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
+  $$('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.getAttribute('data-i18n-ph')); });
 }
 
 /* ---------- UI back-stack (phone back button support) ----------
@@ -3658,15 +3734,58 @@ window.addEventListener('popstate', () => {
   }, 30);
 });
 
-/* ---------- modal ---------- */
-function _closeModalDom() { $('#modalRoot').innerHTML = ''; document.removeEventListener('keydown', escClose); }
+/* ---------- modal ----------
+   Accessible dialog: aria roles, focus moved in and restored on close, Tab is
+   trapped inside, the page behind cannot scroll, and Enter inside a form runs
+   the primary action instead of doing an implicit submit (which reloaded the
+   whole app and lost the typed data). */
+const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+let _modalReturnFocus = null;
+function _lockScroll(on) { document.body.classList.toggle('scroll-lock', !!on); }
+function _closeModalDom() {
+  $('#modalRoot').innerHTML = '';
+  document.removeEventListener('keydown', escClose);
+  if (!document.getElementById('jdOverlay')) _lockScroll(false);
+  const back = _modalReturnFocus;
+  _modalReturnFocus = null;
+  if (back && document.contains(back)) { try { back.focus({ preventScroll: true }); } catch (e) {} }
+}
 function openModal(html, opts = {}) {
   const hadModal = !!document.getElementById('modalOverlay');
+  if (!hadModal) _modalReturnFocus = document.activeElement;
+  const keepFocus = _modalReturnFocus;
   _closeModalDom();
+  _modalReturnFocus = keepFocus;
   const root = $('#modalRoot');
-  root.innerHTML = `<div class="modal-overlay" id="modalOverlay"><div class="modal ${opts.size || ''}">${html}</div></div>`;
+  root.innerHTML = `<div class="modal-overlay" id="modalOverlay"><div class="modal ${opts.size || ''}" role="dialog" aria-modal="true" aria-label="Z Lift">${html}</div></div>`;
+  const box = root.querySelector('.modal');
+  const head = box.querySelector('.modal-head h3');
+  if (head) { head.id = 'modalTitle'; box.setAttribute('aria-labelledby', 'modalTitle'); box.removeAttribute('aria-label'); }
   $('#modalOverlay').addEventListener('mousedown', e => { if (e.target.id === 'modalOverlay') closeModal(); });
   document.addEventListener('keydown', escClose);
+  _lockScroll(true);
+  /* Enter anywhere in the form = the primary button (never an implicit submit) */
+  box.querySelectorAll('form').forEach(f => {
+    f.addEventListener('submit', e => {
+      e.preventDefault();
+      const primary = box.querySelector('.modal-foot .btn-primary:not([disabled])');
+      if (primary) primary.click();
+    });
+  });
+  /* keep Tab inside the dialog */
+  box.addEventListener('keydown', e => {
+    if (e.key !== 'Tab') return;
+    const items = [...box.querySelectorAll(FOCUSABLE)].filter(el => el.offsetParent !== null || el === document.activeElement);
+    if (!items.length) return;
+    const first = items[0], last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+  /* move focus into the dialog — on phones don't pop the keyboard automatically */
+  const wide = typeof matchMedia === 'function' && matchMedia('(min-width: 641px)').matches;
+  const target = (wide && box.querySelector('input:not([readonly]):not([type="file"]), textarea, select')) ||
+                 box.querySelector('.modal-foot .btn-primary') || box.querySelector('.modal-head .icon-btn');
+  if (target) { try { target.focus({ preventScroll: true }); } catch (e) {} }
   if (!hadModal) pushUiLayer('modal', _closeModalDom);
 }
 function escClose(e) { if (e.key === 'Escape') closeModal(); }
@@ -3684,6 +3803,91 @@ function confirmDialog(title, msg, onYes) {
       <button class="btn btn-danger" id="confirmYes">${t('yesDelete')}</button>
     </div>`, { size: 'sm' });
   $('#confirmYes').onclick = onYes;
+}
+
+/* ---------- printing ----------
+   One pipeline for every printable document (service report, invoice, monthly
+   report, QR label): build the sheet, print it, then take it out of the DOM so
+   nothing stale is left behind for the next print. */
+function printDoc(html) {
+  let sheet = document.getElementById('printSheet');
+  if (!sheet) {
+    sheet = document.createElement('div');
+    sheet.id = 'printSheet';
+    sheet.className = 'print-sheet';
+    document.body.appendChild(sheet);
+  }
+  sheet.dir = I18N[LANG].dir;
+  sheet.innerHTML = html;
+  const cleanup = () => {
+    window.removeEventListener('afterprint', cleanup);
+    const el = document.getElementById('printSheet');
+    if (el) el.innerHTML = '';
+  };
+  window.addEventListener('afterprint', cleanup);
+  setTimeout(cleanup, 60000);            // safety net for browsers without afterprint
+  try { window.print(); } catch (e) { reportError(e, 'print'); }
+}
+/* shared header for printed documents */
+function printHeader(subtitle) {
+  const st = state.settings || {};
+  return `<h1>🛗 ${esc(st.company || 'Z Lift')}</h1>
+    <div class="ph-sub">${subtitle}${st.phone ? ' · ' + esc(st.phone) : ''}${st.address ? ' · ' + esc(st.address) : ''}</div>`;
+}
+/* ---------- file downloads ---------- */
+function downloadBlob(blob, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+}
+/* Excel-friendly CSV (UTF-8 BOM + CRLF) */
+function downloadCsv(filename, head, rows) {
+  const cell = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const csv = '\ufeff' + [head, ...rows].map(r => r.map(cell).join(',')).join('\r\n');
+  downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), filename);
+}
+/* paint long lists in chunks: the first screenful is instant even with hundreds
+   of records, the rest is appended silently while the user scrolls */
+function paintList(el, items, rowFn, chunk = 60) {
+  if (!el) return;
+  if (typeof IntersectionObserver !== 'function' || items.length <= chunk) {
+    el.innerHTML = items.map(rowFn).join('');
+    return;
+  }
+  el.innerHTML = items.slice(0, chunk).map(rowFn).join('');
+  let i = chunk;
+  const sentinel = document.createElement('div');
+  sentinel.setAttribute('aria-hidden', 'true');
+  sentinel.style.height = '1px';
+  el.appendChild(sentinel);
+  const io = new IntersectionObserver(entries => {
+    if (!entries.some(e => e.isIntersecting)) return;
+    if (!document.contains(sentinel)) { io.disconnect(); return; }
+    sentinel.insertAdjacentHTML('beforebegin', items.slice(i, i + chunk).map(rowFn).join(''));
+    i += chunk;
+    if (i >= items.length) { io.disconnect(); sentinel.remove(); }
+  }, { rootMargin: '600px' });
+  io.observe(sentinel);
+}
+
+/* keywords used by the fault statistics (project profile + monthly report) */
+const FAULT_WORDS = [
+  ['درب', 'درب'], ['فتوسل', 'فتوسل'], ['ترمز', 'ترمز'], ['انکودر', 'انکودر'], ['درایو', 'درایو'],
+  ['موتور', 'موتور'], ['بکسل', 'بکسل'], ['قفل', 'قفل درب'], ['روغن', 'روغن'], ['سیل', 'سیل جک'],
+  ['شیر', 'شیرها'], ['پمپ', 'پمپ'], ['ریزش', 'ریزش'], ['همسطح', 'همسطح‌سازی'], ['برق', 'برق'],
+  ['کنتاکتور', 'کنتاکتور'], ['لیمیت', 'لیمیت'], ['صدا', 'صدا'], ['لرزش', 'لرزش']
+];
+const FAULT_ICONS = { 'درب': '🚪', 'ترمز': '🛑', 'درایو': '🖥️', 'موتور': '⚙️', 'بکسل': '🔗', 'قفل درب': '🔒', 'روغن': '🛢️', 'همسطح‌سازی': '🎯', 'برق': '⚡', 'صدا': '🔊' };
+function faultTally(services, icons) {
+  const words = {};
+  services.forEach(sv => {
+    const txt = norm((sv.problem || '') + ' ' + (sv.diagnosis || '') + ' ' + (sv.complaint || ''));
+    FAULT_WORDS.forEach(([w, lbl]) => { if (txt.includes(norm(w))) { const k = icons && icons[lbl] ? lbl + ' ' + icons[lbl] : lbl; words[k] = (words[k] || 0) + 1; } });
+  });
+  return Object.entries(words).sort((a, b) => b[1] - a[1]);
 }
 
 /* ---------- data loading ---------- */
@@ -3829,14 +4033,24 @@ const NAV = [
   { route: '/tools', key: 'tools', icon: 'wrench' },
   { route: '/notes', key: 'notes', icon: 'note' }
 ];
+let _navLang = null;
 function renderNav() {
   const nav = $('#mainNav');
-  nav.innerHTML = NAV.map(item => {
-    if (item.section) return `<div class="nav-section">${t(item.section)}</div>`;
-    const active = state.route === item.route || state.route.startsWith(item.route + '/');
-    return `<button class="nav-item ${active ? 'active' : ''}" data-route="${item.route}">${IC[item.icon]}<span>${t(item.key)}</span></button>`;
-  }).join('');
-  nav.querySelectorAll('.nav-item').forEach(b => b.onclick = () => { navigate(b.dataset.route); closeSidebar(); });
+  if (!nav) return;
+  if (_navLang !== LANG || !nav.children.length) {          // (re)build only when needed
+    _navLang = LANG;
+    nav.innerHTML = NAV.map(item => {
+      if (item.section) return `<div class="nav-section">${t(item.section)}</div>`;
+      return `<button class="nav-item" data-route="${item.route}" aria-current="false">${IC[item.icon]}<span>${t(item.key)}</span></button>`;
+    }).join('');
+    nav.querySelectorAll('.nav-item').forEach(b => b.onclick = () => { navigate(b.dataset.route); closeSidebar(); });
+  }
+  nav.querySelectorAll('.nav-item').forEach(b => {
+    const r = b.dataset.route;
+    const active = state.route === r || state.route.startsWith(r + '/');
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-current', active ? 'page' : 'false');
+  });
 }
 function _closeSidebarDom() { $('#sidebar').classList.remove('open'); $('#backdrop').classList.remove('show'); }
 function closeSidebar() {
@@ -3856,16 +4070,26 @@ function flushUiLayers() {
   _closeSidebarDom();
   diagSession = null;
 }
+/* remember where the user was on each page: opening a page starts at the top,
+   coming back restores the previous scroll position (like a native app) */
+const _scrollPos = {};
+let _pendingScroll = 0;
+function _saveScroll() { if (state.route) _scrollPos[state.route] = window.scrollY || window.pageYOffset || 0; }
 function navigate(route) {
+  if (route === state.route) { flushUiLayers(); render(); return; }
+  _saveScroll();
   flushUiLayers();
   state.route = route;
+  _pendingScroll = 0;                 // a freshly opened page starts at the top
   location.hash = route;
   render();
 }
 window.addEventListener('hashchange', () => {
   const r = location.hash.slice(1) || '/dashboard';
   if (r !== state.route) {
+    _saveScroll();
     state.route = r;
+    _pendingScroll = _scrollPos[r] || 0;   // back/forward → restore the old spot
     // route changed underneath any open overlays: close them & reset stack
     flushUiLayers();
     if (state.user) render();
@@ -3886,9 +4110,12 @@ async function render() {
   };
   const baseRoute = '/' + r.split('/')[1];
   $('#pageTitle').textContent = t(titles[baseRoute] || 'dashboard');
-  c.innerHTML = '<div class="page-loading"><div class="spinner"></div></div>';
+  const spinner = setTimeout(() => {
+    if (seq === _renderSeq) c.innerHTML = '<div class="page-loading"><div class="spinner"></div></div>';
+  }, 160);                                   // no spinner flash on instant local data
   try {
     await loadAll();
+    clearTimeout(spinner);
     if (seq !== _renderSeq) return;  // a newer navigation won the race
     if (r === '/dashboard') renderDashboard();
     else if (r === '/projects') renderProjects();
@@ -3910,7 +4137,10 @@ async function render() {
     else if (r === '/notes') renderNotes();
     else if (r === '/calendar') renderCalendar();
     else renderDashboard();
+    const y = _pendingScroll; _pendingScroll = 0;
+    if (typeof window.scrollTo === 'function') { try { window.scrollTo(0, y); } catch (e2) {} }
   } catch (e) {
+    clearTimeout(spinner);
     if (seq !== _renderSeq) return;
     if (e && e.message === 'unauthorized') return;
     reportError(e, 'render:' + r);
@@ -4140,18 +4370,18 @@ function renderProjects() {
     </div>
     <div id="projList"></div>`;
   $('#projSearch').oninput = debounce(e => { projFilter.q = e.target.value; drawProjList(); }, 200);
-  $$('.chip').forEach(ch => ch.onclick = () => { projFilter.type = ch.dataset.t; renderProjects(); });
+  $$('#content .toolbar .chip[data-t]').forEach(ch => ch.onclick = () => { projFilter.type = ch.dataset.t; renderProjects(); });
   $('#projStatusSel').onchange = e => { projFilter.status = e.target.value; drawProjList(); };
   $('#projSortSel').onchange = e => { projFilter.sort = e.target.value; drawProjList(); };
   drawProjList();
 }
 function drawProjList() {
   if (!$('#projList')) return;
-  const q = projFilter.q.trim().toLowerCase();
+  const q = norm(projFilter.q);
   let list = state.projects;
   if (projFilter.type !== 'all') list = list.filter(p => p.elevatorType === projFilter.type);
   if (projFilter.status !== 'all') list = list.filter(p => p.status === projFilter.status);
-  if (q) list = list.filter(p => [p.name, p.customer, p.location, p.controller, p.motor].map(v => v || '').join(' ').toLowerCase().includes(q));
+  if (q) list = list.filter(p => hay(p.name, p.customer, p.location, p.controller, p.motor).includes(q));
   list = [...list];
   if (projFilter.sort === 'name') list.sort((a, b) => a.name.localeCompare(b.name, 'fa'));
   else if (projFilter.sort === 'progress') list.sort((a, b) => b.progress - a.progress);
@@ -4164,7 +4394,7 @@ function drawProjList() {
     el.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p></div>`;
     return;
   }
-  el.innerHTML = list.map(p => `
+  paintList(el, list, p => `
     <div class="row-item" onclick="navigate('/projects/${p.id}')">
       <div class="row-icon" style="background:${p.elevatorType === 'hydraulic' ? 'var(--teal-soft)' : 'var(--accent-soft)'};font-size:20px">${p.elevatorType === 'hydraulic' ? '🛢️' : '⚙️'}</div>
       <div class="row-body">
@@ -4176,7 +4406,7 @@ function drawProjList() {
         ${statusBadge(p.status)}
         <span class="date">${faNum(p.floors)} ${t('floorsUnit')} · ${faNum(p.capacityKg)}kg · ${faNum(p.progress)}٪</span>
       </div>
-    </div>`).join('');
+    </div>`);
 }
 
 function openProjectForm(id) {
@@ -4220,7 +4450,7 @@ function openProjectForm(id) {
     </div>`, { size: 'lg' });
   $('#projSave').onclick = async () => {
     const name = $('#f_name').value.trim();
-    if (!name) { toast(t('requiredName'), 'err'); return; }
+    if (!name) { fieldError('#f_name', 'requiredName'); return; }
     const body = {
       name, customer: $('#f_customer').value, phone: $('#f_phone').value, location: $('#f_location').value,
       elevatorType: $('#f_type').value, status: $('#f_status').value,
@@ -4245,7 +4475,7 @@ function openProjectForm(id) {
       }
       state.projects.sort((a, b) => b.updatedAt - a.updatedAt);
       closeModal(); render();
-    } catch (e) { toast(t('errGeneric'), 'err'); btn.disabled = false; }
+    } catch (e) { toast(errMsg(e), 'err'); btn.disabled = false; }
   };
 }
 
@@ -4264,7 +4494,7 @@ function deleteProject(id) {
       toast(t('deleted'));
     } catch (e) {
       rb.restore();
-      toast(t('errGeneric'), 'err'); render();
+      toast(errMsg(e), 'err'); render();
     }
   });
 }
@@ -4384,14 +4614,7 @@ function renderProjectDetail(id) {
       /* fault pattern stats */
       const pSvc = state.services.filter(s => s.projectId === p.id);
       if (pSvc.length >= 2) {
-        const words = {};
-        pSvc.forEach(s => {
-          const txt = (s.problem || '') + ' ' + (s.diagnosis || '');
-          [['درب', 'درب 🚪'], ['فتوسل', 'فتوسل'], ['ترمز', 'ترمز 🛑'], ['انکودر', 'انکودر'], ['درایو', 'درایو 🖥️'], ['موتور', 'موتور ⚙️'], ['بکسل', 'بکسل 🔗'], ['قفل', 'قفل درب 🔒'], ['روغن', 'روغن 🛢️'], ['سیل', 'سیل جک'], ['شیر', 'شیرها'], ['پمپ', 'پمپ'], ['ریزش', 'ریزش'], ['همسطح', 'همسطح‌سازی 🎯'], ['برق', 'برق ⚡'], ['کنتاکتور', 'کنتاکتور'], ['لیمیت', 'لیمیت'], ['صدا', 'صدا 🔊'], ['لرزش', 'لرزش']].forEach(([w, lbl]) => {
-            if (txt.includes(w)) words[lbl] = (words[lbl] || 0) + 1;
-          });
-        });
-        const top = Object.entries(words).sort((a, b) => b[1] - a[1]).slice(0, 6);
+        const top = faultTally(pSvc, FAULT_ICONS).slice(0, 6);
         if (top.length) {
           const mx = top[0][1];
           out += `<div class="card" style="margin-top:16px"><div class="card-title">📊 ${t('faultStats')}</div>
@@ -4444,7 +4667,7 @@ function renderProjectDetail(id) {
   const range = $('#progRange');
   const saveProg = debounce(async val => {
     try { await api('/projects/' + p.id, { method: 'PUT', body: { progress: val } }); toast(t('saved')); }
-    catch (e) { toast(t('errGeneric'), 'err'); }
+    catch (e) { toast(errMsg(e), 'err'); }
   }, 600);
   range.oninput = () => {
     const v = +range.value;
@@ -4481,16 +4704,16 @@ function renderServices() {
     </div>
     <div id="svcList"></div>`;
   $('#svcSearch').oninput = debounce(e => { svcFilter.q = e.target.value; drawSvcList(); }, 200);
-  $$('.chip').forEach(ch => ch.onclick = () => { svcFilter.type = ch.dataset.t; renderServices(); });
+  $$('#content .toolbar .chip[data-t]').forEach(ch => ch.onclick = () => { svcFilter.type = ch.dataset.t; renderServices(); });
   drawSvcList();
 }
 function drawSvcList() {
   if (!$('#svcList')) return;
-  const q = svcFilter.q.trim().toLowerCase();
+  const q = norm(svcFilter.q);
   let list = state.services;
   if (svcFilter.projectId) list = list.filter(s => s.projectId === svcFilter.projectId);
   if (svcFilter.type !== 'all') list = list.filter(s => s.serviceType === svcFilter.type);
-  if (q) list = list.filter(s => (svcTarget(s) + ' ' + (s.customer || '') + ' ' + (s.elevatorInfo || '') + ' ' + s.technician + ' ' + s.problem + ' ' + (s.complaint || '') + ' ' + s.diagnosis + ' ' + s.workDone + ' ' + s.partsReplaced).toLowerCase().includes(q));
+  if (q) list = list.filter(s => hay(svcTarget(s), s.customer, s.elevatorInfo, s.technician, s.problem, s.complaint, s.diagnosis, s.workDone, s.partsReplaced, s.recommendations).includes(q));
   const el = $('#svcList');
   if (!state.services.length) {
     el.innerHTML = `<div class="empty"><div class="e-icon">🔧</div><strong>${t('noServices')}</strong><p>${t('noServicesSub')}</p><button class="btn btn-primary" onclick="openServiceForm()">${IC.plus} ${t('newServiceRec')}</button></div>`;
@@ -4500,7 +4723,7 @@ function drawSvcList() {
     el.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p></div>`;
     return;
   }
-  el.innerHTML = list.map(serviceRow).join('');
+  paintList(el, list, serviceRow);
 }
 function exportServicesCsv() {
   const head = [t('svcDate'), t('svcCustomer'), t('svcProject'), t('svcTechnician'), t('svcType'), t('svcProblem'), t('svcDiagnosis'), t('svcWork'), t('svcParts'), t('svcFinal')];
@@ -4510,15 +4733,7 @@ function exportServicesCsv() {
     t(svcMeta(s.serviceType).key), s.problem, s.diagnosis, s.workDone, s.partsReplaced,
     t(finalMeta(s.finalStatus).key)
   ]);
-  const csvEsc = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-  const csv = '\ufeff' + [head, ...rows].map(r => r.map(csvEsc).join(',')).join('\r\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'zlift-services-' + new Date().toISOString().slice(0, 10) + '.csv';
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+  downloadCsv('zlift-services-' + new Date().toISOString().slice(0, 10) + '.csv', head, rows);
   toast(t('saved'));
 }
 function serviceRow(s) {
@@ -4580,8 +4795,8 @@ function openServiceForm(id, presetProject) {
   openModal(`
     <div class="modal-head"><h3>${s ? '✏️ ' + t('editService') : '🔧 ' + t('newServiceRec')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body"><form class="form-grid">
-      <div class="field span2"><label>${t('svcCustomer')} ${v.projectId ? '' : '*'}</label><input id="s_customer" value="${esc(v.customer || '')}" placeholder="مثلاً آقای احمدی — ساختمان نگین" /></div>
-      <div class="field span2"><label>${t('svcElevator')}</label><input id="s_elevator" value="${esc(v.elevatorInfo || '')}" placeholder="مثلاً کششی ۶ نفره، سعادت‌آباد" /></div>
+      <div class="field span2"><label>${t('svcCustomer')} ${v.projectId ? '' : '*'}</label><input id="s_customer" value="${esc(v.customer || '')}" placeholder="${esc(t('phCustomer'))}" /></div>
+      <div class="field span2"><label>${t('svcElevator')}</label><input id="s_elevator" value="${esc(v.elevatorInfo || '')}" placeholder="${esc(t('phElevator'))}" /></div>
       <div class="field span2"><label>${t('svcLinkProject')}</label><select id="s_project">${projOpts}</select></div>
       <div class="field"><label>${t('svcDate')}</label>${jdateInput('s_date', v.date)}</div>
       <div class="field"><label>${t('svcTechnician')}</label><input id="s_tech" value="${esc(v.technician)}" /></div>
@@ -4594,7 +4809,7 @@ function openServiceForm(id, presetProject) {
       <div class="field span2"><label>${t('svcComplaint')}</label><textarea id="s_complaint" style="min-height:52px">${esc(v.complaint || '')}</textarea></div>
       <div class="field span2"><label>${t('svcProblem')}</label><textarea id="s_problem" style="min-height:52px">${esc(v.problem)}</textarea></div>
       <div class="field span2"><label>${t('svcDiagnosis')}</label><textarea id="s_diag" style="min-height:52px">${esc(v.diagnosis)}</textarea></div>
-      <div class="field span2"><label>${t('svcMeasurements')}</label><textarea id="s_meas" style="min-height:52px" placeholder="مثلاً: V=382/379/381 · I=13.8A · P=34bar">${esc(v.measurements || '')}</textarea></div>
+      <div class="field span2"><label>${t('svcMeasurements')}</label><textarea id="s_meas" style="min-height:52px" placeholder="${esc(t('phMeasure'))}">${esc(v.measurements || '')}</textarea></div>
       <div class="field span2"><label>${t('svcWork')}</label><textarea id="s_work" style="min-height:64px">${esc(v.workDone)}</textarea></div>
       <div class="field span2"><label>${t('svcParts')}</label><input id="s_parts" value="${esc(v.partsReplaced)}" /></div>
       <div class="field span2"><label>${t('svcRecommend')}</label><textarea id="s_recommend" style="min-height:52px">${esc(v.recommendations || '')}</textarea></div>
@@ -4607,7 +4822,7 @@ function openServiceForm(id, presetProject) {
   $('#svcSave').onclick = async () => {
     const projectId = $('#s_project').value;
     const customer = $('#s_customer').value.trim();
-    if (!projectId && !customer) { toast(t('requiredCustomer'), 'err'); return; }
+    if (!projectId && !customer) { fieldError('#s_customer', 'requiredCustomer'); return; }
     const body = {
       projectId, customer, elevatorInfo: $('#s_elevator').value,
       date: jdateVal('s_date') || Date.now(),
@@ -4629,22 +4844,13 @@ function openServiceForm(id, presetProject) {
       }
       state.services.sort((a, b) => b.date - a.date);
       closeModal(); render();
-    } catch (e) { toast(t('errGeneric'), 'err'); btn.disabled = false; }
+    } catch (e) { toast(errMsg(e), 'err'); btn.disabled = false; }
   };
 }
 function printServiceReport(id) {
   const s = state.services.find(x => x.id === id);
   if (!s) return;
   const p = state.projects.find(x => x.id === s.projectId) || {};
-  const st = state.settings || {};
-  let sheet = document.getElementById('printSheet');
-  if (!sheet) {
-    sheet = document.createElement('div');
-    sheet.id = 'printSheet';
-    sheet.className = 'print-sheet';
-    document.body.appendChild(sheet);
-  }
-  sheet.dir = I18N[LANG].dir;
   const rows = [
     [t('reportNo'), s.id.slice(0, 8).toUpperCase()],
     [t('svcDate'), fmtDateTime(s.date)],
@@ -4663,15 +4869,13 @@ function printServiceReport(id) {
     [t('svcFinal'), t(finalMeta(s.finalStatus).key)],
     [t('svcFollowUp'), s.followUpDate ? fmtDate(s.followUpDate) : '']
   ].filter(r => r && r[1]);
-  sheet.innerHTML = `
-    <h1>🛗 ${esc(st.company || 'Z Lift')}</h1>
-    <div class="ph-sub">${t('reportTitle')} — ${esc(st.phone || '')} ${st.address ? '· ' + esc(st.address) : ''}</div>
+  printDoc(`
+    ${printHeader(t('reportTitle'))}
     <table>${rows.map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(v || '—')}</td></tr>`).join('')}</table>
     <div class="sig-row">
       <div class="sig">${t('signTech')}</div>
       <div class="sig">${t('signCustomer')}</div>
-    </div>`;
-  window.print();
+    </div>`);
 }
 
 function duplicateService(id) {
@@ -4695,7 +4899,7 @@ function deleteService(id) {
     if (!rb) { closeModal(); return; }
     closeModal(); render();
     try { await api('/services/' + id, { method: 'DELETE' }); toast(t('deleted')); }
-    catch (e) { rb.restore(); toast(t('errGeneric'), 'err'); render(); }
+    catch (e) { rb.restore(); toast(errMsg(e), 'err'); render(); }
   });
 }
 
@@ -4809,7 +5013,7 @@ function drawCalendar() {
   $('#calWrap').innerHTML = `
     <div class="cal-head">
       <button class="icon-btn" onclick="calShift(-1)" aria-label="${t('prevMonth')}" title="${t('prevMonth')}">${navArrows().prev}</button>
-      <strong id="calHeader">${JAL_MONTHS[jm - 1]} ${faNum(jy)}</strong>
+      <strong id="calHeader">${jalMonth(jm)} ${faNum(jy)}</strong>
       <button class="icon-btn" onclick="calShift(1)" aria-label="${t('nextMonth')}" title="${t('nextMonth')}">${navArrows().next}</button>
       <button class="btn btn-ghost btn-sm" onclick="calToday()">${t('today')}</button>
     </div>
@@ -4872,7 +5076,7 @@ function openReminderForm(id) {
     </div>`);
   $('#rmSave').onclick = guard('#rmSave', async () => {
     const title = $('#rm_title').value.trim();
-    if (!title) { toast(t('reminderTitleReq'), 'err'); return; }
+    if (!title) { fieldError('#rm_title', 'reminderTitleReq'); return; }
     const body = {
       title, due: jdateVal('rm_due') || (Date.now() + 7 * 86400000),
       kind: $('#rm_kind').value, projectId: $('#rm_project').value
@@ -4882,7 +5086,7 @@ function openReminderForm(id) {
       else { await api('/reminders', { method: 'POST', body }); }
       await reloadReminders();
       closeModal(); toast(r ? t('saved') : t('created')); render();
-    } catch (e) { toast(t('errGeneric'), 'err'); }
+    } catch (e) { toast(errMsg(e), 'err'); }
   });
 }
 function deleteReminder(id) {
@@ -4891,7 +5095,7 @@ function deleteReminder(id) {
       await api('/reminders/' + id, { method: 'DELETE' });
       await reloadReminders();
       closeModal(); toast(t('reminderDeleted')); render();
-    } catch (e) { closeModal(); toast(t('errGeneric'), 'err'); }
+    } catch (e) { closeModal(); toast(errMsg(e), 'err'); }
   });
 }
 /* refresh just the reminders collection (cheaper & safer than a full reload) */
@@ -4925,15 +5129,15 @@ function renderParts() {
     </div>
     <div class="card" style="padding:6px 6px 2px"><div class="table-wrap" id="partList"></div></div>`;
   $('#partSearch').oninput = debounce(e => { partFilter.q = e.target.value; drawParts(); }, 200);
-  $$('.chip').forEach(ch => ch.onclick = () => { partFilter.low = ch.dataset.low === '1'; renderParts(); });
+  $$('#content .toolbar .chip[data-low]').forEach(ch => ch.onclick = () => { partFilter.low = ch.dataset.low === '1'; renderParts(); });
   drawParts();
 }
 function drawParts() {
   if (!$('#partList')) return;
-  const q = partFilter.q.trim().toLowerCase();
+  const q = norm(partFilter.q);
   let list = state.parts;
   if (partFilter.low) list = list.filter(x => x.qty <= x.minQty);
-  if (q) list = list.filter(x => [x.name, x.category, x.location, x.note].map(v => v || '').join(' ').toLowerCase().includes(q));
+  if (q) list = list.filter(x => hay(x.name, x.category, x.location, x.note, x.unit).includes(q));
   const el = $('#partList');
   if (!state.parts.length) {
     el.innerHTML = `<div class="empty" style="border:0"><div class="e-icon">📦</div><strong>${t('noParts')}</strong><p>${t('noPartsSub')}</p><button class="btn btn-primary" onclick="openPartForm()">${IC.plus} ${t('newPart')}</button></div>`;
@@ -4965,15 +5169,7 @@ function drawParts() {
 function exportPartsCsv() {
   const head = [t('partName'), t('partCategory'), t('partUnit'), t('partQty'), t('partMin'), t('partPrice'), t('partLocation'), t('partNote')];
   const rows = state.parts.map(x => [x.name, x.category, x.unit, x.qty, x.minQty, x.price, x.location, x.note]);
-  const csvEsc = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-  const csv = '\ufeff' + [head, ...rows].map(r => r.map(csvEsc).join(',')).join('\r\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'zlift-parts-' + new Date().toISOString().slice(0, 10) + '.csv';
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+  downloadCsv('zlift-parts-' + new Date().toISOString().slice(0, 10) + '.csv', head, rows);
   toast(t('saved'));
 }
 function openPartForm(id) {
@@ -4999,7 +5195,7 @@ function openPartForm(id) {
     </div>`);
   $('#partSave').onclick = async () => {
     const name = $('#p_name').value.trim();
-    if (!name) { toast(t('requiredTitle'), 'err'); return; }
+    if (!name) { fieldError('#p_name', 'requiredTitle'); return; }
     const body = {
       name, category: $('#p_cat').value, unit: $('#p_unit').value,
       qty: +$('#p_qty').value, minQty: +$('#p_min').value, price: +$('#p_price').value,
@@ -5017,7 +5213,7 @@ function openPartForm(id) {
         toast(t('created'));
       }
       closeModal(); drawParts();
-    } catch (e) { toast(t('errGeneric'), 'err'); btn.disabled = false; }
+    } catch (e) { toast(errMsg(e), 'err'); btn.disabled = false; }
   };
 }
 function deletePart(id) {
@@ -5026,7 +5222,7 @@ function deletePart(id) {
     if (!rb) { closeModal(); return; }
     closeModal(); drawParts();
     try { await api('/parts/' + id, { method: 'DELETE' }); toast(t('deleted')); }
-    catch (e) { rb.restore(); toast(t('errGeneric'), 'err'); drawParts(); }
+    catch (e) { rb.restore(); toast(errMsg(e), 'err'); drawParts(); }
   });
 }
 
@@ -5148,7 +5344,7 @@ function renderChecklistDetail(idWithQuery) {
       const inst2 = getInst();
       if (!inst2) return;
       try { await api('/checklists', { method: 'POST', body: { projectId: selectedProject, templateId: tid, checked: inst2.checked } }); }
-      catch (e) { toast(t('errGeneric'), 'err'); }
+      catch (e) { toast(errMsg(e), 'err'); }
     }, 500);
 
     async function cycle(el) {
@@ -5166,7 +5362,7 @@ function renderChecklistDetail(idWithQuery) {
             inst2 = d.checklist;
             if (!state.checklists.includes(inst2)) state.checklists.push(inst2);
           } catch (e) {
-            toast(t('errGeneric'), 'err');
+            toast(errMsg(e), 'err');
             return;
           }
         }
@@ -5276,10 +5472,10 @@ function wireConverters() {
 }
 function renderCalculations() {
   const c = $('#content');
-  const q = calcFilter.q.trim().toLowerCase();
+  const q = norm(calcFilter.q);
   let list = CALCULATORS;
   if (calcFilter.cat !== 'all' && calcFilter.cat !== 'quick') list = list.filter(x => x.cat === calcFilter.cat);
-  if (q) list = list.filter(x => (x.title.fa + ' ' + (x.title.en || '') + ' ' + x.desc.fa + ' ' + x.formula).toLowerCase().includes(q));
+  if (q) list = list.filter(x => hay(x.title.fa, x.title.en, x.desc.fa, x.desc.en, x.formula).includes(q));
   const showConv = calcFilter.cat === 'all' || calcFilter.cat === 'quick';
   const showCalcs = calcFilter.cat !== 'quick';
   c.innerHTML = `
@@ -5327,7 +5523,7 @@ function renderCalculations() {
     }, 300);
   });
   $('#calcSearch').oninput = debounce(e => { calcFilter.q = e.target.value; renderCalculations(); }, 300);
-  $$('.chip[data-cc]').forEach(ch => ch.onclick = () => { calcFilter.cat = ch.dataset.cc; renderCalculations(); });
+  $$('#content .chip[data-cc]').forEach(ch => ch.onclick = () => { calcFilter.cat = ch.dataset.cc; renderCalculations(); });
   wireConverters();
 }
 
@@ -5351,7 +5547,7 @@ function renderDiagnostics() {
     <p style="font-size:13px;color:var(--text-2);margin-bottom:14px">${t('diagPickSymptom')} — ${t('diagIntro')}</p>
     <div id="diagList"></div>`;
   $('#diagSearch').oninput = debounce(e => { diagFilter.q = e.target.value; drawDiagList(); }, 200);
-  $$('.chip').forEach(ch => ch.onclick = () => { diagFilter.type = ch.dataset.t; renderDiagnostics(); });
+  $$('#content .toolbar .chip[data-t]').forEach(ch => ch.onclick = () => { diagFilter.type = ch.dataset.t; renderDiagnostics(); });
   drawDiagList();
 }
 function flowSearchText(f) {
@@ -5362,10 +5558,10 @@ function flowSearchText(f) {
     (n.causes || []).forEach(x => s += ' ' + x.fa);
     (n.parts || []).forEach(x => s += ' ' + x.fa);
   });
-  return s.toLowerCase();
+  return norm(s);
 }
 function drawDiagList() {
-  const q = diagFilter.q.trim().toLowerCase();
+  const q = norm(diagFilter.q);
   let list = DIAG_FLOWS;
   if (diagFilter.type !== 'all') list = list.filter(d => d.type === 'both' || d.type === diagFilter.type);
   if (q) list = list.filter(d => flowSearchText(d).includes(q));
@@ -5509,7 +5705,7 @@ function kbSearchText(k) {
   ['what', 'where', 'safety', 'diag'].forEach(f => { if (k[f]) s += ' ' + k[f]; });
   ['symptoms', 'inspect', 'test', 'causes', 'related'].forEach(f => { if (k[f]) s += ' ' + k[f].join(' '); });
   if (k.body) s += ' ' + (k.body.fa || '') + ' ' + (k.body.en || '');
-  return s.toLowerCase();
+  return norm(s);
 }
 function renderKnowledge() {
   const c = $('#content');
@@ -5522,11 +5718,11 @@ function renderKnowledge() {
     </div>
     <div id="kbList" class="grid-2"></div>`;
   $('#kbSearch').oninput = debounce(e => { kbQuery = e.target.value; drawKb(); }, 200);
-  $$('.chip[data-c]').forEach(ch => ch.onclick = () => { kbCat = ch.dataset.c; renderKnowledge(); });
+  $$('#content .chip[data-c]').forEach(ch => ch.onclick = () => { kbCat = ch.dataset.c; renderKnowledge(); });
   drawKb();
 }
 function drawKb() {
-  const q = kbQuery.trim().toLowerCase();
+  const q = norm(kbQuery);
   let list = KNOWLEDGE;
   if (kbCat !== 'all') list = list.filter(k => k.cat === kbCat);
   if (q) list = list.filter(k => kbSearchText(k).includes(q));
@@ -5550,8 +5746,8 @@ function kbSection(icon, titleKey, content) {
   return `<h4 style="display:flex;align-items:center;gap:7px">${icon} ${t(titleKey)}</h4>${body}`;
 }
 function kbOpenRelated(name) {
-  const q = name.toLowerCase();
-  const hit = KNOWLEDGE.find(k => (k.title.fa + ' ' + (k.title.en || '')).toLowerCase().includes(q)) ||
+  const q = norm(name);
+  const hit = KNOWLEDGE.find(k => hay(k.title.fa, k.title.en).includes(q)) ||
               KNOWLEDGE.find(k => kbSearchText(k).includes(q));
   if (hit) { openKbArticle(hit.id); }
   else { closeModal(); kbQuery = name; navigate('/knowledge'); }
@@ -5924,7 +6120,7 @@ let stdCat = 'all';
 function stdSearchText(s) {
   let str = s.title.fa + ' ' + (s.title.en || '') + ' ' + s.clause + ' ' + (s.note ? s.note.fa + ' ' + s.note.en : '');
   s.vals.forEach(v => { str += ' ' + v.fa + ' ' + (v.en || '') + ' ' + v.v + ' ' + (v.unit || ''); });
-  return str.toLowerCase();
+  return norm(str);
 }
 function renderStandards() {
   const c = $('#content');
@@ -5941,11 +6137,11 @@ function renderStandards() {
     <div id="stdList" class="grid-2"></div>
     <p class="calc-note" style="margin-top:16px">📖 ${t('stdDisclaimer')}</p>`;
   $('#stdSearch').oninput = debounce(e => { stdQuery = e.target.value; drawStd(); }, 200);
-  $$('.chip[data-sc]').forEach(ch => ch.onclick = () => { stdCat = ch.dataset.sc; renderStandards(); });
+  $$('#content .chip[data-sc]').forEach(ch => ch.onclick = () => { stdCat = ch.dataset.sc; renderStandards(); });
   drawStd();
 }
 function drawStd() {
-  const q = stdQuery.trim().toLowerCase();
+  const q = norm(stdQuery);
   let list = STD81;
   if (stdCat !== 'all') list = list.filter(s => s.cat === stdCat);
   if (q) list = list.filter(s => stdSearchText(s).includes(q));
@@ -6002,9 +6198,9 @@ function renderNotes() {
   drawNotes();
 }
 function drawNotes() {
-  const q = noteQuery.trim().toLowerCase();
+  const q = norm(noteQuery);
   let list = state.notes;
-  if (q) list = list.filter(n => (n.title + ' ' + n.content + ' ' + n.tags.join(' ')).toLowerCase().includes(q));
+  if (q) list = list.filter(n => hay(n.title, n.content, (n.tags || []).join(' ')).includes(q));
   const el = $('#noteList');
   if (!state.notes.length) {
     el.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="e-icon">📝</div><strong>${t('noNotes')}</strong><p>${t('noNotesSub')}</p><button class="btn btn-primary" onclick="openNoteForm()">${IC.plus} ${t('newNote')}</button></div>`;
@@ -6041,7 +6237,7 @@ function openNoteForm(id) {
     </div>`);
   $('#noteSave').onclick = async () => {
     const title = $('#n_title').value.trim();
-    if (!title) { toast(t('requiredTitle'), 'err'); return; }
+    if (!title) { fieldError('#n_title', 'requiredTitle'); return; }
     const body = {
       title, content: $('#n_content').value,
       tags: $('#n_tags').value.split(/[,،]/).map(x => x.trim()).filter(Boolean)
@@ -6058,7 +6254,7 @@ function openNoteForm(id) {
         toast(t('created'));
       }
       closeModal(); drawNotes();
-    } catch (e) { toast(t('errGeneric'), 'err'); btn.disabled = false; }
+    } catch (e) { toast(errMsg(e), 'err'); btn.disabled = false; }
   };
 }
 function deleteNote(id) {
@@ -6067,7 +6263,7 @@ function deleteNote(id) {
     if (!rb) { closeModal(); return; }
     closeModal(); drawNotes();
     try { await api('/notes/' + id, { method: 'DELETE' }); toast(t('deleted')); }
-    catch (e) { rb.restore(); toast(t('errGeneric'), 'err'); drawNotes(); }
+    catch (e) { rb.restore(); toast(errMsg(e), 'err'); drawNotes(); }
   });
 }
 
@@ -6077,9 +6273,9 @@ let vvvfSel = { brand: 0, q: '' };
 function renderVVVF() {
   const c = $('#content');
   const drive = VVVF_DB[vvvfSel.brand] || VVVF_DB[0];
-  const q = vvvfSel.q.trim().toLowerCase();
+  const q = norm(vvvfSel.q);
   let codes = drive.codes;
-  if (q) codes = codes.filter(x => (x.code + ' ' + x.meaning + ' ' + x.causes.join(' ')).toLowerCase().includes(q));
+  if (q) codes = codes.filter(x => hay(x.code, x.meaning, (x.causes || []).join(' ')).includes(q));
   c.innerHTML = `
     <div class="safety-banner" style="background:var(--warn-soft);border-color:var(--warn);color:var(--warn)">
       <span style="font-size:18px">⚠️</span><span>${t('vvvfWarn')}</span>
@@ -6109,7 +6305,7 @@ function renderVVVF() {
       </div>`).join('')
     : `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p></div>`}`;
   $('#vvvfSearch').oninput = debounce(e => { vvvfSel.q = e.target.value; renderVVVF(); }, 250);
-  $$('.chip[data-b]').forEach(ch => ch.onclick = () => { vvvfSel.brand = +ch.dataset.b; vvvfSel.q = ''; renderVVVF(); });
+  $$('#content .chip[data-b]').forEach(ch => ch.onclick = () => { vvvfSel.brand = +ch.dataset.b; vvvfSel.q = ''; renderVVVF(); });
 }
 
 /* ================= OPEN ISSUES ================= */
@@ -6168,17 +6364,17 @@ function openIssueForm(id, presetProject) {
       const d = await api('/issues/' + i.id, { method: 'PUT', body: { closed: !i.closed } });
       Object.assign(i, d.item);
       closeModal(); toast(t('saved')); render();
-    } catch (e) { toast(t('errGeneric'), 'err'); }
+    } catch (e) { toast(errMsg(e), 'err'); }
   };
   $('#isSave').onclick = guard('#isSave', async () => {
     const title = $('#is_title').value.trim();
-    if (!title) { toast(t('requiredTitle'), 'err'); return; }
+    if (!title) { fieldError('#is_title', 'requiredTitle'); return; }
     const body = { title, kind: $('#is_kind').value, projectId: $('#is_project').value, note: $('#is_note').value, closed: i ? i.closed : false };
     try {
       if (i) { const d = await api('/issues/' + i.id, { method: 'PUT', body }); Object.assign(i, d.item); }
       else { const d = await api('/issues', { method: 'POST', body }); state.issues.unshift(d.item); }
       closeModal(); toast(t('saved')); render();
-    } catch (e) { toast(t('errGeneric'), 'err'); }
+    } catch (e) { toast(errMsg(e), 'err'); }
   });
 }
 function deleteIssue(id) {
@@ -6187,7 +6383,7 @@ function deleteIssue(id) {
     if (!rb) { closeModal(); return; }
     closeModal(); render();
     try { await api('/issues/' + id, { method: 'DELETE' }); toast(t('deleted')); }
-    catch (e) { rb.restore(); toast(t('errGeneric'), 'err'); render(); }
+    catch (e) { rb.restore(); toast(errMsg(e), 'err'); render(); }
   });
 }
 
@@ -6217,7 +6413,7 @@ async function quickAddTool(name) {
     const d = await api('/tools', { method: 'POST', body: { name, note: '' } });
     state.tools.unshift(d.item);
     toast(t('created')); renderToolsPage();
-  } catch (e) { toast(t('errGeneric'), 'err'); }
+  } catch (e) { toast(errMsg(e), 'err'); }
 }
 function openToolForm(id) {
   const x = id ? state.tools.find(y => y.id === id) : null;
@@ -6236,16 +6432,16 @@ function openToolForm(id) {
   if (x) $('#tlDel').onclick = () => confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteToolMsg'), async () => {
     state.tools = state.tools.filter(y => y.id !== x.id);
     closeModal(); renderToolsPage();
-    try { await api('/tools/' + x.id, { method: 'DELETE' }); toast(t('deleted')); } catch (e) { toast(t('errGeneric'), 'err'); }
+    try { await api('/tools/' + x.id, { method: 'DELETE' }); toast(t('deleted')); } catch (e) { toast(errMsg(e), 'err'); }
   });
   $('#tlSave').onclick = guard('#tlSave', async () => {
     const name = $('#tl_name').value.trim();
-    if (!name) { toast(t('requiredTitle'), 'err'); return; }
+    if (!name) { fieldError('#tl_name', 'requiredTitle'); return; }
     try {
       if (x) { const d = await api('/tools/' + x.id, { method: 'PUT', body: { name, note: $('#tl_note').value } }); Object.assign(x, d.item); }
       else { const d = await api('/tools', { method: 'POST', body: { name, note: $('#tl_note').value } }); state.tools.unshift(d.item); }
       closeModal(); toast(t('saved')); renderToolsPage();
-    } catch (e) { toast(t('errGeneric'), 'err'); }
+    } catch (e) { toast(errMsg(e), 'err'); }
   });
 }
 
@@ -6364,7 +6560,7 @@ function openDiagSaveForm(flowId, resultNodeId) {
       toast(t('diagSaved'));
       // offer transfer to service report
       diagToServicePrompt(d.item);
-    } catch (e) { toast(t('errGeneric'), 'err'); }
+    } catch (e) { toast(errMsg(e), 'err'); }
   });
 }
 function diagToServicePrompt(sess) {
@@ -6424,7 +6620,7 @@ function openCalcSaveForm(calId) {
       } });
       state.calcSaves.unshift(d.item);
       closeModal(); toast(t('calcSaved'));
-    } catch (e) { toast(t('errGeneric'), 'err'); }
+    } catch (e) { toast(errMsg(e), 'err'); }
   });
 }
 
@@ -6462,7 +6658,7 @@ function openConsumeForm(partId) {
       const d = await api('/parts-consume', { method: 'POST', body: { partId: part.id, qty, projectId: $('#cn_project').value, note: $('#cn_note').value } });
       Object.assign(part, d.part);
       closeModal(); toast(t('consumeDone') + ' — ' + faNum(part.qty) + ' ' + part.unit); drawParts();
-    } catch (e) { toast(t('errGeneric'), 'err'); }
+    } catch (e) { toast(errMsg(e), 'err'); }
   });
 }
 
@@ -6496,8 +6692,8 @@ function openPhotoForm(presetProject) {
     if (!file) return;
     const img = new Image();
     const fr = new FileReader();
-    fr.onerror = () => toast(t('errGeneric'), 'err');
-    img.onerror = () => { dataUrl = ''; $('#phSave').disabled = true; toast(t('errGeneric'), 'err'); };
+    fr.onerror = () => toast(t('photoReadFailed'), 'err');
+    img.onerror = () => { dataUrl = ''; $('#phSave').disabled = true; toast(t('photoReadFailed'), 'err'); };
     fr.onload = () => {
       img.onload = () => {
         // downscale to max 1280px to keep storage sane
@@ -6522,7 +6718,7 @@ function openPhotoForm(presetProject) {
       const d = await api('/photos', { method: 'POST', body: { data: dataUrl, cat: $('#ph_cat').value, projectId: $('#ph_project').value, note: $('#ph_note').value } });
       state.photos.unshift(d.item);
       closeModal(); toast(t('saved')); render();
-    } catch (e) { toast(e.code === 'too_large' ? t('photoTooLarge') : t('errGeneric'), 'err'); }
+    } catch (e) { toast(errMsg(e), 'err'); }
   });
 }
 function viewPhoto(id) {
@@ -6545,7 +6741,7 @@ function deletePhoto(id) {
     if (!rb) { closeModal(); return; }
     closeModal(); render();
     try { await api('/photos/' + id, { method: 'DELETE' }); toast(t('deleted')); }
-    catch (e) { rb.restore(); toast(t('errGeneric'), 'err'); render(); }
+    catch (e) { rb.restore(); toast(errMsg(e), 'err'); render(); }
   });
 }
 
@@ -6594,12 +6790,12 @@ function renderInvoices() {
     </div>
     <div id="invList"></div>`;
   $('#invSearch').oninput = debounce(e => { invFilter.q = e.target.value; drawInvList(); }, 200);
-  $$('.chip[data-s]').forEach(ch => ch.onclick = () => { invFilter.status = ch.dataset.s; renderInvoices(); });
+  $$('#content .chip[data-s]').forEach(ch => ch.onclick = () => { invFilter.status = ch.dataset.s; renderInvoices(); });
   drawInvList();
 }
 function drawInvList() {
   if (!$('#invList')) return;
-  const q = invFilter.q.trim().toLowerCase();
+  const q = norm(invFilter.q);
   let list = state.invoices;
   if (invFilter.status !== 'all') {
     list = list.filter(inv => {
@@ -6609,7 +6805,7 @@ function drawInvList() {
              (invFilter.status === 'unpaid' && m.key === 'invUnpaid');
     });
   }
-  if (q) list = list.filter(inv => (inv.customer + ' ' + (inv.note || '') + ' ' + (inv.projectId ? projName(inv.projectId) : '') + ' ' + (inv.items || []).map(i => i.desc).join(' ')).toLowerCase().includes(q));
+  if (q) list = list.filter(inv => hay(inv.customer, inv.note, inv.projectId ? projName(inv.projectId) : '', (inv.items || []).map(i => i.desc).join(' ')).includes(q));
   const el = $('#invList');
   if (!state.invoices.length) {
     el.innerHTML = `<div class="empty"><div class="e-icon">🧾</div><strong>${t('noInvoices')}</strong><p>${t('noInvoicesSub')}</p><button class="btn btn-primary" onclick="openInvoiceForm()">${IC.plus} ${t('newInvoice')}</button></div>`;
@@ -6619,7 +6815,7 @@ function drawInvList() {
     el.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p></div>`;
     return;
   }
-  el.innerHTML = list.map(inv => {
+  paintList(el, list, inv => {
     const tt = invTotals(inv);
     const m = invStatusMeta(inv);
     return `<div class="row-item" onclick="openInvoiceForm('${inv.id}')">
@@ -6633,7 +6829,7 @@ function drawInvList() {
         <span class="date">${fmtDate(inv.date || inv.createdAt)} · #${esc((inv.id || '').slice(0, 6).toUpperCase())}</span>
       </div>
     </div>`;
-  }).join('');
+  });
 }
 
 function invItemsHTML() {
@@ -6835,7 +7031,7 @@ function openInvoiceForm(id, presetProject, keepDraft) {
       const btn = $('#payOk');
       if (btn.disabled) return;
       const amount = Math.round(+$('#pay_amount').value || 0);
-      if (amount <= 0) { toast(t('errGeneric'), 'err'); return; }
+      if (amount <= 0) { fieldError('#pay_amount', 'invPayInvalid'); return; }
       // overpayment guard: compute balance from current draft
       const items = invDraft.items.reduce((a, it) => a + (Math.round(+it.qty || 0) * Math.round(+it.price || 0)), 0);
       const labor = Math.round(invDraft.laborOverride !== undefined ? +invDraft.laborOverride : (inv ? +inv.labor || 0 : 0));
@@ -6855,7 +7051,7 @@ function openInvoiceForm(id, presetProject, keepDraft) {
 
   $('#invSave').onclick = async () => {
     const customer = $('#inv_customer').value.trim();
-    if (!customer) { toast(t('requiredCustomer'), 'err'); return; }
+    if (!customer) { fieldError('#inv_customer', 'requiredCustomer'); return; }
     const body = {
       customer,
       projectId: $('#inv_project').value,
@@ -6905,7 +7101,7 @@ function openInvoiceForm(id, presetProject, keepDraft) {
       invDraft.consumedParts = [];
       invDraft = null;
       closeModal(); toast(t('saved')); render();
-    } catch (e) { toast(t('errGeneric'), 'err'); btn.disabled = false; }
+    } catch (e) { toast(errMsg(e), 'err'); btn.disabled = false; }
   };
 }
 function invDelPay(i) {
@@ -6920,25 +7116,15 @@ function deleteInvoice(id) {
     if (!rb) { closeModal(); return; }
     closeModal(); render();
     try { await api('/invoices/' + id, { method: 'DELETE' }); toast(t('deleted')); }
-    catch (e) { rb.restore(); toast(t('errGeneric'), 'err'); render(); }
+    catch (e) { rb.restore(); toast(errMsg(e), 'err'); render(); }
   });
 }
 function printInvoice(id) {
   const inv = state.invoices.find(x => x.id === id);
   if (!inv) return;
-  const st = state.settings || {};
   const tt = invTotals(inv);
-  let sheet = document.getElementById('printSheet');
-  if (!sheet) {
-    sheet = document.createElement('div');
-    sheet.id = 'printSheet';
-    sheet.className = 'print-sheet';
-    document.body.appendChild(sheet);
-  }
-  sheet.dir = I18N[LANG].dir;
-  sheet.innerHTML = `
-    <h1>🛗 ${esc(st.company || 'Z Lift')}</h1>
-    <div class="ph-sub">${t('invoice')} — ${esc(st.phone || '')} ${st.address ? '· ' + esc(st.address) : ''}</div>
+  printDoc(`
+    ${printHeader(t('invoice'))}
     <table>
       <tr><th>${t('invNo')}</th><td>${esc(inv.id.slice(0, 8).toUpperCase())}</td></tr>
       <tr><th>${t('invDate')}</th><td>${fmtDate(inv.date || inv.createdAt)}</td></tr>
@@ -6958,8 +7144,7 @@ function printInvoice(id) {
     <div class="sig-row">
       <div class="sig">${t('signTech')}</div>
       <div class="sig">${t('signCustomer')}</div>
-    </div>`;
-  window.print();
+    </div>`);
 }
 
 
@@ -6984,34 +7169,34 @@ function gsRow(icon, title, sub, onclick) {
   </div>`;
 }
 function drawGlobalSearch(qRaw) {
-  const q = qRaw.trim().toLowerCase();
+  const q = norm(qRaw);
   const out = $('#gsOut');
   if (q.length < 2) { out.innerHTML = `<p style="font-size:12.5px;color:var(--text-3)">…</p>`; return; }
   const S = [];
   const grp = (label, rows) => { if (rows.length) S.push(`<div class="nav-section" style="margin:10px 2px 6px">${label} (${faNum(rows.length)})</div>` + rows.join('')); };
 
   grp(t('srProjects'), state.projects
-    .filter(p => (p.name + ' ' + p.customer + ' ' + p.location + ' ' + p.controller + ' ' + p.motor).toLowerCase().includes(q))
+    .filter(p => hay(p.name, p.customer, p.location, p.controller, p.motor).includes(q))
     .slice(0, 5).map(p => gsRow(p.elevatorType === 'hydraulic' ? '🛢️' : '⚙️', esc(p.name), esc(p.customer || p.location || ''), `closeModal();navigate('/projects/${p.id}')`)));
 
   grp(t('srServices'), state.services
-    .filter(s => (svcTarget(s) + ' ' + (s.problem || '') + ' ' + (s.diagnosis || '') + ' ' + (s.workDone || '') + ' ' + (s.partsReplaced || '')).toLowerCase().includes(q))
+    .filter(s => hay(svcTarget(s), s.problem, s.diagnosis, s.workDone, s.partsReplaced).includes(q))
     .slice(0, 5).map(s => gsRow('🔧', esc(svcTarget(s)), esc(s.problem || s.complaint || fmtDate(s.date)), `closeModal();openServiceView('${s.id}')`)));
 
   grp(t('srParts'), state.parts
-    .filter(x => (x.name + ' ' + x.category + ' ' + x.location + ' ' + (x.note || '')).toLowerCase().includes(q))
+    .filter(x => hay(x.name, x.category, x.location, x.note).includes(q))
     .slice(0, 5).map(x => gsRow('📦', esc(x.name), faNum(x.qty) + ' ' + esc(x.unit) + (x.qty <= x.minQty ? ' ⚠️' : ''), `closeModal();navigate('/parts');setTimeout(()=>openPartForm('${x.id}'),120)`)));
 
   grp(t('srInv'), state.invoices
-    .filter(i => (i.customer + ' ' + (i.note || '') + ' ' + (i.items || []).map(x => x.desc).join(' ')).toLowerCase().includes(q))
+    .filter(i => hay(i.customer, i.note, (i.items || []).map(x => x.desc).join(' ')).includes(q))
     .slice(0, 5).map(i => gsRow('🧾', esc(i.customer || '—'), money(invTotals(i).grand) + ' ' + t('rial'), `closeModal();navigate('/invoices');setTimeout(()=>openInvoiceForm('${i.id}'),120)`)));
 
   grp(t('srContracts'), state.contracts
-    .filter(ct => (ct.building + ' ' + (ct.note || '')).toLowerCase().includes(q))
+    .filter(ct => hay(ct.building, ct.note).includes(q))
     .slice(0, 5).map(ct => gsRow('📄', esc(ct.building), money(ct.amount) + ' ' + t('rial'), `closeModal();navigate('/contracts');setTimeout(()=>openContractForm('${ct.id}'),120)`)));
 
   grp(t('srNotes'), state.notes
-    .filter(n => (n.title + ' ' + n.content + ' ' + n.tags.join(' ')).toLowerCase().includes(q))
+    .filter(n => hay(n.title, n.content, (n.tags || []).join(' ')).includes(q))
     .slice(0, 5).map(n => gsRow('📝', esc(n.title), esc((n.content || '').slice(0, 60)), `closeModal();navigate('/notes');setTimeout(()=>openNoteForm('${n.id}'),120)`)));
 
   grp(t('srKb'), KNOWLEDGE
@@ -7023,7 +7208,7 @@ function drawGlobalSearch(qRaw) {
     .slice(0, 5).map(f => gsRow(f.icon || '🔩', esc(f.symptom.fa), esc((f.first && f.first.fa) || ''), `closeModal();navigate('/diagnostics');setTimeout(()=>startDiagFlow('${f.id}'),120)`)));
 
   grp(t('srCalc'), CALCULATORS
-    .filter(c2 => (c2.title.fa + ' ' + (c2.title.en || '') + ' ' + c2.desc.fa + ' ' + c2.formula).toLowerCase().includes(q))
+    .filter(c2 => hay(c2.title.fa, c2.title.en, c2.desc.fa, c2.formula).includes(q))
     .slice(0, 5).map(c2 => gsRow('🧮', esc(c2.title.fa), esc(c2.desc.fa), `closeModal();calcFilter={cat:'all',q:'${jsAttr(qRaw)}'};navigate('/calculations')`)));
 
   out.innerHTML = S.length ? S.join('') : `<div class="empty" style="padding:26px"><div class="e-icon">🔍</div><strong>${t('noResults')}</strong></div>`;
@@ -7075,7 +7260,7 @@ function renderContracts() {
     <div class="grid-2" style="margin-bottom:16px">
       <div class="card stat-card"><div class="stat-icon" style="background:var(--accent-soft);font-size:21px">📄</div>
         <div class="stat-body"><div class="stat-value" style="font-size:17px">${money(expect)} <span style="font-size:11px;color:var(--text-3)">${t('rial')}</span></div>
-        <div class="stat-label">${t('ctExpectMonth')} (${JAL_MONTHS[nowJ.jm - 1]})</div></div></div>
+        <div class="stat-label">${t('ctExpectMonth')} (${jalMonth(nowJ.jm)})</div></div></div>
       <div class="card stat-card"><div class="stat-icon" style="background:var(--ok-soft);font-size:21px">💰</div>
         <div class="stat-body"><div class="stat-value" style="font-size:17px">${money(collected)} <span style="font-size:11px;color:var(--text-3)">${t('rial')}</span></div>
         <div class="stat-label">${t('ctCollected')}</div></div></div>
@@ -7090,7 +7275,7 @@ function renderContracts() {
         <div class="row-icon" style="background:${st.overdue ? 'var(--danger-soft)' : 'var(--ok-soft)'};font-size:18px">${st.overdue ? '🔴' : '📄'}</div>
         <div class="row-body">
           <strong>${esc(ct.building)}</strong>
-          <span class="sub">${money(ct.amount)} ${t('rial')} / ${JAL_MONTHS[tsToJalali(ctStartTs(ct)).jm - 1]} ${faNum(tsToJalali(ctStartTs(ct)).jy)} · ${faNum(st.total)} ${LANG === 'fa' ? 'ماه' : 'months'}</span>
+          <span class="sub">${money(ct.amount)} ${t('rial')} / ${jalMonth(tsToJalali(ctStartTs(ct)).jm)} ${faNum(tsToJalali(ctStartTs(ct)).jy)} · ${faNum(st.total)} ${LANG === 'fa' ? 'ماه' : 'months'}</span>
         </div>
         <div class="row-side">
           ${st.overdue ? `<span class="badge b-red">${faNum(st.overdue)} ${t('ctOverdueMonths')}</span>` : `<span class="badge b-green">${st.expired ? t('ctExpired') : t('ctActive')}</span>`}
@@ -7129,7 +7314,7 @@ function openContractForm(id) {
     </div>`, { size: 'lg' });
   $('#ctSave').onclick = guard('#ctSave', async () => {
     const building = $('#ct_building').value.trim();
-    if (!building) { toast(t('requiredTitle'), 'err'); return; }
+    if (!building) { fieldError('#ct_building', 'requiredTitle'); return; }
     const body = {
       building, amount: +$('#ct_amount').value || 0,
       months: Math.max(1, Math.min(36, +$('#ct_months').value || 12)),
@@ -7141,7 +7326,7 @@ function openContractForm(id) {
       if (ct) { const d = await api('/contracts/' + ct.id, { method: 'PUT', body }); Object.assign(ct, d.item); }
       else { const d = await api('/contracts', { method: 'POST', body }); state.contracts.unshift(d.item); }
       closeModal(); toast(t('saved')); render();
-    } catch (e) { toast(t('errGeneric'), 'err'); }
+    } catch (e) { toast(errMsg(e), 'err'); }
   });
 }
 function ctMonthsHTML(ct) {
@@ -7152,7 +7337,7 @@ function ctMonthsHTML(ct) {
     return `<button onclick="ctTogglePaid('${ct.id}','${m.key}')" style="border:1.5px solid ${paid ? 'var(--ok)' : due ? 'var(--danger)' : 'var(--border)'};
       background:${paid ? 'var(--ok-soft)' : due ? 'var(--danger-soft)' : 'var(--bg-soft)'};
       border-radius:11px;padding:9px 4px;font-family:inherit;font-size:12px;cursor:pointer;color:var(--text);line-height:1.5">
-      ${paid ? '✅' : due ? '🔴' : '⬜'}<br><b>${JAL_MONTHS[m.jm - 1]}</b><br><span style="font-size:10px;color:var(--text-3)">${faNum(m.jy)}</span>
+      ${paid ? '✅' : due ? '🔴' : '⬜'}<br><b>${jalMonth(m.jm)}</b><br><span style="font-size:10px;color:var(--text-3)">${faNum(m.jy)}</span>
     </button>`;
   }).join('');
 }
@@ -7165,7 +7350,7 @@ async function ctTogglePaid(ctId, key) {
   const box = $('#ctMonths');
   if (box) box.innerHTML = ctMonthsHTML(ct);
   try { await api('/contracts/' + ct.id, { method: 'PUT', body: { paid: ct.paid } }); }
-  catch (e) { toast(t('errGeneric'), 'err'); }
+  catch (e) { toast(errMsg(e), 'err'); }
 }
 function deleteContract(id) {
   confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteCtMsg'), async () => {
@@ -7173,7 +7358,7 @@ function deleteContract(id) {
     if (!rb) { closeModal(); return; }
     closeModal(); render();
     try { await api('/contracts/' + id, { method: 'DELETE' }); toast(t('deleted')); }
-    catch (e) { rb.restore(); toast(t('errGeneric'), 'err'); render(); }
+    catch (e) { rb.restore(); toast(errMsg(e), 'err'); render(); }
   });
 }
 
@@ -7190,15 +7375,8 @@ function renderMonthlyReport() {
   const svcs = state.services.filter(s => inMonth(s.date));
   const byType = {};
   svcs.forEach(s => { byType[s.serviceType] = (byType[s.serviceType] || 0) + 1; });
-  // fault words
-  const words = {};
-  svcs.forEach(s => {
-    const txt = (s.problem || '') + ' ' + (s.diagnosis || '');
-    [['درب', 'درب'], ['فتوسل', 'فتوسل'], ['ترمز', 'ترمز'], ['انکودر', 'انکودر'], ['درایو', 'درایو'], ['موتور', 'موتور'], ['بکسل', 'بکسل'], ['قفل', 'قفل درب'], ['روغن', 'روغن'], ['سیل', 'سیل جک'], ['شیر', 'شیرها'], ['پمپ', 'پمپ'], ['ریزش', 'ریزش'], ['همسطح', 'همسطح‌سازی'], ['برق', 'برق'], ['کنتاکتور', 'کنتاکتور'], ['لیمیت', 'لیمیت'], ['صدا', 'صدا'], ['لرزش', 'لرزش']].forEach(([w, lbl]) => {
-      if (txt.includes(w)) words[lbl] = (words[lbl] || 0) + 1;
-    });
-  });
-  const topFaults = Object.entries(words).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  // fault words (shared keyword list — see FAULT_WORDS)
+  const topFaults = faultTally(svcs).slice(0, 6);
   // money
   let invIncome = 0, ctIncome = 0, openBalance = 0;
   state.invoices.forEach(inv => {
@@ -7224,7 +7402,7 @@ function renderMonthlyReport() {
     <div class="card" style="margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
         <button class="icon-btn" onclick="_mrPrev()" aria-label="${t('prevMonth')}" title="${t('prevMonth')}">${navArrows().prev}</button>
-        <strong style="font-size:16.5px">📈 ${JAL_MONTHS[jm - 1]} ${faNum(jy)}</strong>
+        <strong style="font-size:16.5px">📈 ${jalMonth(jm)} ${faNum(jy)}</strong>
         <button class="icon-btn" onclick="_mrNext()" aria-label="${t('nextMonth')}" title="${t('nextMonth')}">${navArrows().next}</button>
       </div>
     </div>
@@ -7274,7 +7452,7 @@ function buildMonthlyText() {
   const mk = jy + '-' + jm;
   state.contracts.forEach(ct => { if (ct.paid && ct.paid[mk]) ctIncome += +ct.amount || 0; });
   const co = (state.settings || {}).company || 'Z Lift';
-  return `📈 ${t('mrTitle')} — ${JAL_MONTHS[jm - 1]} ${faNum(jy)}\n🏢 ${co}\n\n🔧 ${t('mrServices')}: ${faNum(svcs.length)}\n💰 ${t('mrIncome')}: ${money(invIncome)} ${t('rial')}\n📄 ${t('mrContracts')}: ${money(ctIncome)} ${t('rial')}\n\n🛗 Z Lift`;
+  return `📈 ${t('mrTitle')} — ${jalMonth(jm)} ${faNum(jy)}\n🏢 ${co}\n\n🔧 ${t('mrServices')}: ${faNum(svcs.length)}\n💰 ${t('mrIncome')}: ${money(invIncome)} ${t('rial')}\n📄 ${t('mrContracts')}: ${money(ctIncome)} ${t('rial')}\n\n🛗 Z Lift`;
 }
 function printMonthlyReport() {
   const { jy, jm } = mrMonth;
@@ -7287,13 +7465,8 @@ function printMonthlyReport() {
   state.contracts.forEach(ct => { if (ct.paid && ct.paid[mk]) ctIncome += +ct.amount || 0; });
   const partsUsed = [];
   state.parts.forEach(p => (p.history || []).forEach(h => { if (inMonth(h.date)) partsUsed.push({ name: p.name, qty: h.qty }); }));
-  const st = state.settings || {};
-  let sheet = document.getElementById('printSheet');
-  if (!sheet) { sheet = document.createElement('div'); sheet.id = 'printSheet'; sheet.className = 'print-sheet'; document.body.appendChild(sheet); }
-  sheet.dir = I18N[LANG].dir;
-  sheet.innerHTML = `
-    <h1>🛗 ${esc(st.company || 'Z Lift')}</h1>
-    <div class="ph-sub">${t('mrTitle')} — ${JAL_MONTHS[jm - 1]} ${faNum(jy)} ${st.phone ? '· ' + esc(st.phone) : ''}</div>
+  printDoc(`
+    ${printHeader(t('mrTitle') + ' — ' + jalMonth(jm) + ' ' + faNum(jy))}
     <table>
       <tr><th>${t('mrServices')}</th><td>${faNum(svcs.length)}</td></tr>
       <tr><th>${t('mrIncome')}</th><td>${money(invIncome)} ${t('rial')}</td></tr>
@@ -7304,8 +7477,7 @@ function printMonthlyReport() {
       <tr><th style="width:90px">${t('svcDate')}</th><th>${t('svcCustomer')}</th><th>${t('svcProblem')}</th><th style="width:80px">${t('svcFinal')}</th></tr>
       ${svcs.map(s => `<tr><td>${fmtJalali(s.date)}</td><td>${esc(svcTarget(s))}</td><td>${esc(s.problem || s.complaint || '—')}</td><td>${t(finalMeta(s.finalStatus).key)}</td></tr>`).join('')}
     </table>
-    <div class="sig-row"><div class="sig">${t('signTech')}</div></div>`;
-  window.print();
+    <div class="sig-row"><div class="sig">${t('signTech')}</div></div>`);
 }
 
 /* ================= SHARE (Telegram / system) ================= */
@@ -9739,18 +9911,14 @@ function printQrLabel(projectId) {
   if (!p) return;
   const st = state.settings || {};
   const url = location.origin + location.pathname + '#/projects/' + p.id;
-  let sheet = document.getElementById('printSheet');
-  if (!sheet) { sheet = document.createElement('div'); sheet.id = 'printSheet'; sheet.className = 'print-sheet'; document.body.appendChild(sheet); }
-  sheet.dir = I18N[LANG].dir;
-  sheet.innerHTML = `
+  printDoc(`
     <div style="text-align:center;padding-top:30px">
       <h1 style="font-size:22px">🛗 ${esc(st.company || 'Z Lift')}</h1>
       <div class="ph-sub">${esc(st.phone || '')}</div>
       <div style="margin:24px auto;display:inline-block;border:2px solid #000;border-radius:12px;padding:16px">${qrSvg(url, 260)}</div>
       <h2 style="font-size:17px;margin-top:4px">${esc(p.name)}</h2>
       <p style="font-size:12px;color:#444;margin-top:8px">${t('qrScanHint')}</p>
-    </div>`;
-  window.print();
+    </div>`);
 }
 
 /* ================= JALALI DATE INPUT ================= */
@@ -9780,6 +9948,7 @@ function openJdatePicker(targetId, allowEmpty) {
   root.innerHTML = `<div id="jdBox" style="background:var(--bg-card);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow-lg);width:100%;max-width:330px;padding:16px"></div>`;
   root.addEventListener('mousedown', e => { if (e.target.id === 'jdOverlay') closeJdatePicker(); });
   document.body.appendChild(root);
+  _lockScroll(true);
   pushUiLayer('jdate', _closeJdateDom);
   drawJdate();
 }
@@ -9787,6 +9956,7 @@ function _closeJdateDom() {
   const o = document.getElementById('jdOverlay');
   if (o) o.remove();
   _jdCur = null;
+  if (!document.getElementById('modalOverlay')) _lockScroll(false);
 }
 function closeJdatePicker() {
   const had = !!document.getElementById('jdOverlay');
@@ -9837,7 +10007,7 @@ function drawJdate() {
   box.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <button class="icon-btn" style="width:34px;height:34px" onclick="jdShift(-1)" aria-label="${t('prevMonth')}" title="${t('prevMonth')}">${navArrows().prev}</button>
-      <strong style="font-size:14.5px">${JAL_MONTHS[jm - 1]} ${faNum(jy)}</strong>
+      <strong style="font-size:14.5px">${jalMonth(jm)} ${faNum(jy)}</strong>
       <button class="icon-btn" style="width:34px;height:34px" onclick="jdShift(1)" aria-label="${t('nextMonth')}" title="${t('nextMonth')}">${navArrows().next}</button>
     </div>
     <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;font-size:10.5px;color:var(--text-3);margin-bottom:5px">
@@ -9878,8 +10048,14 @@ function openBackupModal() {
           const raw = localStorage.getItem('zlift_db') || '';
           const mb = (raw.length * 2 / 1048576).toFixed(1);
           const pct = Math.min(100, Math.round(raw.length * 2 / (5 * 1048576) * 100));
+          const lastBk = +localStorage.getItem('zlift_last_backup') || 0;
+          const days = lastBk ? Math.floor((Date.now() - lastBk) / 86400000) : -1;
+          const lastTxt = lastBk
+            ? fmtDate(lastBk) + (days > 0 ? ' · ' + faNum(days) + ' ' + t('daysAgo') : ' · ' + t('today'))
+            : t('backupNever');
           return `<div class="kv-cell" style="margin-bottom:14px"><div class="k">📊 ${t('storageUsage')}</div>
             <div class="v" style="font-weight:600;font-size:13px">${faNum(mb)} MB · ${faNum((state.photos || []).length)} ${t('storagePhotos')}</div>
+            <div class="k" style="margin-top:6px">🕓 ${t('backupLast')}: <b style="color:${lastBk && days <= 7 ? 'var(--ok)' : 'var(--danger)'}">${lastTxt}</b></div>
             <div class="mini-progress" style="height:7px;margin-top:6px"><div class="fill" style="width:${pct}%;background:${pct > 75 ? 'var(--danger)' : 'var(--accent)'}"></div></div></div>`;
         } catch (e) { return ''; }
       })()}
@@ -9906,21 +10082,16 @@ function openBackupModal() {
       } });
       state.settings = d.settings;
       toast(t('saved'));
-    } catch (e) { toast(t('errGeneric'), 'err'); }
+    } catch (e) { toast(errMsg(e), 'err'); }
   });
   $('#bkExport').onclick = async () => {
     try {
       localStorage.setItem('zlift_last_backup', String(Date.now()));
       const d = await api('/backup');
-      const blob = new Blob([JSON.stringify(d.backup, null, 2)], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'zlift-backup-' + new Date().toISOString().slice(0, 10) + '.json';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+      downloadBlob(new Blob([JSON.stringify(d.backup, null, 2)], { type: 'application/json' }),
+        'zlift-backup-' + new Date().toISOString().slice(0, 10) + '.json');
       toast(t('backupDone'));
-    } catch (e) { toast(t('errGeneric'), 'err'); }
+    } catch (e) { toast(errMsg(e), 'err'); }
   };
   $('#bkImport').onclick = () => $('#bkFile').click();
   $('#bkFile').onchange = () => {
