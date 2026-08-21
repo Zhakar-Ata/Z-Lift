@@ -5,7 +5,7 @@
      • same-origin static assets & the fonts CDN → cache-first, refreshed in background
      • /api/ GETs → network-first, cached copy as offline fallback
    Bump CACHE on every release so old shells are evicted. */
-const CACHE = 'zlift-pwa-v24';
+const CACHE = 'zlift-pwa-v25';
 const CORE = [
   './',
   './index.html',

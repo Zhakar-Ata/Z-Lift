@@ -973,6 +973,7 @@ const I18N = {
     noParts: 'قطعه‌ای ثبت نشده', noPartsSub: 'قطعات مصرفی و یدکی خود را اینجا مدیریت کنید',
     lowStockOnly: 'فقط کمبودها', stockAlert: 'هشدار موجودی انبار', stockAlertSub: 'قطعه به حداقل موجودی رسیده',
     tParts: 'انبار قطعات', tPartsSub: 'موجودی و کمبودها',
+    tAnalytics: 'آمار و تحلیل', tAnalyticsSub: 'درآمد و عملکرد',
     // service due
     svcDue: 'سرویس‌های سررسید', overdue: 'عقب‌افتاده', dueSoon: 'نزدیک موعد',
     daysOverdue: 'روز تأخیر', daysLeft: 'روز مانده', lastService: 'آخرین سرویس', nextService: 'سرویس بعدی',
@@ -1119,7 +1120,19 @@ const I18N = {
     svcCalHint: 'تقویم، سررسید قراردادها و یادآوری‌های سرویس — همه در یک نگاه',
     calLegendEvents: 'رویداد هر روز (سرویس + یادآوری)',
     calLegendToday: 'امروز', calLegendOverdue: 'سررسید گذشته', calLegendSoon: 'نزدیک موعد',
-    svcNoReminder: 'یادآوری فعالی نیست', svcOpenCalendar: 'باز کردن تقویم سرویس'
+    svcNoReminder: 'یادآوری فعالی نیست', svcOpenCalendar: 'باز کردن تقویم سرویس',
+    // v25 — analytics & insights
+    analytics: 'آمار و تحلیل',
+    anPeriod: 'بازهٔ زمانی', an3m: '۳ ماه', an6m: '۶ ماه', an12m: '۱۲ ماه',
+    anIncome: 'درآمد کل', anServices: 'تعداد سرویس', anBalance: 'مانده وصول‌نشده', anAvgMonth: 'میانگین ماهانه',
+    anRevenueTrend: 'روند درآمد', anSvcTrend: 'روند سرویس‌ها',
+    anByType: 'سرویس به تفکیک نوع', anByTech: 'بار کاری تکنسین‌ها',
+    anTopFaults: 'پرتکرارترین خرابی‌ها', anTopElevators: 'پرتقاضات‌ترین آسانسورها',
+    anPartsUsed: 'قطعات مصرف‌شده', anConsumedValue: 'ارزش مصرف',
+    anContractForecast: 'پیش‌بینی درآمد قراردادها', anForecastMonth: 'در ماه (قراردادهای فعال)',
+    anReceivables: 'مطالبات معوق', anNoData: 'در این بازه فعالیتی ثبت نشده',
+    anTitle: 'آمار و تحلیل عملکرد', anPrint: 'چاپ گزارش', anEmpty: 'داده‌ای برای نمایش نیست',
+    anServicesUnit: 'سرویس', anActiveContracts: 'قرارداد فعال', anRevenue: 'درآمد', anCount: 'تعداد'
   },
   en: {
     dir: 'ltr',
@@ -1206,6 +1219,7 @@ const I18N = {
     noParts: 'No parts yet', noPartsSub: 'Manage your spare and consumable parts here',
     lowStockOnly: 'Low stock only', stockAlert: 'Stock alert', stockAlertSub: 'part(s) at or below minimum',
     tParts: 'Parts inventory', tPartsSub: 'Stock & shortages',
+    tAnalytics: 'Analytics', tAnalyticsSub: 'Revenue & performance',
     svcDue: 'Service due', overdue: 'Overdue', dueSoon: 'Due soon',
     daysOverdue: 'days overdue', daysLeft: 'days left', lastService: 'Last service', nextService: 'Next service',
     serviceInterval: 'Service interval (days — 0 means no contract)', noDue: 'No overdue services ✅',
@@ -1338,7 +1352,19 @@ const I18N = {
     svcCalHint: 'Calendar, contract due dates and service reminders — all in one glance',
     calLegendEvents: 'Events per day (service + reminder)',
     calLegendToday: 'Today', calLegendOverdue: 'Overdue', calLegendSoon: 'Due soon',
-    svcNoReminder: 'No active reminders', svcOpenCalendar: 'Open service calendar'
+    svcNoReminder: 'No active reminders', svcOpenCalendar: 'Open service calendar',
+    // v25 — analytics & insights
+    analytics: 'Analytics',
+    anPeriod: 'Period', an3m: '3 months', an6m: '6 months', an12m: '12 months',
+    anIncome: 'Total income', anServices: 'Services', anBalance: 'Outstanding balance', anAvgMonth: 'Avg / month',
+    anRevenueTrend: 'Revenue trend', anSvcTrend: 'Services trend',
+    anByType: 'Services by type', anByTech: 'Technician workload',
+    anTopFaults: 'Most frequent faults', anTopElevators: 'Most-serviced elevators',
+    anPartsUsed: 'Parts consumed', anConsumedValue: 'Consumed value',
+    anContractForecast: 'Contract revenue forecast', anForecastMonth: '/ month (active contracts)',
+    anReceivables: 'Receivables', anNoData: 'No activity in this period',
+    anTitle: 'Performance analytics', anPrint: 'Print report', anEmpty: 'No data to show',
+    anServicesUnit: 'services', anActiveContracts: 'active contracts', anRevenue: 'Income', anCount: 'Count'
   }
 };
 
@@ -3758,7 +3784,8 @@ const IC = {
   cam: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
   print: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>',
   std: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>',
-  cal: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>'
+  cal: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>',
+  stats: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 3 5-6"/><circle cx="7" cy="14" r="1.4" fill="currentColor" stroke="none"/><circle cx="11" cy="10" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="13" r="1.4" fill="currentColor" stroke="none"/><circle cx="20" cy="7" r="1.4" fill="currentColor" stroke="none"/></svg>'
 };
 
 /* ---------- theme & lang ---------- */
@@ -4118,6 +4145,7 @@ const NAV = [
   { route: '/invoices', key: 'invoices', icon: 'bill' },
   { route: '/contracts', key: 'contracts', icon: 'doc' },
   { route: '/report', key: 'monthlyReport', icon: 'chart' },
+  { route: '/analytics', key: 'analytics', icon: 'stats' },
   { route: '/parts', key: 'parts', icon: 'box' },
   { section: 'navTools' },
   { route: '/checklists', key: 'checklists', icon: 'check' },
@@ -4203,7 +4231,7 @@ async function render() {
     '/dashboard': 'dashboard', '/projects': 'projects', '/services': 'services',
     '/parts': 'parts', '/checklists': 'checklists', '/calculations': 'calculations',
     '/diagnostics': 'diagnostics', '/knowledge': 'knowledge', '/notes': 'notes',
-    '/vvvf': 'vvvf', '/issues': 'issues', '/tools': 'tools', '/invoices': 'invoices', '/contracts': 'contracts', '/report': 'monthlyReport', '/standards': 'standards', '/calendar': 'calendar'
+    '/vvvf': 'vvvf', '/issues': 'issues', '/tools': 'tools', '/invoices': 'invoices', '/contracts': 'contracts', '/report': 'monthlyReport', '/standards': 'standards', '/calendar': 'calendar', '/analytics': 'analytics'
   };
   const baseRoute = '/' + r.split('/')[1];
   $('#pageTitle').textContent = t(titles[baseRoute] || 'dashboard');
@@ -4228,6 +4256,7 @@ async function render() {
     else if (r === '/invoices') renderInvoices();
     else if (r === '/contracts') renderContracts();
     else if (r === '/report') renderMonthlyReport();
+    else if (r === '/analytics') renderAnalytics();
     else if (r === '/tools') renderToolsPage();
     else if (r === '/knowledge') renderKnowledge();
     else if (r === '/standards') renderStandards();
@@ -4288,7 +4317,8 @@ function renderDashboard() {
     ['tCalc', 'tCalcSub', '/calculations', 'calc', 'var(--purple-soft)', 'var(--purple)'],
     ['tDiag', 'tDiagSub', '/diagnostics', 'diag', 'var(--warn-soft)', 'var(--warn)'],
     ['tKb', 'tKbSub', '/knowledge', 'kb', 'var(--danger-soft)', 'var(--danger)'],
-    ['tParts', 'tPartsSub', '/parts', 'box', 'var(--teal-soft)', 'var(--teal)']
+    ['tParts', 'tPartsSub', '/parts', 'box', 'var(--teal-soft)', 'var(--teal)'],
+    ['tAnalytics', 'tAnalyticsSub', '/analytics', 'stats', 'var(--accent-soft)', 'var(--accent-2)']
   ].map(([k, sub, route, icon, bg, fg]) => `
     <div class="tile" onclick="navigate('${route}')">
       <div class="t-icon" style="background:${bg};color:${fg}">${IC[icon]}</div>
@@ -7959,6 +7989,207 @@ function printMonthlyReport() {
       ${svcs.map(s => `<tr><td>${fmtJalali(s.date)}</td><td>${esc(svcTarget(s))}</td><td>${esc(s.problem || s.complaint || '—')}</td><td>${t(finalMeta(s.finalStatus).key)}</td></tr>`).join('')}
     </table>
     <div class="sig-row"><div class="sig">${t('signTech')}</div></div>`);
+}
+
+/* ================= ANALYTICS & INSIGHTS (v25) ================= */
+/* A bird's-eye view of the business over a selectable window (3 / 6 / 12 months).
+   Everything is derived from existing collections — no new storage. */
+let anPeriod = +localStorage.getItem('zlift_anperiod') || 12;
+function anSetPeriod(n) { anPeriod = n; localStorage.setItem('zlift_anperiod', String(n)); renderAnalytics(); }
+/* trailing Jalali month buckets, oldest -> newest */
+function anBuckets(n) {
+  const out = [];
+  const now = tsToJalali(Date.now());
+  let jy = now.jy, jm = now.jm;
+  const keys = [];
+  for (let i = 0; i < n; i++) { keys.push({ jy, jm }); jm--; if (jm < 1) { jm = 12; jy--; } }
+  keys.reverse().forEach(({ jy, jm }) => {
+    const { from, to } = jalMonthRange(jy, jm);
+    out.push({ jy, jm, key: jy + '-' + jm, from, to });
+  });
+  return out;
+}
+/* compact axis label so 12 columns still fit a phone */
+function anMonthShort(jm) { const m = jalMonth(jm); return m.length > 4 ? m.slice(0, 3) : m; }
+/* horizontal bar chart from per-bucket values (scrolls on narrow screens) */
+function anBarChart(buckets, values, bg) {
+  const max = Math.max(1, ...values.map(v => +v || 0));
+  const cols = buckets.map((b, i) => {
+    const v = +values[i] || 0;
+    return `<div class="chart-col">
+      <span class="bar-num">${v ? faNum(v) : ''}</span>
+      <div class="bar-v" style="height:${Math.round(v / max * 100)}%;background:${bg || 'linear-gradient(180deg,var(--accent-2),var(--accent))'}"></div>
+      <span class="bar-lbl">${anMonthShort(b.jm)}</span>
+    </div>`;
+  }).join('');
+  return `<div style="overflow-x:auto"><div class="chart-bars" style="min-width:${buckets.length * 34}px">${cols}</div></div>`;
+}
+/* status-bars from [{label,value,color}] */
+function anStatusBars(rows, def) {
+  const max = Math.max(1, ...rows.map(r => +r.value || 0));
+  return `<div class="status-bars">${rows.map(r => {
+    const v = +r.value || 0; if (!v) return '';
+    return `<div class="sb-row"><span class="sb-lbl">${r.label}</span>
+      <div class="sb-track"><div class="sb-fill" style="width:${Math.round(v / max * 100)}%;background:${r.color || def || 'var(--accent)'}"></div></div>
+      <span class="sb-val">${faNum(v)}</span></div>`;
+  }).join('')}</div>`;
+}
+function svcColor(k) { return { maintenance: 'var(--teal)', repair: 'var(--accent-2)', emergency: 'var(--danger)', inspection: 'var(--purple)' }[k] || 'var(--accent)'; }
+function anWindow() {
+  const buckets = anBuckets(anPeriod);
+  const from = buckets[0].from, to = buckets[buckets.length - 1].to;
+  const inPeriod = ts => ts >= from && ts < to;
+  const keySet = new Set(buckets.map(b => b.key));
+  return { buckets, inPeriod, keySet };
+}
+function renderAnalytics() {
+  const c = $('#content');
+  const { buckets, inPeriod, keySet } = anWindow();
+  const svcs = state.services.filter(s => inPeriod(s.date));
+  const incomeByMonth = {}; buckets.forEach(b => incomeByMonth[b.key] = 0);
+  const svcByMonth = {}; buckets.forEach(b => svcByMonth[b.key] = 0);
+  let income = 0;
+  state.invoices.forEach(inv => (inv.payments || []).forEach(p => {
+    if (inPeriod(p.date)) { income += +p.amount || 0; const j = tsToJalali(p.date); const k = j.jy + '-' + j.jm; if (incomeByMonth[k] != null) incomeByMonth[k] += +p.amount || 0; }
+  }));
+  state.contracts.forEach(ct => (ctStats(ct).list || []).forEach(m => {
+    if (keySet.has(m.key) && ct.paid && ct.paid[m.key]) { income += +ct.amount || 0; if (incomeByMonth[m.key] != null) incomeByMonth[m.key] += +ct.amount || 0; }
+  }));
+  svcs.forEach(s => { const j = tsToJalali(s.date); const k = j.jy + '-' + j.jm; if (svcByMonth[k] != null) svcByMonth[k]++; });
+  let openBalance = 0, unpaidCount = 0;
+  state.invoices.forEach(inv => { const b = invTotals(inv).balance; openBalance += b; if (b > 0) unpaidCount++; });
+  const activeContracts = state.contracts.filter(ct => ctStats(ct).active);
+  const forecast = activeContracts.reduce((a, ct) => a + (+ct.amount || 0), 0);
+  const byType = Object.keys(SVC_META).map(k => ({ label: t(SVC_META[k].key), value: svcs.filter(s => s.serviceType === k).length, color: svcColor(k) }));
+  const techMap = {};
+  svcs.forEach(s => { const tk = (s.technician || '—').trim() || '—'; techMap[tk] = (techMap[tk] || 0) + 1; });
+  const byTech = Object.entries(techMap).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([label, value]) => ({ label, value }));
+  const topFaults = faultTally(svcs, FAULT_ICONS).slice(0, 7).map(([label, value]) => ({ label, value, color: 'var(--warn)' }));
+  const elevMap = {};
+  svcs.forEach(s => {
+    const key = s.projectId || ('c:' + (s.customer || svcTarget(s)));
+    if (!elevMap[key]) { const p = s.projectId ? (state.projects.find(x => x.id === s.projectId) || null) : null;
+      elevMap[key] = { name: p ? p.name : (s.customer || svcTarget(s)), n: 0, type: p ? p.elevatorType : '', pid: s.projectId || '' }; }
+    elevMap[key].n++;
+  });
+  const topElev = Object.values(elevMap).sort((a, b) => b.n - a.n).slice(0, 6);
+  const partsUsed = []; let consumedValue = 0;
+  state.parts.forEach(p => (p.history || []).forEach(h => {
+    if (inPeriod(h.date) && h.qty < 0) { const q = -h.qty; partsUsed.push({ name: p.name, qty: q }); consumedValue += q * (+p.price || 0); }
+  }));
+  partsUsed.sort((a, b) => b.qty - a.qty);
+  const hasData = svcs.length || income || state.invoices.length || state.contracts.length;
+  const avgMonth = Math.round((svcs.length / anPeriod) * 10) / 10;
+
+  const periodChips = [['an3m', 3], ['an6m', 6], ['an12m', 12]].map(([k, n]) =>
+    `<button class="chip ${anPeriod === n ? 'active' : ''}" onclick="anSetPeriod(${n})">${t(k)}</button>`).join('');
+  const muted = txt => `<p style="font-size:12.5px;color:var(--text-3)">${txt}</p>`;
+
+  c.innerHTML = `
+    <div class="toolbar">
+      <span style="font-size:12.5px;color:var(--text-2);font-weight:700">${t('anPeriod')}:</span>
+      <div class="chip-row">${periodChips}</div>
+      <div style="flex:1"></div>
+      <button class="btn btn-ghost" onclick="exportAnalyticsCsv()">📊 ${t('exportCsv')}</button>
+      <button class="btn btn-ghost" style="color:#2AABEE" onclick="shareTelegram(buildAnalyticsText())">${IC.telegram} ${t('shareTelegram')}</button>
+      <button class="btn btn-ghost" onclick="shareText(buildAnalyticsText())">📤 ${t('share')}</button>
+      <button class="btn btn-primary" onclick="printAnalytics()">${IC.print} ${t('anPrint')}</button>
+    </div>
+    ${!hasData ? `<div class="empty"><div class="e-icon">📉</div><strong>${t('anNoData')}</strong></div>` : `
+    <div class="grid-4" style="margin-bottom:16px">
+      ${svcKpiHTML('💰', 'var(--ok-soft)', money(income), t('anIncome'), "navigate('/invoices')")}
+      ${svcKpiHTML('🔧', 'var(--teal-soft)', faNum(svcs.length), t('anServices'), "navigate('/services')")}
+      ${svcKpiHTML('🧾', 'var(--danger-soft)', money(openBalance), t('anBalance'), "navigate('/invoices')")}
+      ${svcKpiHTML('📈', 'var(--accent-soft)', faNum(avgMonth), t('anAvgMonth'), "navigate('/analytics')")}
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">${IC.stats} ${t('anRevenueTrend')}<span style="margin-inline-start:auto;font-size:12px;color:var(--text-2);font-weight:600">${money(income)} ${t('rial')}</span></div>
+        ${income ? anBarChart(buckets, buckets.map(b => incomeByMonth[b.key]), 'linear-gradient(180deg,#34d399,var(--ok))') : muted('—')}
+      </div>
+      <div class="card">
+        <div class="card-title">${IC.chart} ${t('anSvcTrend')}</div>
+        ${svcs.length ? anBarChart(buckets, buckets.map(b => svcByMonth[b.key])) : muted('—')}
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top:16px">
+      <div class="card">
+        <div class="card-title">🔧 ${t('anByType')}</div>
+        ${byType.some(r => r.value) ? anStatusBars(byType) : muted('—')}
+      </div>
+      <div class="card">
+        <div class="card-title">👷 ${t('anByTech')}</div>
+        ${byTech.length ? anStatusBars(byTech, 'var(--purple)') : muted('—')}
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top:16px">
+      <div class="card">
+        <div class="card-title">🚨 ${t('anTopFaults')}</div>
+        ${topFaults.length ? anStatusBars(topFaults) : muted('—')}
+      </div>
+      <div class="card">
+        <div class="card-title">🛗 ${t('anTopElevators')}</div>
+        ${topElev.length ? topElev.map(e => {
+          const go = e.pid ? `svcFilter={q:'',type:'all',projectId:'${e.pid}'};svcTab='list';navigate('/services')` : `svcTab='list';navigate('/services')`;
+          return `<div class="due-item" style="cursor:pointer" onclick="${go}">
+            <div class="grow"><strong>${e.type === 'hydraulic' ? '🛢️ ' : '⚙️ '}${esc(e.name)}</strong></div>
+            <span class="badge b-blue">${faNum(e.n)} ${t('anServicesUnit')}</span></div>`;
+        }).join('') : muted('—')}
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top:16px">
+      <div class="card">
+        <div class="card-title">📦 ${t('anPartsUsed')}<span style="margin-inline-start:auto;font-size:12px;color:var(--text-2);font-weight:600">${t('anConsumedValue')}: ${money(consumedValue)} ${t('rial')}</span></div>
+        ${partsUsed.length ? `<div style="display:flex;flex-wrap:wrap;gap:7px">${partsUsed.slice(0, 10).map(p => `<span class="badge b-gray">${esc(p.name)} ×${faNum(p.qty)}</span>`).join('')}</div>` : muted('—')}
+      </div>
+      <div class="card">
+        <div class="card-title">📄 ${t('anContractForecast')}</div>
+        <div class="kv-cell" style="margin-bottom:10px"><div class="k">${t('anForecastMonth')}</div><div class="v" style="color:var(--ok)">${money(forecast)} ${t('rial')}</div></div>
+        <div class="kv-cell"><div class="k">${t('anActiveContracts')}</div><div class="v">${faNum(activeContracts.length)}</div></div>
+        ${openBalance ? `<div class="kv-cell" style="margin-top:10px"><div class="k">${t('anReceivables')} (${faNum(unpaidCount)})</div><div class="v" style="color:var(--danger)">${money(openBalance)} ${t('rial')}</div></div>` : ''}
+      </div>
+    </div>`}`;
+}
+function buildAnalyticsText() {
+  const { inPeriod } = anWindow();
+  const svcs = state.services.filter(s => inPeriod(s.date));
+  let income = state.invoices.reduce((a, inv) => a + (inv.payments || []).reduce((b, p) => b + (inPeriod(p.date) ? +p.amount || 0 : 0), 0), 0);
+  const openBalance = state.invoices.reduce((a, inv) => a + invTotals(inv).balance, 0);
+  const co = (state.settings || {}).company || 'Z Lift';
+  return `📊 ${t('anTitle')} — ${faNum(anPeriod)} ${LANG === 'fa' ? 'ماه' : 'months'}\n🏢 ${co}\n\n💰 ${t('anIncome')}: ${money(income)} ${t('rial')}\n🔧 ${t('anServices')}: ${faNum(svcs.length)}\n📈 ${t('anAvgMonth')}: ${faNum(Math.round(svcs.length / anPeriod))}\n🧾 ${t('anBalance')}: ${money(openBalance)} ${t('rial')}\n\n🛗 Z Lift`;
+}
+function printAnalytics() {
+  const { inPeriod } = anWindow();
+  const svcs = state.services.filter(s => inPeriod(s.date));
+  let income = state.invoices.reduce((a, inv) => a + (inv.payments || []).reduce((b, p) => b + (inPeriod(p.date) ? +p.amount || 0 : 0), 0), 0);
+  const byType = {}; svcs.forEach(s => byType[s.serviceType] = (byType[s.serviceType] || 0) + 1);
+  const topFaults = faultTally(svcs, FAULT_ICONS).slice(0, 8);
+  const subtitle = faNum(anPeriod) + ' ' + (LANG === 'fa' ? 'ماه' : 'months');
+  printDoc(`
+    ${printHeader(t('anTitle') + ' — ' + subtitle)}
+    <table>
+      <tr><th>${t('anIncome')}</th><td>${money(income)} ${t('rial')}</td></tr>
+      <tr><th>${t('anServices')}</th><td>${faNum(svcs.length)}</td></tr>
+      <tr><th>${t('anByType')}</th><td>${Object.keys(byType).map(k => t(svcMeta(k).key) + ' ' + faNum(byType[k])).join('، ') || '—'}</td></tr>
+    </table>
+    <table>
+      <tr><th>${t('anTopFaults')}</th><th style="width:80px">${t('anCount')}</th></tr>
+      ${topFaults.length ? topFaults.map(([lbl, n]) => `<tr><td>${esc(lbl)}</td><td>${faNum(n)}</td></tr>`).join('') : `<tr><td>—</td><td></td></tr>`}
+    </table>
+    <div class="sig-row"><div class="sig">${t('signTech')}</div></div>`);
+}
+function exportAnalyticsCsv() {
+  const buckets = anBuckets(anPeriod);
+  const head = [t('anPeriod'), t('anRevenue'), t('anServices')];
+  const rows = buckets.map(b => {
+    const svcN = state.services.filter(s => { const j = tsToJalali(s.date); return j.jy === b.jy && j.jm === b.jm; }).length;
+    let inc = 0;
+    state.invoices.forEach(inv => (inv.payments || []).forEach(p => { const j = tsToJalali(p.date); if (j.jy === b.jy && j.jm === b.jm) inc += +p.amount || 0; }));
+    state.contracts.forEach(ct => { if (ct.paid && ct.paid[b.key]) inc += +ct.amount || 0; });
+    return [jalMonth(b.jm) + ' ' + b.jy, inc, svcN];
+  });
+  downloadCsv('zlift-analytics-' + new Date().toISOString().slice(0, 10) + '.csv', head, rows);
+  toast(t('saved'));
 }
 
 /* ================= SHARE (Telegram / system) ================= */
