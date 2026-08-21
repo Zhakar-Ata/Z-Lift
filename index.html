@@ -1132,7 +1132,20 @@ const I18N = {
     anContractForecast: 'پیش‌بینی درآمد قراردادها', anForecastMonth: 'در ماه (قراردادهای فعال)',
     anReceivables: 'مطالبات معوق', anNoData: 'در این بازه فعالیتی ثبت نشده',
     anTitle: 'آمار و تحلیل عملکرد', anPrint: 'چاپ گزارش', anEmpty: 'داده‌ای برای نمایش نیست',
-    anServicesUnit: 'سرویس', anActiveContracts: 'قرارداد فعال', anRevenue: 'درآمد', anCount: 'تعداد'
+    anServicesUnit: 'سرویس', anActiveContracts: 'قرارداد فعال', anRevenue: 'درآمد', anCount: 'تعداد',
+    // v26 — settings hub + notifications
+    settings: 'تنظیمات',
+    setSvcDefaults: 'پیش‌فرض‌های سرویس', setDefaultTech: 'نام تکنسین پیش‌فرض',
+    setDefaultTechHint: 'هنگام ثبت سرویس، این نام به‌صورت پیش‌فرض پر می‌شود',
+    setAppearance: 'ظاهر', setLight: 'روشن', setDark: 'تیره',
+    setNotifications: 'اعلان‌ها', setNotifyEnable: 'اعلان سررسید سرویس‌ها',
+    setNotifyHint: 'هنگام باز کردن اپ، سرویس‌های عقب‌افتاده و نزدیک موعد را اعلان می‌کند',
+    setNotifyRequest: 'اجازه دادن', setNotifyGranted: 'مجاز', setNotifyDenied: 'مسدود شده', setNotifyAsk: 'هنوز مجاز نشده',
+    setNotifyUnsupported: 'مرورگر شما از اعلان پشتیبانی نمی‌کند', setNotifyOn: 'اعلان‌ها فعال شد',
+    setOn: 'فعال', setOff: 'غیرفعال',
+    setData: 'مدیریت داده‌ها', setClearAll: 'پاک کردن همه داده‌ها',
+    setClearAllMsg: 'تمام پروژه‌ها، سرویس‌ها، فاکتورها و داده‌ها حذف می‌شوند. حتماً ابتدا بکاپ بگیرید! ادامه می‌دهید؟',
+    setAbout: 'درباره Z Lift'
   },
   en: {
     dir: 'ltr',
@@ -1364,7 +1377,20 @@ const I18N = {
     anContractForecast: 'Contract revenue forecast', anForecastMonth: '/ month (active contracts)',
     anReceivables: 'Receivables', anNoData: 'No activity in this period',
     anTitle: 'Performance analytics', anPrint: 'Print report', anEmpty: 'No data to show',
-    anServicesUnit: 'services', anActiveContracts: 'active contracts', anRevenue: 'Income', anCount: 'Count'
+    anServicesUnit: 'services', anActiveContracts: 'active contracts', anRevenue: 'Income', anCount: 'Count',
+    // v26 — settings hub + notifications
+    settings: 'Settings',
+    setSvcDefaults: 'Service defaults', setDefaultTech: 'Default technician name',
+    setDefaultTechHint: 'Pre-filled when you log a new service',
+    setAppearance: 'Appearance', setLight: 'Light', setDark: 'Dark',
+    setNotifications: 'Notifications', setNotifyEnable: 'Service-due notifications',
+    setNotifyHint: 'When you open the app, alerts you about overdue and upcoming services',
+    setNotifyRequest: 'Allow', setNotifyGranted: 'Allowed', setNotifyDenied: 'Blocked', setNotifyAsk: 'Not allowed yet',
+    setNotifyUnsupported: 'Your browser does not support notifications', setNotifyOn: 'Notifications enabled',
+    setOn: 'On', setOff: 'Off',
+    setData: 'Data management', setClearAll: 'Clear all data',
+    setClearAllMsg: 'All projects, services, invoices and data will be deleted. Back up first! Continue?',
+    setAbout: 'About Z Lift'
   }
 };
 
@@ -3785,7 +3811,8 @@ const IC = {
   print: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>',
   std: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>',
   cal: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>',
-  stats: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 3 5-6"/><circle cx="7" cy="14" r="1.4" fill="currentColor" stroke="none"/><circle cx="11" cy="10" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="13" r="1.4" fill="currentColor" stroke="none"/><circle cx="20" cy="7" r="1.4" fill="currentColor" stroke="none"/></svg>'
+  stats: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 3 5-6"/><circle cx="7" cy="14" r="1.4" fill="currentColor" stroke="none"/><circle cx="11" cy="10" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="13" r="1.4" fill="currentColor" stroke="none"/><circle cx="20" cy="7" r="1.4" fill="currentColor" stroke="none"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'
 };
 
 /* ---------- theme & lang ---------- */
@@ -4135,6 +4162,8 @@ function enterApp() {
   $('#userAvatar').textContent = (state.user.name || '?').trim()[0] || '?';
   renderNav();
   navigate(state.route || '/dashboard');
+  /* surface overdue services as a native notification shortly after entering */
+  setTimeout(checkRemindersNotify, 1500);
 }
 const NAV = [
   { section: 'navMain' },
@@ -4156,7 +4185,8 @@ const NAV = [
   { section: 'navKnowledge' },
   { route: '/knowledge', key: 'knowledge', icon: 'kb' },
   { route: '/tools', key: 'tools', icon: 'wrench' },
-  { route: '/notes', key: 'notes', icon: 'note' }
+  { route: '/notes', key: 'notes', icon: 'note' },
+  { route: '/settings', key: 'settings', icon: 'gear' }
 ];
 let _navLang = null;
 function renderNav() {
@@ -4231,7 +4261,7 @@ async function render() {
     '/dashboard': 'dashboard', '/projects': 'projects', '/services': 'services',
     '/parts': 'parts', '/checklists': 'checklists', '/calculations': 'calculations',
     '/diagnostics': 'diagnostics', '/knowledge': 'knowledge', '/notes': 'notes',
-    '/vvvf': 'vvvf', '/issues': 'issues', '/tools': 'tools', '/invoices': 'invoices', '/contracts': 'contracts', '/report': 'monthlyReport', '/standards': 'standards', '/calendar': 'calendar', '/analytics': 'analytics'
+    '/vvvf': 'vvvf', '/issues': 'issues', '/tools': 'tools', '/invoices': 'invoices', '/contracts': 'contracts', '/report': 'monthlyReport', '/standards': 'standards', '/calendar': 'calendar', '/analytics': 'analytics', '/settings': 'settings'
   };
   const baseRoute = '/' + r.split('/')[1];
   $('#pageTitle').textContent = t(titles[baseRoute] || 'dashboard');
@@ -4257,6 +4287,7 @@ async function render() {
     else if (r === '/contracts') renderContracts();
     else if (r === '/report') renderMonthlyReport();
     else if (r === '/analytics') renderAnalytics();
+    else if (r === '/settings') renderSettings();
     else if (r === '/tools') renderToolsPage();
     else if (r === '/knowledge') renderKnowledge();
     else if (r === '/standards') renderStandards();
@@ -5072,7 +5103,7 @@ function readSignature(prefix) {
 
 function openServiceForm(id, presetProject) {
   const s = id ? state.services.find(x => x.id === id) : null;
-  const v = s || { projectId: presetProject || '', customer: '', elevatorInfo: '', date: Date.now(), technician: state.user.name, serviceType: 'maintenance', complaint: '', problem: '', diagnosis: '', measurements: '', workDone: '', partsReplaced: '', recommendations: '', followUpDate: 0, finalStatus: 'ok' };
+  const v = s || { projectId: presetProject || '', customer: '', elevatorInfo: '', date: Date.now(), technician: (state.settings && state.settings.defaultTech) || state.user.name, serviceType: 'maintenance', complaint: '', problem: '', diagnosis: '', measurements: '', workDone: '', partsReplaced: '', recommendations: '', followUpDate: 0, finalStatus: 'ok' };
   const projOpts = `<option value="">— ${t('svcNoProject')} —</option>` +
     state.projects.map(p => `<option value="${p.id}" ${v.projectId === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
   /* jalali date inputs */
@@ -8192,6 +8223,94 @@ function exportAnalyticsCsv() {
   toast(t('saved'));
 }
 
+/* ================= SETTINGS HUB (v26) ================= */
+function renderSettings() {
+  const c = $('#content');
+  const s = state.settings || {};
+  const theme = document.documentElement.getAttribute('data-theme') || 'light';
+  const notifyOn = !!s.notify;
+  const canNotify = notifySupported();
+  const perm = canNotify ? (Notification.permission || 'default') : 'unsupported';
+  let usage = '—';
+  try {
+    const raw = localStorage.getItem('zlift_db') || '';
+    const mb = (raw.length * 2 / 1048576).toFixed(1);
+    usage = faNum(mb) + ' MB · ' + faNum((state.photos || []).length) + ' ' + t('storagePhotos');
+  } catch (e) {}
+  const permBadge = perm === 'granted' ? `<span class="badge b-green">${t('setNotifyGranted')}</span>`
+    : perm === 'denied' ? `<span class="badge b-red">${t('setNotifyDenied')}</span>`
+    : perm === 'unsupported' ? `<span class="badge b-gray">—</span>`
+    : `<span class="badge b-amber">${t('setNotifyAsk')}</span>`;
+  c.innerHTML = `
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🏢 ${t('setCompany')}</div>
+        <div class="field"><label>${t('setCompany')}</label><input id="st_company" value="${esc(s.company || '')}" /></div>
+        <div class="form-grid">
+          <div class="field"><label>${t('setPhone')}</label><input id="st_phone" value="${esc(s.phone || '')}" /></div>
+          <div class="field"><label>${t('setAddress')}</label><input id="st_address" value="${esc(s.address || '')}" /></div>
+        </div>
+        <button class="btn btn-primary btn-sm" id="stSaveCompany">💾 ${t('save')}</button>
+      </div>
+      <div class="card">
+        <div class="card-title">🔧 ${t('setSvcDefaults')}</div>
+        <div class="field"><label>${t('setDefaultTech')}</label><input id="st_defaulttech" value="${esc(s.defaultTech || '')}" placeholder="${esc((state.user && state.user.name) || '')}" /></div>
+        <p class="hint">${t('setDefaultTechHint')}</p>
+        <button class="btn btn-primary btn-sm" id="stSaveSvc">💾 ${t('save')}</button>
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top:16px">
+      <div class="card">
+        <div class="card-title">🎨 ${t('setAppearance')}</div>
+        <div class="seg" style="margin-bottom:12px">
+          <button class="seg-btn ${theme === 'light' ? 'active' : ''}" onclick="setTheme('light')">☀️ ${t('setLight')}</button>
+          <button class="seg-btn ${theme === 'dark' ? 'active' : ''}" onclick="setTheme('dark')">🌙 ${t('setDark')}</button>
+        </div>
+        <div class="seg">
+          <button class="seg-btn ${LANG === 'fa' ? 'active' : ''}" onclick="setLang('fa')">فارسی</button>
+          <button class="seg-btn ${LANG === 'en' ? 'active' : ''}" onclick="setLang('en')">English</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔔 ${t('setNotifications')}</div>
+        ${canNotify ? `
+        <div class="due-item" style="align-items:center">
+          <div class="grow"><strong>${t('setNotifyEnable')}</strong><div class="d-sub">${t('setNotifyHint')}</div></div>
+          <div class="seg" style="max-width:170px">
+            <button class="seg-btn ${notifyOn ? 'active' : ''}" onclick="toggleNotify(true)">${t('setOn')}</button>
+            <button class="seg-btn ${!notifyOn ? 'active' : ''}" onclick="toggleNotify(false)">${t('setOff')}</button>
+          </div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          ${permBadge}
+          ${perm === 'default' ? `<button class="btn btn-ghost btn-sm" onclick="enableNotifications()">${t('setNotifyRequest')}</button>` : ''}
+        </div>` : `<p class="hint">${t('setNotifyUnsupported')}</p>`}
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">💾 ${t('setData')}</div>
+      <div class="kv-cell" style="margin-bottom:12px"><div class="k">📊 ${t('storageUsage')}</div><div class="v">${usage}</div></div>
+      <div style="display:flex;gap:9px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="openBackupModal()">💾 ${t('backup')}</button>
+        <button class="btn btn-soft-danger" onclick="clearAllData()">${IC.trash} ${t('setClearAll')}</button>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px;text-align:center">
+      <div style="font-size:32px;margin-bottom:4px">🛗</div>
+      <strong style="font-size:17px">Z Lift</strong>
+      <div style="color:var(--text-3);font-size:12.5px;margin-top:4px">v26 · ${t('tagline')}</div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:12px;color:#2AABEE" onclick="openTgChannel()">${IC.telegram} ${t('tgChannel')}</button>
+    </div>`;
+  $('#stSaveCompany').onclick = guard('#stSaveCompany', async () => {
+    try { const d = await api('/settings', { method: 'PUT', body: { company: $('#st_company').value, phone: $('#st_phone').value, address: $('#st_address').value } }); state.settings = d.settings; toast(t('saved')); }
+    catch (e) { toast(errMsg(e), 'err'); }
+  });
+  $('#stSaveSvc').onclick = guard('#stSaveSvc', async () => {
+    try { const d = await api('/settings', { method: 'PUT', body: { defaultTech: $('#st_defaulttech').value } }); state.settings = d.settings; toast(t('saved')); }
+    catch (e) { toast(errMsg(e), 'err'); }
+  });
+}
+
 /* ================= SHARE (Telegram / system) ================= */
 async function shareText(text) {
   try {
@@ -10853,27 +10972,89 @@ function openBackupModal() {
 }
 
 /* ================= INIT ================= */
+/* ============ v26: theme/lang helpers + service-due notifications ============ */
+function setTheme(th) {
+  if (th !== 'dark') th = 'light';
+  localStorage.setItem('zlift_theme', th);
+  applyTheme();
+}
+function setLang(l) {
+  LANG = (l === 'en') ? 'en' : 'fa';
+  localStorage.setItem('zlift_lang', LANG);
+  applyLang();
+  updateOnlineBadge();
+  if (state.user) { renderNav(); render(); $('#userName').textContent = state.user.name; }
+  setAuthMode(authMode);
+}
+/* Browser notifications — only fired by user opt-in; the app has no backend,
+   so they surface when the app is opened/foregrounded with overdue items. */
+function notifySupported() { return typeof window !== 'undefined' && 'Notification' in window; }
+async function ensureNotifyPermission() {
+  if (!notifySupported() || typeof Notification.requestPermission !== 'function') return false;
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') return false;
+  try { return (await Notification.requestPermission()) === 'granted'; } catch (e) { return false; }
+}
+let _lastNotifyCheck = 0;
+function checkRemindersNotify() {
+  if (!notifySupported()) return;
+  const s = state.settings || {};
+  if (!s.notify || Notification.permission !== 'granted') return;
+  const rems = buildReminders();
+  const due = rems.filter(r => r.overdue || r.soon);
+  if (!due.length) return;
+  const overdueN = due.filter(r => r.overdue).length;
+  const title = overdueN
+    ? (LANG === 'fa' ? '🔴 ' + faNum(overdueN) + ' سرویس عقب‌افتاده' : overdueN + ' overdue services')
+    : (LANG === 'fa' ? '🟡 سرویس‌های نزدیک موعد' : 'Services due soon');
+  const body = due.slice(0, 5).map(r => '• ' + r.title).join('\n');
+  try {
+    const n = new Notification(title, { body, tag: 'zlift-reminders', icon: 'icons/icon-192.png' });
+    n.onclick = () => { try { window.focus(); n.close(); svcTab = 'calendar'; navigate('/services'); } catch (e) {} };
+    setTimeout(() => { try { n.close(); } catch (e) {} }, 10000);
+  } catch (e) { /* notifications can be blocked at runtime — fail silently */ }
+}
+async function enableNotifications() {
+  const ok = await ensureNotifyPermission();
+  if (!ok) { toast(t('setNotifyDenied'), 'err'); renderSettings(); return false; }
+  try { const d = await api('/settings', { method: 'PUT', body: { notify: true } }); state.settings = d.settings; } catch (e) { toast(errMsg(e), 'err'); }
+  toast(t('setNotifyOn'), 'ok');
+  renderSettings();
+  checkRemindersNotify();
+  return true;
+}
+async function toggleNotify(on) {
+  if (!on) {
+    try { const d = await api('/settings', { method: 'PUT', body: { notify: false } }); state.settings = d.settings; } catch (e) {}
+    renderSettings();
+    return;
+  }
+  await enableNotifications();
+}
+function clearAllData() {
+  confirmDialog(t('confirmDeleteTitle'), t('setClearAllMsg'), () => {
+    try { localStorage.removeItem('zlift_db'); localStorage.removeItem('zlift_db_mirror'); } catch (e) {}
+    doLocalLogout();
+    try { location.reload(); } catch (e) {}
+  });
+}
+
 async function init() {
   applyTheme();
   applyLang();
   initAuth();
 
-  $('#themeBtn').onclick = () => {
-    const th = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    localStorage.setItem('zlift_theme', th);
-    applyTheme();
-  };
-  $('#langBtn').onclick = () => {
-    LANG = LANG === 'fa' ? 'en' : 'fa';
-    localStorage.setItem('zlift_lang', LANG);
-    applyLang();
-    updateOnlineBadge();
-    if (state.user) { renderNav(); render(); $('#userName').textContent = state.user.name; }
-    setAuthMode(authMode);
-  };
+  $('#themeBtn').onclick = () => setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  $('#langBtn').onclick = () => setLang(LANG === 'fa' ? 'en' : 'fa');
   updateOnlineBadge();
   window.addEventListener('online', updateOnlineBadge);
   window.addEventListener('offline', updateOnlineBadge);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    if (Date.now() - _lastNotifyCheck < 5 * 60 * 1000) return;
+    _lastNotifyCheck = Date.now();
+    checkRemindersNotify();
+  });
   $('#menuBtn').onclick = () => {
     $('#sidebar').classList.add('open');
     $('#backdrop').classList.add('show');
@@ -11382,7 +11563,8 @@ async function api(path, opts = {}) {
   /* settings */
   if (path === '/settings' && method === 'GET') return { settings: db.settings };
   if (path === '/settings' && method === 'PUT') {
-    ['company', 'phone', 'address'].forEach(f => { if (b[f] !== undefined) db.settings[f] = String(b[f]); });
+    ['company', 'phone', 'address', 'defaultTech'].forEach(f => { if (b[f] !== undefined) db.settings[f] = String(b[f]); });
+    if (b.notify !== undefined) db.settings.notify = !!b.notify;
     _lsSave();
     return { settings: db.settings };
   }

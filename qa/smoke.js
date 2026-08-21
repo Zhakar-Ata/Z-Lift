@@ -72,7 +72,7 @@ async function T(name, cond, info) {
     const routes = [
       '/dashboard', '/projects', '/services', '/parts', '/checklists', '/calculations',
       '/diagnostics', '/vvvf', '/knowledge', '/tools', '/notes', '/calendar', '/invoices',
-      '/contracts', '/report', '/analytics', '/standards'
+      '/contracts', '/report', '/analytics', '/settings', '/standards'
     ];
     for (const route of routes) {
       await ev(`navigate('${route}')`);
