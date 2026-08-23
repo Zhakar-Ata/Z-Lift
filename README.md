@@ -8,12 +8,19 @@
 کتابخانهٔ استانداردها (EN 81-20 / 81-50 / 81-28 / 13015)، شمارهٔ سریالی گزارش، تأمین‌کننده و
 کد فنی قطعات، ارزش کل انبار و شاخص‌های مالی داشبورد.
 
-> **جدید v29.1 — سخت‌سازی Phase 1:** اندازه‌گیری ساختاریافته اکنون سرویس مرتبط، محل، نقطه،
+> **جدید v29.1.1 — سخت‌سازی پشتیبان خارجی و PWA:** خروجی JSON اکنون metadata کامل
+> (نسخه برنامه/DB/فرمت، شناسه بکاپ، زبان، شمارش رکوردها و checksum) دارد، قبل از دانلود validate
+> می‌شود، وضعیت «پشتیبان خارجی» را جدا از snapshot محلی نشان می‌دهد و بازیابی ابتدا preview و سپس
+> safety backup محلی می‌سازد. Service Worker با `zlift-pwa-v35`، precache اتمیک و fallback آفلاین
+> برای فایل‌های same-origin سخت‌تر شد. نسخه‌ها: **App 29.1.1 · DB 3 · Backup 8 · Cache v35**.
+> تست خودکار: **۲۶۴ بررسی موفق**. گزارش‌ها: `docs/DATA_SAFETY_PWA_HARDENING.md` و
+> `docs/REAL_DEVICE_PWA_TEST_PLAN.md`.
+>
+> **v29.1 — سخت‌سازی Phase 1:** اندازه‌گیری ساختاریافته اکنون سرویس مرتبط، محل، نقطه،
 > حالت آزمون، واحد کنترل‌شده، مشاهده تکنسین و عکس مرتبط را نگه می‌دارد. شماره فاکتور در لایه داده
 > یکتا است و مقادیر منفی/خراب پیش از اثر روی انبار رد می‌شوند. اعتبارسنجی پشتیبان، نسخه‌ها،
 > فاکتورها و اندازه‌گیری‌های خراب را قبل از بازیابی رد می‌کند. نصب Service Worker تنها با کش کامل
-> همه ماژول‌های ضروری فعال می‌شود. نسخه‌ها: **App 29.1.0 · DB 3 · Backup 7 · Cache v34**.
-> تست خودکار: **۲۵۷ بررسی موفق**. گزارش ممیزی: `docs/PHASE1_AUDIT.md`.
+> همه ماژول‌های ضروری فعال می‌شود. گزارش ممیزی: `docs/PHASE1_AUDIT.md`.
 >
 > داده‌های ساختاریافته با مهاجرت detect → validate → copy → verify → mark به **IndexedDB** منتقل
 > می‌شوند و منبع legacy حذف نمی‌شود؛ نبود/خطای IndexedDB به fallback صریح localStorage می‌رود.
@@ -63,10 +70,12 @@ python3 -m http.server 8080      # سپس http://localhost:8080
 | `js/core`, `js/database` | هسته مشترک، API محلی، IndexedDB، عکس و پشتیبان |
 | `js/modules`, `js/engineering` | قابلیت‌های تکنسین و منطق مهندسی/اندازه‌گیری |
 | `js/data`, `js/reports` | داده‌های مرجع برنامه و گزارش‌ها |
-| `sw.js` | Service Worker — ناوبری network-first و فایل‌های استاتیک cache-first |
+| `sw.js` | Service Worker — ناوبری و فایل‌های same-origin به‌صورت network-first با fallback آفلاین |
 | `manifest.json` | تنظیمات PWA |
-| `qa/smoke.js` | تست سرتاسری با jsdom و fake IndexedDB (۲۵۷ بررسی) |
+| `qa/smoke.js` | تست سرتاسری با jsdom و fake IndexedDB (۲۶۴ بررسی) |
 | `docs/PHASE1_AUDIT.md` | ممیزی معماری، نقشه ذخیره‌سازی، اصلاحات و محدودیت‌ها |
+| `docs/DATA_SAFETY_PWA_HARDENING.md` | ممیزی و مستندات سخت‌سازی پشتیبان خارجی، integrity و PWA |
+| `docs/REAL_DEVICE_PWA_TEST_PLAN.md` | چک‌لیست دستی Android برای نصب/آفلاین/به‌روزرسانی PWA |
 
 ## تست
 
