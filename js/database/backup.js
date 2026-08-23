@@ -76,6 +76,14 @@ function auditBackupData(bk, opts) {
   ['services', 'invoices', 'contracts', 'checklists', 'measurements', 'reminders', 'photos', 'diagSessions', 'issues'].forEach(k => {
     (Array.isArray(bk[k]) ? bk[k] : []).forEach(row => { if (row.projectId && !projectIds.has(row.projectId)) errors.push(k + ':project-relation:' + row.id); });
   });
+  /* Phase 2A: older builds could export dangling calcSaves/safetyLogs refs
+     (they were missing from the project-delete detach list). Detected and
+     surfaced as WARNINGS — never silently ignored — but not blocking: the
+     restore path detaches them with the same policy used live, so legacy
+     backups remain restorable. */
+  ['calcSaves', 'safetyLogs'].forEach(k => {
+    (Array.isArray(bk[k]) ? bk[k] : []).forEach(row => { if (row.projectId && !projectIds.has(row.projectId)) warnings.push(k + ':project-relation:' + row.id + ':will-be-detached-on-restore'); });
+  });
   const serviceIds = idsByCollection.services || new Set();
   const photoIds = idsByCollection.photos || new Set();
   const partIds = idsByCollection.parts || new Set();
@@ -355,7 +363,12 @@ function openRestorePreviewModal(bk, audit) {
         const after = await api('/backup');
         const afterCounts = backupCountMap(after.backup);
         const beforeCounts = backupCountMap(bk);
-        for (const k of ['projects', 'services', 'measurements', 'diagSessions', 'checklists', 'invoices', 'parts', 'notes', 'issues']) {
+        /* projects + archivedProjects are compared combined: legacy backups
+           may carry archived entries that the restore path folds into
+           projects (archived:true) instead of keeping a dead collection */
+        const projectTotal = c => (c.projects || 0) + (c.archivedProjects || 0);
+        if (projectTotal(afterCounts) !== projectTotal(beforeCounts)) throw new Error('restore-count-verification:projects');
+        for (const k of ['services', 'measurements', 'diagSessions', 'checklists', 'invoices', 'parts', 'notes', 'issues']) {
           if (afterCounts[k] !== beforeCounts[k]) throw new Error('restore-count-verification:' + k);
         }
         closeModal();

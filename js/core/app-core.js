@@ -1,8 +1,8 @@
 /* ================= VERSION SINGLE SOURCE OF TRUTH ================= */
-var APP_VERSION = '29.1.1';
+var APP_VERSION = '29.1.2';
 var DB_SCHEMA_VERSION = 3;
 var BACKUP_FORMAT_VERSION = 8;
-var CACHE_VERSION = 'zlift-pwa-v35';
+var CACHE_VERSION = 'zlift-pwa-v36';
 /* Display badge shown on Settings / about */
 var APP_BUILD = '2026-08-24';
 

@@ -169,9 +169,12 @@ function archiveProject(id) {
       : 'Project will be moved to archive and removed from active lists. Historical data (services, invoices, measurements…) is preserved. Continue?'),
     async () => {
       try {
-        p.archived = true; p.updatedAt = Date.now();
-        p.archivedAt = Date.now();
-        await api('/projects/' + id, { method: 'PUT', body: { archived: true, archivedAt: p.archivedAt } });
+        const archivedAt = Date.now();
+        const d = await api('/projects/' + id, { method: 'PUT', body: { archived: true, archivedAt } });
+        /* state follows the persisted record returned by the API — the flag
+           is now durable in the database itself, not kept alive only by the
+           shared in-memory object reference */
+        if (d && d.project) Object.assign(p, d.project);
         closeModal(); toast(LANG === 'fa' ? 'پروژه بایگانی شد' : 'Project archived'); render();
       } catch (e) { toast(errMsg(e), 'err'); }
     }
@@ -242,6 +245,7 @@ async function _doDeleteProject(id) {
     state.services.forEach(s => { if (s.projectId === id) { if (p && !s.customer) s.customer = p.customer || p.name || ''; if (p && !s.elevatorInfo) s.elevatorInfo = [p.name, p.location].filter(Boolean).join(' — '); } });
     stampAll(state.services); stampAll(state.measurements); stampAll(state.photos); stampAll(state.invoices);
     stampAll(state.diagSessions); stampAll(state.issues); stampAll(state.contracts); stampAll(state.reminders); stampAll(state.checklists);
+    stampAll(state.calcSaves); stampAll(state.safetyLogs);
     toast(t('deleted'));
   } catch (e) {
     rb.restore();

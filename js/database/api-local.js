@@ -17,12 +17,20 @@ function _lsLoad() {
   ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders', 'measurements', 'safetyLogs'].forEach(k => { if (!Array.isArray(_lsDB[k])) _lsDB[k] = []; });
   let _schemaChanged = false;
   if (!_lsDB.schemaVersion) { _lsDB.schemaVersion = 1; _schemaChanged = true; }
-  /* schema migration: v1 → v2 adds archivedProjects collection */
   if (+_lsDB.schemaVersion < DB_SCHEMA_VERSION) {
     _lsDB.schemaVersion = DB_SCHEMA_VERSION;
-    if (!Array.isArray(_lsDB.archivedProjects)) _lsDB.archivedProjects = [];
+    /* schema v2 introduced an `archivedProjects` collection that no code
+       path ever populated (archiving uses the project `archived` flag); it
+       is no longer created. Legacy entries, if any, are folded back into
+       projects below. */
     _schemaChanged = true;
   }
+  /* Phase 2A load-time normalization (idempotent, no deletes):
+     - fold any legacy archivedProjects entries into projects (archived:true)
+     - clear dangling calcSaves/safetyLogs projectIds left by older builds */
+  if (Array.isArray(_lsDB.archivedProjects) && _lsDB.archivedProjects.length &&
+      typeof STRUCTURED_DB !== 'undefined' && STRUCTURED_DB.foldArchivedProjects(_lsDB)) _schemaChanged = true;
+  if (typeof STRUCTURED_DB !== 'undefined' && STRUCTURED_DB.repairProjectRefs(_lsDB)) _schemaChanged = true;
   if (!_lsDB.sessions || typeof _lsDB.sessions !== 'object') _lsDB.sessions = {};
   _lsPruneSessions();
   _lsMigrateServices();
@@ -293,6 +301,12 @@ async function _apiLocal(path, opts = {}) {
       ['capacityKg', 'persons', 'floors', 'stops', 'speed', 'serviceIntervalDays', 'nominalVoltage'].forEach(f => { if (b[f] !== undefined) p[f] = +b[f] || 0; });
       if (b.voltageTolerance !== undefined) p.voltageTolerance = b.voltageTolerance == null || b.voltageTolerance === '' ? null : Math.max(0, +b.voltageTolerance || 0);
       if (b.progress !== undefined) p.progress = Math.max(0, Math.min(100, +b.progress || 0));
+      /* archive flags are persisted explicitly through the API path — the
+         client must never depend on shared object references for archival
+         (reference-based persistence breaks under cloning, rehydration or
+         multi-tab use). Omitting the fields (normal edit) preserves state. */
+      if (b.archived !== undefined) p.archived = !!b.archived;
+      if (b.archivedAt !== undefined) p.archivedAt = +b.archivedAt || Date.now();
       if (p.elevatorType !== 'hydraulic') p.elevatorType = 'traction';
       p.updatedAt = Date.now(); await _lsSave();
       return { project: p };
@@ -310,7 +324,11 @@ async function _apiLocal(path, opts = {}) {
           stamp(s);
         }
       });
-      ['measurements', 'photos', 'invoices', 'diagSessions', 'issues', 'contracts', 'reminders', 'checklists'].forEach(k => {
+      /* every project-owned collection is detached and stamped — calcSaves and
+         safetyLogs used to be missed here, leaving dangling projectId refs
+         behind after a project deletion (relationship verification now also
+         covers them, so a miss would break boot verification) */
+      ['measurements', 'photos', 'invoices', 'diagSessions', 'issues', 'contracts', 'reminders', 'checklists', 'calcSaves', 'safetyLogs'].forEach(k => {
         if (Array.isArray(db[k])) db[k].forEach(r => { if (r && r.projectId === p.id) stamp(r); });
       });
       db.projects = db.projects.filter(x => x.id !== p.id);
@@ -720,6 +738,16 @@ async function _apiLocal(path, opts = {}) {
       candidate[k] = Array.isArray(bk[k]) ? JSON.parse(JSON.stringify(bk[k])) : [];
     });
     candidate.schemaVersion = DB_SCHEMA_VERSION;
+
+    /* Phase 2A restore normalization (same policies as live operation, applied
+       BEFORE the verified atomic commit): fold legacy archivedProjects entries
+       into projects (archived:true) and detach dangling calcSaves/safetyLogs
+       refs that older builds could export. Without this, a perfectly usable
+       legacy backup would be rejected by strict relationship verification. */
+    if (typeof STRUCTURED_DB !== 'undefined') {
+      STRUCTURED_DB.foldArchivedProjects(candidate);
+      STRUCTURED_DB.repairProjectRefs(candidate);
+    }
 
     /* Keep restored photo bytes inline in the staged aggregate until the atomic
        structured commit is verified. Writing same-id blobs before that commit

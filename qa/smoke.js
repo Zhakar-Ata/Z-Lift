@@ -1022,6 +1022,151 @@ async function T(name, cond, info) {
     await T('migration recovery preserves counts and does not duplicate records', await ev(`_lsLoad().projects.length===${migrationExpectedProjects} && new Set(_lsLoad().projects.map(x=>x.id)).size===_lsLoad().projects.length`));
     await T('migration recovery never deletes or rewrites the legacy source', await ev(`localStorage.getItem('zlift_db')===${JSON.stringify(migrationLegacyRaw)}`));
 
+    /* ---- PHASE 2A: BUG-1 archive persistence (real API → IDB path) ---- */
+    const p2aArchive = await ev(`(async()=>{
+      const mk = name => api('/projects', { method: 'POST', body: { name } }).then(d => d.project);
+      const pA = await mk('P2A-Archive-A');
+      const pB = await mk('P2A-Archive-B');
+      if (!pA || !pB) return { ok: false, step: 'create' };
+      const ts = Date.now();
+      const put = await api('/projects/' + pA.id, { method: 'PUT', body: { archived: true, archivedAt: ts } });
+      if (!put.project || put.project.archived !== true || put.project.archivedAt !== ts) return { ok: false, step: 'put-response' };
+      /* clone the aggregate and re-read the database: the flag must live in
+         IndexedDB itself, not in a shared object reference */
+      const freshRead = () => STRUCTURED_DB.verifyAggregate(JSON.parse(JSON.stringify(_lsDB)));
+      const f1 = await freshRead();
+      const fA = f1.projects.find(x => x.id === pA.id);
+      const fB = f1.projects.find(x => x.id === pB.id);
+      if (!fA || fA.archived !== true || fA.archivedAt !== ts) return { ok: false, step: 'fresh-read' };
+      if (!fB || fB.archived === true) return { ok: false, step: 'sibling-isolation' };
+      /* a normal field edit must not clear the archive flags (whitelist semantics) */
+      const upd = await api('/projects/' + pA.id, { method: 'PUT', body: { name: 'P2A-Archive-A-renamed' } });
+      if (!upd.project || upd.project.archived !== true || upd.project.archivedAt !== ts) return { ok: false, step: 'edit-keeps-archive' };
+      /* archive → re-read → archive again (repeat operation) */
+      const ts2 = Date.now() + 5;
+      await api('/projects/' + pA.id, { method: 'PUT', body: { archived: true, archivedAt: ts2 } });
+      const f2 = await freshRead();
+      const fA2 = f2.projects.find(x => x.id === pA.id);
+      if (!fA2 || fA2.archived !== true || fA2.archivedAt !== ts2) return { ok: false, step: 're-archive' };
+      /* data-layer unarchive is supported (UI has no button — documented) */
+      const un = await api('/projects/' + pA.id, { method: 'PUT', body: { archived: false } });
+      const f3 = await freshRead();
+      const fA3 = f3.projects.find(x => x.id === pA.id);
+      if (!un.project || un.project.archived !== false || !fA3 || fA3.archived !== false) return { ok: false, step: 'unarchive-api' };
+      /* re-archive for the backup/restore check below */
+      await api('/projects/' + pA.id, { method: 'PUT', body: { archived: true, archivedAt: ts2 } });
+      return { ok: true, id: pA.id, other: pB.id };
+    })()`);
+    await T('P2A BUG-1: archive persists explicitly through the real API/IndexedDB path (clone-independent, edit-safe, repeatable)', p2aArchive && p2aArchive.ok, JSON.stringify(p2aArchive));
+    const p2aArchiveBackup = await ev(`(async()=>{
+      const exported = (await api('/backup')).backup;
+      const v = validateBackup(exported);
+      if (!v.ok) return { ok: false, step: 'export-invalid:' + v.why };
+      await api('/backup', { method: 'PUT', body: { backup: exported } });
+      const fresh = await STRUCTURED_DB.verifyAggregate(JSON.parse(JSON.stringify(_lsDB)));
+      const p = fresh.projects.find(x => x.name === 'P2A-Archive-A-renamed');
+      return { ok: !!p && p.archived === true && typeof p.archivedAt === 'number' && p.archivedAt > 0 };
+    })()`);
+    await T('P2A BUG-1: archived project survives backup → restore → verified re-read', p2aArchiveBackup && p2aArchiveBackup.ok, JSON.stringify(p2aArchiveBackup));
+
+    /* ---- PHASE 2A: BUG-2 delete/detach completeness ---- */
+    const p2aDelete = await ev(`(async()=>{
+      const mk = name => api('/projects', { method: 'POST', body: { name } }).then(d => d.project);
+      const pA = await mk('P2A-Del-A');
+      const pB = await mk('P2A-Del-B');
+      const csA = (await api('/calcSaves', { method: 'POST', body: { calcId: 'c9', name: 't', inputs: [], results: [], projectId: pA.id } })).item;
+      const csB = (await api('/calcSaves', { method: 'POST', body: { calcId: 'c9', name: 't2', inputs: [], results: [], projectId: pB.id } })).item;
+      const slA = (await api('/safetyLogs', { method: 'POST', body: { checklistId: 'tpl', projectId: pA.id, acknowledged: true } })).item;
+      const svA = (await api('/services', { method: 'POST', body: { projectId: pA.id, customer: '', elevatorInfo: '', problem: 'x' } })).service;
+      const svB = (await api('/services', { method: 'POST', body: { projectId: pB.id, customer: '', elevatorInfo: '', problem: 'y' } })).service;
+      await api('/projects/' + pA.id, { method: 'DELETE' });
+      const fresh = await STRUCTURED_DB.verifyAggregate(JSON.parse(JSON.stringify(_lsDB)));
+      const csA2 = fresh.calcSaves.find(x => x.id === csA.id);
+      const csB2 = fresh.calcSaves.find(x => x.id === csB.id);
+      const slA2 = fresh.safetyLogs.find(x => x.id === slA.id);
+      const svA2 = fresh.services.find(x => x.id === svA.id);
+      const svB2 = fresh.services.find(x => x.id === svB.id);
+      return {
+        ok: csA2 && csA2.projectId === '' && String(csA2.projectInfo || '').includes('P2A-Del-A')   /* detached + stamped, not deleted */
+         && slA2 && slA2.projectId === '' && String(slA2.projectInfo || '').includes('P2A-Del-A')
+         && csB2 && csB2.projectId === pB.id                                                          /* sibling untouched */
+         && svA2 && svA2.projectId === '' && svA2.customer === 'P2A-Del-A'                            /* legacy detach behavior preserved */
+         && svB2 && svB2.projectId === pB.id
+         && !fresh.projects.some(x => x.id === pA.id) && fresh.projects.some(x => x.id === pB.id)
+      };
+    })()`);
+    await T('P2A BUG-2: project delete detaches calcSaves & safetyLogs (stamped, no dangling refs; siblings & legacy service behavior intact)', p2aDelete && p2aDelete.ok, JSON.stringify(p2aDelete));
+
+    const p2aDangling = await ev(`(async()=>{
+      const injectAndExpectThrow = async (coll) => {
+        const rec = _lsDB[coll][0];
+        const keep = rec.projectId;
+        rec.projectId = 'ghost-project-p2a';
+        await _lsSave();                                    /* real persistence path */
+        let threw = false;
+        try { await STRUCTURED_DB.verifyAggregate(JSON.parse(JSON.stringify(_lsDB))); }
+        catch (e) { threw = String(e && e.message || '').includes('structured-relation:' + coll); }
+        const repaired = STRUCTURED_DB.repairProjectRefs(_lsDB);   /* canonical repair on the real aggregate */
+        await _lsSave();
+        let okAfter = false;
+        try { await STRUCTURED_DB.verifyAggregate(JSON.parse(JSON.stringify(_lsDB))); okAfter = true; } catch (e) {}
+        rec.projectId = keep; /* restore context for later tests (already '' post-repair) */
+        return threw && repaired && okAfter;
+      };
+      const calcOk = await injectAndExpectThrow('calcSaves');
+      const safetyOk = await injectAndExpectThrow('safetyLogs');
+      return { ok: calcOk && safetyOk, calcOk, safetyOk };
+    })()`);
+    await T('P2A BUG-2: strict relationship verification detects injected dangling calcSaves AND safetyLogs refs; canonical repair restores integrity', p2aDangling && p2aDangling.ok, JSON.stringify(p2aDangling));
+    await T('P2A BUG-2: backup audit surfaces dangling calcSaves/safetyLogs refs as warnings (legacy backups stay restorable)', () => ev(`(function(){
+      const now = Date.now();
+      const bk = { app:'zlift', formatVersion:BACKUP_FORMAT_VERSION, dbSchemaVersion:DB_SCHEMA_VERSION,
+        projects:[{id:'p1', name:'x', createdAt:now, updatedAt:now}], archivedProjects:[],
+        services:[], notes:[], checklists:[], parts:[], diagSessions:[],
+        calcSaves:[{id:'c1', projectId:'ghost', title:'legacy calc', createdAt:now, updatedAt:now}],
+        issues:[], tools:[], photos:[], invoices:[], contracts:[], reminders:[], measurements:[],
+        safetyLogs:[{id:'s1', projectId:'ghost', checklistId:'t', createdAt:now, updatedAt:now}], settings:{} };
+      const a = auditBackupData(bk);
+      return a.ok && a.warnings.some(w => w.indexOf('calcSaves:project-relation:') === 0)
+        && a.warnings.some(w => w.indexOf('safetyLogs:project-relation:') === 0);
+    })()`));
+
+    /* ---- PHASE 2A: OBS-2 vestigial archivedProjects disposition ---- */
+    const p2aObs = await ev(`(async()=>{
+      /* pure fold helper: valid entry folded, duplicate dropped, malformed kept */
+      const db1 = { projects: [{id:'p1', name:'live'}], archivedProjects: [
+        {id:'pa1', name:'Old Tower', createdAt:1, updatedAt:2},
+        {id:'p1', name:'duplicate-of-live'},
+        {notAnId:true}
+      ]};
+      const changed = STRUCTURED_DB.foldArchivedProjects(db1);
+      const foldOk = changed === true && db1.projects.length === 2 && db1.projects[1].id === 'pa1'
+        && db1.projects[1].archived === true && db1.projects[1].archivedAt === 2
+        && db1.archivedProjects.length === 1 /* malformed row is never deleted */;
+      /* the collection left the live model: validate() no longer gates on it */
+      const validateIgnores = STRUCTURED_DB.validate({ projects: [], users: [], archivedProjects: 'garbage-not-an-array' }).ok === true;
+      /* legacy backup carrying archivedProjects entries + a dangling legacy calcSave:
+         import stays valid (warnings only) and restore folds/repairs everything */
+      const now = Date.now();
+      const legacy = enrichBackupMetadata({ app:'zlift', projects:[{id:'qa-pr-live', name:'Live Tower', elevatorType:'traction', createdAt:now, updatedAt:now}],
+        archivedProjects:[{id:'qa-pr-arch', name:'Legacy Archived Tower', elevatorType:'hydraulic', createdAt:now-5, updatedAt:now-4}],
+        services:[], notes:[], checklists:[], parts:[], diagSessions:[],
+        calcSaves:[{id:'qa-calc-dangling', projectId:'qa-pr-gone', title:'legacy calc', createdAt:now, updatedAt:now}],
+        issues:[], tools:[], photos:[], invoices:[], contracts:[], reminders:[], measurements:[], safetyLogs:[], settings:{} });
+      const v = validateBackup(legacy);
+      if (!v.ok) return { ok: false, step: 'legacy-validate:' + v.why, foldOk };
+      await api('/backup', { method: 'PUT', body: { backup: legacy } });
+      const fresh = await STRUCTURED_DB.verifyAggregate(JSON.parse(JSON.stringify(_lsDB)));
+      const live = fresh.projects.find(x => x.id === 'qa-pr-live');
+      const arch = fresh.projects.find(x => x.id === 'qa-pr-arch');
+      const calcFixed = fresh.calcSaves.find(x => x.id === 'qa-calc-dangling');
+      const exported = (await api('/backup')).backup;
+      const exportClean = Array.isArray(exported.archivedProjects) && exported.archivedProjects.length === 0;
+      return { ok: foldOk && validateIgnores && live && arch && arch.archived === true
+        && calcFixed && calcFixed.projectId === '' && exportClean, foldOk, validateIgnores };
+    })()`);
+    await T('P2A OBS-2: legacy archivedProjects entries fold into archived projects (never deleted); dangling legacy calcSave restored via documented detach; export carries the empty collection', p2aObs && p2aObs.ok, JSON.stringify(p2aObs));
+
     /* ---- PH20: version identifiers stay consistent across files ---- */
     const swSrc = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
     const pkgJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));

@@ -9,6 +9,12 @@
    1:1 projection with the same stable id. This preserves today's API while
    leaving a clean relationship seam for a future multi-elevator project model.
 
+   Phase 2A note: the vestigial schema-v2 `archivedProjects` collection left
+   the live model (archiving uses the project `archived` flag). Any legacy
+   rows/entries are folded back into projects as archived:true — never
+   deleted — and relationship verification now also covers calcSaves and
+   safetyLogs (see repairProjectRefs/foldArchivedProjects below).
+
    Migration is fail-safe and idempotent:
      DETECT → VALIDATE → COPY (one transaction) → VERIFY → MARK COMPLETE.
    Any failure leaves zlift_db/zlift_db_mirror untouched and activates the
@@ -18,7 +24,7 @@ var STRUCTURED_DB = (() => {
   const VERSION = 3;
   const MIGRATION_VERSION = 1;
   const ARRAY_STORES = {
-    projects: 'projects', archivedProjects: 'archivedProjects', services: 'services', notes: 'notes',
+    projects: 'projects', services: 'services', notes: 'notes',
     checklists: 'checklists', parts: 'inventory', diagSessions: 'diagnostics', calcSaves: 'calculations',
     issues: 'issues', tools: 'tools', photos: 'photos', invoices: 'invoices', contracts: 'contracts',
     reminders: 'reminders', measurements: 'measurements', safetyLogs: 'safetyLogs', users: 'users'
@@ -149,6 +155,69 @@ var STRUCTURED_DB = (() => {
     counts.elevators = (db.projects || []).length;
     return counts;
   }
+  /* ---- Phase 2A data-integrity helpers (pure, idempotent, no deletes) ----
+     Both helpers may run on any aggregate-shaped object (boot read, legacy
+     localStorage source, staged restore candidate). They never remove a
+     record — they only repair relationships using the app's documented
+     detach policy. */
+  function repairProjectRefs(db) {
+    /* Older builds detached every project-owned record on project delete
+       EXCEPT calcSaves and safetyLogs, which could keep a dangling
+       projectId. Strict verification covers those collections now, so any
+       pre-existing dangling ref is normalized here (same policy as the
+       service-repair in the localStorage layer: clear the dead link). */
+    let changed = false;
+    const ids = new Set((db.projects || []).filter(Boolean).map(p => p.id));
+    ['calcSaves', 'safetyLogs'].forEach(k => {
+      (Array.isArray(db[k]) ? db[k] : []).forEach(r => {
+        if (r && r.projectId && !ids.has(r.projectId)) { r.projectId = ''; changed = true; }
+      });
+    });
+    return changed;
+  }
+  function foldArchivedProjects(db) {
+    /* `archivedProjects` was a schema-v2 collection that no code path ever
+       populated (archiving uses the project `archived` flag). It is no longer
+       part of the live model. If entries somehow exist (legacy device data or
+       an imported old backup), fold them back into projects as archived:true
+       — no archived project may disappear. Unmergeable malformed rows are
+       left in place, never deleted. */
+    if (!Array.isArray(db.archivedProjects) || !db.archivedProjects.length) return false;
+    let changed = false;
+    const ids = new Set((db.projects || []).filter(Boolean).map(p => p.id));
+    const keep = [];
+    db.archivedProjects.forEach(rec => {
+      if (rec && typeof rec === 'object' && typeof rec.id === 'string' && rec.id && !ids.has(rec.id)) {
+        ids.add(rec.id);
+        db.projects.push(Object.assign({}, rec, { archived: true, archivedAt: +rec.archivedAt || +rec.updatedAt || Date.now() }));
+        changed = true;
+      } else if (rec && typeof rec === 'object' && typeof rec.id === 'string' && rec.id) {
+        changed = true;   // duplicate of a live project — the live record wins
+      } else {
+        keep.push(rec);   // malformed/unknown — leave untouched
+      }
+    });
+    if (changed) db.archivedProjects = keep;
+    return changed;
+  }
+  async function sweepLegacyArchivedStore(agg) {
+    /* One-way compatibility sweep of the vestigial physical store on devices
+       whose IndexedDB was created before the collection left the live model.
+       Folds any rows into the aggregate (then clears the store only when
+       everything was consumed) so boot verification can never fail on them. */
+    try {
+      const db = await open();
+      if (!db.objectStoreNames || !db.objectStoreNames.contains('archivedProjects')) return false;
+      const rows = await request(db.transaction('archivedProjects', 'readonly').objectStore('archivedProjects').getAll());
+      if (!Array.isArray(rows) || !rows.length) return false;
+      agg.archivedProjects = rows;
+      const folded = foldArchivedProjects(agg);
+      if (folded && agg.archivedProjects.length === 0) {
+        await transaction(['archivedProjects'], 'readwrite', tx => tx.objectStore('archivedProjects').clear());
+      }
+      return folded;
+    } catch (e) { return false; }
+  }
   async function writeAggregate(source, migrationRecord) {
     const check = validate(source);
     if (!check.ok) throw new Error('structured-validation:' + check.why);
@@ -178,7 +247,7 @@ var STRUCTURED_DB = (() => {
       if (a[key] !== b[key]) throw new Error('structured-count:' + key);
     }
     const projectIds = new Set((loaded.projects || []).map(x => x.id));
-    for (const key of ['services', 'invoices', 'contracts', 'checklists', 'measurements', 'reminders', 'photos', 'diagSessions', 'issues']) {
+    for (const key of ['services', 'invoices', 'contracts', 'checklists', 'measurements', 'reminders', 'photos', 'diagSessions', 'issues', 'calcSaves', 'safetyLogs']) {
       for (const row of (loaded[key] || [])) {
         if (row.projectId && !projectIds.has(row.projectId)) throw new Error('structured-relation:' + key + ':' + row.id);
       }
@@ -202,11 +271,22 @@ var STRUCTURED_DB = (() => {
         await open();
         const marker = await readMeta('migration');
         if (marker && marker.status === 'complete' && +marker.version === MIGRATION_VERSION) {
-          _lsDB = await verifyAggregate(await readAggregate());
+          const agg = await readAggregate();
+          /* Phase 2A: normalize pre-existing integrity gaps (legacy dangling
+             calcSaves/safetyLogs refs, vestigial archivedProjects rows)
+             BEFORE strict verification, so an old device can never be pushed
+             into the localStorage fallback by data written by older builds.
+             writeAggregate is used directly (save() would re-enter ready()). */
+          const folded = await sweepLegacyArchivedStore(agg);
+          const repaired = repairProjectRefs(agg);
+          if (folded || repaired) await writeAggregate(agg, null);
+          _lsDB = await verifyAggregate(agg);
           mode = 'indexedDB';
           return mode;
         }
         const legacy = legacySource();
+        foldArchivedProjects(legacy.db);
+        repairProjectRefs(legacy.db);
         const sourceCheck = validate(legacy.db);
         if (!sourceCheck.ok) throw new Error('migration-source:' + sourceCheck.why);
         const startedAt = Date.now();
@@ -268,6 +348,7 @@ var STRUCTURED_DB = (() => {
   }
   return {
     available, ready, save, validate, verifyAggregate, putBackup, listBackups, clear,
+    repairProjectRefs, foldArchivedProjects,
     schemaVersion: VERSION, migrationVersion: MIGRATION_VERSION,
     status() { return { mode, error: lastError, migrationVersion: MIGRATION_VERSION }; }
   };
