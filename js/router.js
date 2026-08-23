@@ -1,7 +1,7 @@
 /* ================= APP SHELL ================= */
 function checkBackupNag() {
   try {
-    const last = +localStorage.getItem('zlift_last_backup') || 0;
+    const last = +(localStorage.getItem('zlift_last_external_backup') || 0);
     const snooze = +localStorage.getItem('zlift_backup_snooze') || 0;
     if (Date.now() < snooze) return;
     const days = last ? Math.floor((Date.now() - last) / 86400000) : 999;

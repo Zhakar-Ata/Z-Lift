@@ -798,27 +798,27 @@ async function T(name, cond, info) {
     await T('validateBackup rejects missing projects', () => ev(`validateBackup({app:'zlift',services:[]}).ok===false`));
     await T('validateBackup rejects corrupt/array field', () => ev(`validateBackup({app:'zlift',projects:[],services:'nope'}).ok===false`));
     await T('validateBackup rejects malformed version metadata', () => ev(`validateBackup({app:'zlift',version:'not-a-version',projects:[]}).why==='version'`));
-    await T('validateBackup rejects duplicate invoice numbers', () => ev(`(function(){var b=JSON.parse(JSON.stringify(${JSON.stringify(goodBackup.backup)}));var seed=b.invoices[0];b.invoices.push(Object.assign({},seed,{id:'duplicate-invoice-number-qa'}));return validateBackup(b).why==='invoices:duplicate-number';})()`));
-    await T('validateBackup rejects negative invoice values', () => ev(`(function(){var b=JSON.parse(JSON.stringify(${JSON.stringify(goodBackup.backup)}));b.invoices[0].items[0].qty=-1;return validateBackup(b).why==='invoices:item';})()`));
+    await T('validateBackup rejects duplicate invoice numbers', () => ev(`(function(){var b=JSON.parse(JSON.stringify(${JSON.stringify(goodBackup.backup)}));delete b.integrity;if(b.metadata)delete b.metadata.integrity;if(!b.invoices.length)b.invoices=[{id:'inv-a',number:'DUP',customer:'A',items:[],payments:[]}];var seed=b.invoices[0];b.invoices.push(Object.assign({},seed,{id:'duplicate-invoice-number-qa'}));return validateBackup(b).why.indexOf('invoices:duplicate-number')===0;})()`));
+    await T('validateBackup rejects negative invoice values', () => ev(`(function(){var b=JSON.parse(JSON.stringify(${JSON.stringify(goodBackup.backup)}));delete b.integrity;if(b.metadata)delete b.metadata.integrity;if(!b.invoices.length)b.invoices=[{id:'inv-a',number:'A',customer:'A',items:[{desc:'x',qty:1,price:1}],payments:[]}];b.invoices[0].items[0].qty=-1;return validateBackup(b).why.indexOf('invoices:item')===0;})()`));
     await T('validateBackup accepts a valid backup', () => ev(`validateBackup(${JSON.stringify(goodBackup.backup)}).ok===true`));
     await ev(`typeof runAutoBackup==='function' && runAutoBackup();`);
     await T('auto backup created a snapshot', () => ev(`listAutoBackups && listAutoBackups().length>=1`));
     await T('auto backup snapshot is restorable (round-trips)', () => ev(`(function(){var s=listAutoBackups()[0];return s && s.data && Array.isArray(s.data.projects);})()`));
-    await T('backup rejects device-local photo metadata without portable payload', () => ev(`(function(){var b=JSON.parse(JSON.stringify(${JSON.stringify(goodBackup.backup)}));b.photos=[{id:'missing-photo',inIdb:true,data:''}];return validateBackup(b).why==='photos:missing-data';})()`));
+    await T('backup rejects device-local photo metadata without portable payload', () => ev(`(function(){var b=JSON.parse(JSON.stringify(${JSON.stringify(goodBackup.backup)}));delete b.integrity;if(b.metadata)delete b.metadata.integrity;b.photos=[{id:'missing-photo',inIdb:true,data:''}];return validateBackup(b).why.indexOf('photos:missing-data')===0;})()`));
 
     const portablePhoto = 'data:image/png;base64,' + 'A'.repeat(5000);
-    const restoreResult = await ev(`(async()=>{var b=JSON.parse(JSON.stringify(${JSON.stringify(goodBackup.backup)}));b.projects.push({id:'restore-project-qa',name:'restore marker',createdAt:111,updatedAt:222});b.settings=Object.assign({},b.settings,{company:'Restore QA Company'});b.photos.push({id:'restore-photo-qa',data:${JSON.stringify(portablePhoto)},inIdb:false,cat:'QA',projectId:'restore-project-qa',createdAt:333,updatedAt:444});var r=await api('/backup',{method:'PUT',body:{backup:b}});var x=await api('/backup');return {r,project:x.backup.projects.find(p=>p.id==='restore-project-qa'),photo:x.backup.photos.find(p=>p.id==='restore-photo-qa'),company:x.backup.settings.company};})()`);
+    const restoreResult = await ev(`(async()=>{var b=JSON.parse(JSON.stringify(${JSON.stringify(goodBackup.backup)}));b.projects.push({id:'restore-project-qa',name:'restore marker',createdAt:111,updatedAt:222});b.settings=Object.assign({},b.settings,{company:'Restore QA Company'});b.photos.push({id:'restore-photo-qa',data:${JSON.stringify(portablePhoto)},inIdb:false,cat:'QA',projectId:'restore-project-qa',createdAt:333,updatedAt:444});b=enrichBackupMetadata(b);var r=await api('/backup',{method:'PUT',body:{backup:b}});var x=await api('/backup');return {r,project:x.backup.projects.find(p=>p.id==='restore-project-qa'),photo:x.backup.photos.find(p=>p.id==='restore-photo-qa'),company:x.backup.settings.company};})()`);
     await T('restore commits and read-back verifies all staged collections', restoreResult.r.verified === true && restoreResult.project && restoreResult.project.createdAt === 111 && restoreResult.company === 'Restore QA Company', JSON.stringify(restoreResult).slice(0, 220));
     await T('restore preserves and re-exports photo payloads and timestamps', restoreResult.photo && restoreResult.photo.data === portablePhoto && restoreResult.photo.createdAt === 333 && restoreResult.photo.updatedAt === 444);
     await ev(`(async()=>{await api('/backup',{method:'PUT',body:{backup:${JSON.stringify(goodBackup.backup)}}});await loadAll(true);return true})()`);
 
     const restoreBeforeFailure = await ev(`({company:_lsLoad().settings.company,projects:_lsLoad().projects.length})`);
-    const restoreCommitFailure = await ev(`(async()=>{var b=JSON.parse(JSON.stringify(${JSON.stringify(goodBackup.backup)}));b.settings.company='must not activate';var real=_lsSave;_lsSave=async()=>{throw new Error('qa-restore-commit')};try{await api('/backup',{method:'PUT',body:{backup:b}});return {ok:true}}catch(e){return {ok:false,message:e.message}}finally{_lsSave=real}})()`);
+    const restoreCommitFailure = await ev(`(async()=>{var b=JSON.parse(JSON.stringify(${JSON.stringify(goodBackup.backup)}));b.settings.company='must not activate';b=enrichBackupMetadata(b);var real=_lsSave;_lsSave=async()=>{throw new Error('qa-restore-commit')};try{await api('/backup',{method:'PUT',body:{backup:b}});return {ok:true}}catch(e){return {ok:false,message:e.message}}finally{_lsSave=real}})()`);
     const restoreAfterFailure = await ev(`({company:_lsLoad().settings.company,projects:_lsLoad().projects.length})`);
     await T('restore commit failure is surfaced instead of activating partial data', restoreCommitFailure.ok === false && restoreCommitFailure.message === 'qa-restore-commit', JSON.stringify(restoreCommitFailure));
     await T('restore commit failure keeps the previous live aggregate', restoreAfterFailure.company === restoreBeforeFailure.company && restoreAfterFailure.projects === restoreBeforeFailure.projects, JSON.stringify({restoreBeforeFailure,restoreAfterFailure}));
 
-    const photoFallback = await ev(`(async()=>{var b=JSON.parse(JSON.stringify(${JSON.stringify(goodBackup.backup)}));b.photos.push({id:'restore-photo-fallback',data:${JSON.stringify(portablePhoto)},inIdb:false,cat:'QA',projectId:'',createdAt:555});var real=IDB_PHOTOS.put;IDB_PHOTOS.put=async()=>{throw new Error('qa-photo-store')};try{var r=await api('/backup',{method:'PUT',body:{backup:b}});var p=_lsLoad().photos.find(x=>x.id==='restore-photo-fallback');return {r:r,p:{inIdb:p.inIdb,data:p.data,createdAt:p.createdAt}}}finally{IDB_PHOTOS.put=real}})()`);
+    const photoFallback = await ev(`(async()=>{var b=JSON.parse(JSON.stringify(${JSON.stringify(goodBackup.backup)}));b.photos.push({id:'restore-photo-fallback',data:${JSON.stringify(portablePhoto)},inIdb:false,cat:'QA',projectId:'',createdAt:555});b=enrichBackupMetadata(b);var real=IDB_PHOTOS.put;IDB_PHOTOS.put=async()=>{throw new Error('qa-photo-store')};try{var r=await api('/backup',{method:'PUT',body:{backup:b}});var p=_lsLoad().photos.find(x=>x.id==='restore-photo-fallback');return {r:r,p:{inIdb:p.inIdb,data:p.data,createdAt:p.createdAt}}}finally{IDB_PHOTOS.put=real}})()`);
     await T('restore photo-store failure safely retains verified inline payload', photoFallback.r.verified === true && photoFallback.r.photosOffloaded === false && photoFallback.p.inIdb === false && photoFallback.p.data === portablePhoto && photoFallback.p.createdAt === 555, JSON.stringify(photoFallback).slice(0, 180));
     await ev(`(async()=>{await api('/backup',{method:'PUT',body:{backup:${JSON.stringify(goodBackup.backup)}}});await loadAll(true);return true})()`);
 
@@ -981,7 +981,34 @@ async function T(name, cond, info) {
 
     /* ---- PH3: backup is explicitly labelled LOCAL with its limitations ---- */
     await T('backup: local-backup title & limitation note exist in i18n', () => ev(`!!(I18N.fa.backupLocalTitle && I18N.fa.backupLocalLimits && I18N.en.backupLocalTitle && I18N.en.backupLocalLimits)`));
-    await T('backup: limitation note names phone-loss/device-failure risks', () => ev(`/گم شدن گوشی|phone loss/.test(I18N.fa.backupLocalLimits + I18N.en.backupLocalLimits)`));
+    await T('backup: limitation note names phone-loss/device-failure risks', () => ev(`/خرابی گوشی|phone loss|device failure/.test(I18N.fa.backupLocalLimits + I18N.en.backupLocalLimits)`));
+    await T('backup: status is based on external JSON export, not local snapshot', () => ev(`(localStorage.removeItem('zlift_last_external_backup'), localStorage.setItem('zlift_last_local_backup', String(Date.now())), /No external|هیچ فایل/.test(backupStatusBadge()))`));
+
+    /* ---- Data safety: realistic backup → clear → restore round-trip ---- */
+    const backupRoundTrip = await ev(`(async()=>{
+      const now = Date.now();
+      const p1 = {id:'qa-pr-1', name:'QA Tower A', customer:'Client A', elevatorType:'traction', createdAt:now, updatedAt:now};
+      const p2 = {id:'qa-pr-2', name:'QA Tower B', customer:'Client B', elevatorType:'hydraulic', createdAt:now, updatedAt:now};
+      const part = {id:'qa-part-1', name:'Door roller', category:'Doors', unit:'pcs', qty:5, min:1, price:1000, history:[], createdAt:now, updatedAt:now};
+      const service = {id:'qa-svc-1', projectId:p1.id, customer:p1.customer, elevatorInfo:p1.name, date:now, technician:'QA Tech', serviceType:'maintenance', problem:'noise', diagnosis:'roller', work:'adjusted', partsUsed:[{partId:part.id,name:part.name,qty:1}], finalStatus:'ok', createdAt:now, updatedAt:now};
+      const backup = enrichBackupMetadata({app:'zlift', projects:[p1,p2], archivedProjects:[], services:[service], measurements:[{id:'qa-meas-1', projectId:p1.id, serviceId:service.id, typeId:'voltage', kind:'numeric', value:380, status:'normal', date:now, createdAt:now}], diagSessions:[{id:'qa-diag-1', projectId:p1.id, flowId:'f01', current:'done', evidence:[], createdAt:now, updatedAt:now}], checklists:[{id:'qa-ch-1', projectId:p1.id, type:'traction', items:{x:'pass'}, createdAt:now, updatedAt:now}], invoices:[{id:'qa-inv-1', number:'QA-1', projectId:p1.id, serviceId:service.id, customer:p1.customer, items:[{desc:'Door roller', qty:1, price:1000, partId:part.id}], payments:[{amount:1000,date:now,note:'paid'}], labor:0, discount:0, taxRate:0, createdAt:now, updatedAt:now}], parts:[part], notes:[{id:'qa-note-1', projectId:p1.id, text:'site note', createdAt:now, updatedAt:now}], issues:[{id:'qa-issue-1', projectId:p1.id, title:'follow up', status:'open', createdAt:now, updatedAt:now}], contracts:[], reminders:[], photos:[], calcSaves:[{id:'qa-calc-1', title:'calc', createdAt:now}], tools:[{id:'qa-tool-1', name:'meter', createdAt:now}], safetyLogs:[], settings:{company:'QA Lift', invoiceSeq:1}});
+      const v = validateBackup(backup);
+      if(!v.ok) return {ok:false, step:'validate', why:v.why};
+      await api('/backup',{method:'PUT', body:{backup}});
+      const exported = (await api('/backup')).backup;
+      const exportedValid = validateBackup(exported);
+      if(!exportedValid.ok || !exported.integrity || !exported.recordCounts) return {ok:false, step:'export', why:exportedValid.why};
+      const empty = enrichBackupMetadata(Object.assign({}, backup, {projects:[], services:[], measurements:[], diagSessions:[], checklists:[], invoices:[], parts:[], notes:[], issues:[], calcSaves:[], tools:[]}));
+      await api('/backup',{method:'PUT', body:{backup:empty}});
+      await api('/backup',{method:'PUT', body:{backup:exported}});
+      const restored = (await api('/backup')).backup;
+      const c = backupCountMap(restored);
+      const rel = restored.services[0].projectId === 'qa-pr-1' && restored.measurements[0].serviceId === 'qa-svc-1' && restored.invoices[0].items[0].partId === 'qa-part-1';
+      return {ok:c.projects===2 && c.services===1 && c.measurements===1 && c.diagnostics===1 && c.checklists===1 && c.invoices===1 && c.inventory===1 && c.notes===1 && c.issues===1 && rel, counts:c, rel};
+    })()`);
+    await T('backup/restore: realistic dataset round-trips all key categories and relationships', backupRoundTrip && backupRoundTrip.ok, JSON.stringify(backupRoundTrip));
+    await T('backup validation: newer unsupported backup is rejected safely', () => ev(`!validateBackup(Object.assign({}, (window.__qaLastBackup||{}), {app:'zlift', formatVersion:BACKUP_FORMAT_VERSION+1, projects:[]})).ok`));
+    await T('backup validation: unknown top-level fields are not silently discarded', () => ev(`!validateBackup({app:'zlift', formatVersion:BACKUP_FORMAT_VERSION, projects:[], unexpectedField:true}).ok`));
 
     /* ---- PH2: interrupted migration marker is recovered idempotently ---- */
     const migrationLegacyRaw = await ev(`JSON.stringify(_lsLoad())`);
@@ -1004,6 +1031,12 @@ async function T(name, cond, info) {
     const appVer = (htmlSrc.match(/APP_VERSION = '([^']+)'/) || [])[1];
     await T('versioning: CACHE_VERSION (app) === CACHE (service worker)', swCache && swCache === appCache, swCache + ' vs ' + appCache);
     await T('PWA install requires one complete atomic core precache', /\.addAll\(CORE\)/.test(swSrc) && !/CORE\.map\([^\n]+catch/.test(swSrc));
+    await T('PWA cache does not store unnecessary external CDN/font resources', !/cdn\.jsdelivr|fonts\.googleapis|fonts\.gstatic|isCdn/.test(swSrc));
+    await T('PWA core precache includes every local script and stylesheet from index.html', () => {
+      const assets = [...html.matchAll(/<(?:script|link)[^>]+(?:src|href)=\"([^\"]+)\"/g)].map(m => m[1]).filter(x => !/^(https?:|data:)/.test(x) && !x.startsWith('#'));
+      return assets.every(a => swSrc.includes("'./" + a.replace(/^\.\//, '') + "'") || swSrc.includes('"./' + a.replace(/^\.\//, '') + '"'));
+    });
+    await T('PWA same-origin assets use network-first fallback to avoid old/new shell mismatches', /static assets: network-first/.test(swSrc) && /fetch\(req\)[\s\S]+caches\.match\(req\)/.test(swSrc));
     await T('versioning: package.json version === APP_VERSION', pkgJson.version === appVer, pkgJson.version + ' vs ' + appVer);
     await T('versioning: backup format version is an integer ≥ 6', () => ev(`Number.isInteger(BACKUP_FORMAT_VERSION) && BACKUP_FORMAT_VERSION >= 6`));
 

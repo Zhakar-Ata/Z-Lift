@@ -2,12 +2,12 @@
    Strategy:
      • navigations  → network-first with a 4s timeout, fall back to the cached shell
        (guarantees a fresh app right after deploy, still works fully offline)
-     • same-origin static assets & the fonts CDN → cache-first, refreshed in background
+     • same-origin static assets → network-first with cached offline fallback
      • /api/ GETs → network-first, cached copy as offline fallback
      (defensive only: Z Lift has no backend today — all data is local; this branch
      exists so a future optional sync endpoint keeps working offline)
    Bump CACHE on every release so old shells are evicted. */
-const CACHE = 'zlift-pwa-v34';
+const CACHE = 'zlift-pwa-v35';
 const CORE = [
   './',
   './index.html',
@@ -97,7 +97,6 @@ self.addEventListener('fetch', e => {
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
 
   const sameOrigin = url.origin === self.location.origin;
-  const isCdn = url.hostname === 'cdn.jsdelivr.net' || url.hostname === 'fonts.gstatic.com' || url.hostname === 'fonts.googleapis.com';
 
   /* app shell: network-first so a new release shows up immediately */
   if (req.mode === 'navigate') {
@@ -122,15 +121,13 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  if (!sameOrigin && !isCdn) return;                // leave third-party traffic alone
+  if (!sameOrigin) return;                         // do not cache external fonts/CDNs; they may fail without breaking the app
 
-  /* static assets: cache-first, then refresh the entry in the background */
+  /* static assets: network-first for same-origin files to avoid old HTML/new JS
+     mismatches after deploy; cached entries keep the PWA usable offline. */
   e.respondWith(
-    caches.match(req).then(hit => {
-      const network = fetch(req)
-        .then(res => { putInCache(req, res); return res; })
-        .catch(() => hit || Response.error());
-      return hit || network;
-    })
+    fetch(req)
+      .then(res => { putInCache(req, res); return res; })
+      .catch(() => caches.match(req).then(hit => hit || Response.error()))
   );
 });
