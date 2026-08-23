@@ -1047,7 +1047,8 @@ const I18N = {
     measBalanced: 'تقارن ولتاژ قابل قبول به نظر می‌رسد (اختلاف {p}٪)', measUnbalanced: 'عدم تقارن ولتاژ (اختلاف {p}٪) — اتصالات و شبکه را بررسی کنید',
     measHistory: 'تاریخچهٔ اندازه‌گیری', measNew: 'ثبت اندازه‌گیری جدید', measType: 'نوع اندازه‌گیری', measPoint: 'نقطهٔ اندازه‌گیری',
     measCat_elec: 'الکتریکال', measCat_control: 'کنترل/فرمان', measCat_safety: 'ایمنی', measCat_drive: 'موتور/درایو', measCat_mech: 'مکانیکال',
-    measStatusNormal: 'نرمال', measStatusAttention: 'نیاز به بررسی', measStatusCritical: 'بحرانی', measStatusUnknown: 'نامشخص',
+    measStatusNormal: 'نرمال', measStatusAttention: 'نیاز به بررسی', measStatusCritical: 'بحرانی', measStatusModel: 'وابسته به مدل/استاندارد', measStatusUnknown: 'نامشخص',
+    measModelHint: 'ارزیابی قطعی نیازمند منوال سازنده یا استاندارد قابل اجرا است — حد عمومی و قطعی برای این مقدار در اپ تعریف نشده است.',
     measStatus: 'وضعیت اندازه‌گیری',
     measRedFlag: 'پرچم قرمز', measReason: 'علت', measNextCheck: 'بررسی بعدی', measSafetyWarn: 'هشدار ایمنی',
     measRefType: 'مرجع مقایسه', measRefManual: 'منوال سازنده', measRefStandard: 'استاندارد', measRefTech: 'تجربهٔ تکنسین',
@@ -1316,7 +1317,8 @@ const I18N = {
     measBalanced: 'Voltage balance appears acceptable ({p}% deviation)', measUnbalanced: 'Voltage imbalance ({p}%) — check connections and supply',
     measHistory: 'Measurement history', measNew: 'Log measurement', measType: 'Measurement type', measPoint: 'Measured point',
     measCat_elec: 'Electrical', measCat_control: 'Control', measCat_safety: 'Safety', measCat_drive: 'Motor/Drive', measCat_mech: 'Mechanical',
-    measStatusNormal: 'Normal', measStatusAttention: 'Needs attention', measStatusCritical: 'Critical', measStatusUnknown: 'Unknown',
+    measStatusNormal: 'Normal', measStatusAttention: 'Needs attention', measStatusCritical: 'Critical', measStatusModel: 'Model-/standard-dependent', measStatusUnknown: 'Unknown',
+    measModelHint: 'Definitive evaluation requires the manufacturer manual or the applicable standard — the app does not define a universal hard limit for this value.',
     measStatus: 'Measurement status',
     measRedFlag: 'Red flag', measReason: 'Reason', measNextCheck: 'Next check', measSafetyWarn: 'Safety warning',
     measRefType: 'Reference', measRefManual: 'Manufacturer manual', measRefStandard: 'Standard', measRefTech: 'Technician reference',
@@ -1960,7 +1962,7 @@ const DIAG_FLOWS = [
   {
     id: 'f01', type: 'both', icon: '⛔',
     symptom: { fa: 'آسانسور اصلاً حرکت نمی‌کند', en: 'Elevator does not move at all' },
-    safety: { fa: 'قبل از باز کردن تابلو، برق اصلی را قطع، قفل و برچسب‌گذاری کنید (LOTO) و بی‌برقی را با فازمتر تأیید کنید. اندازه‌گیری زیر ولتاژ فقط با احتیاط کامل و ابزار سالم.' },
+    safety: { fa: '⚠️ الزامات ایمنی: (۱) قبل از باز کردن تابلو، برق اصلی را قطع، قفل و برچسب‌گذاری کنید (LOTO) و بی‌برقی را با مولتی‌متر (نه فقط فازمتر) تأیید کنید. (۲) هرگز کنتاکت‌های مدار ایمنی یا قفل درب را پل/بای‌پس نکنید — نقص ایمنی جدی است. (۳) هرگونه تست زیر ولتاژ با ابزار سالم، دست خشک و تجهیزات حفاظت فردی. (۴) تست حرکت زیر بار یا با مسافر در صورتی که ایمنی کامل تضمین نشده ممنوع است.' },
     tools: { fa: 'مولتی‌متر، فازمتر، چراغ‌قوه' },
     first: { fa: 'اول برق ورودی تابلو و LEDهای مدار ایمنی را ببینید — ۸۰٪ موارد همین‌جاست.' },
     start: 'p1',
@@ -1998,9 +2000,9 @@ const DIAG_FLOWS = [
         opts: [{ l: { fa: 'کنتاکتور می‌گیرد ولی حرکت نیست' }, n: 'r4' }, { l: { fa: 'هیچ واکنشی نیست' }, n: 'r5' }] },
       r4: { title: { fa: 'فرمان هست، حرکت نیست — مکانیکال/ترمز' },
         causes: [{ fa: 'ترمز باز نمی‌شود (بوبین، رکتیفایر، خلاصی)' }, { fa: 'خروجی درایو به موتور قطع است (کنتاکتور خروجی، کابل)' }, { fa: 'گیر مکانیکی: پاراشوت درگیر مانده، جسم خارجی در چاه' }],
-        actions: [{ fa: 'ولتاژ بوبین ترمز را در لحظه فرمان اندازه بگیرید' }, { fa: 'در حالت بی‌برق و ایمن، آزاد بودن مسیر حرکت را با فلایویل/دستگاه نجات حس کنید' }, { fa: 'اتصال سه فاز خروجی درایو به موتور را کنترل کنید' }],
+        actions: [{ fa: 'ولتاژ بوبین ترمز را در لحظه فرمان اندازه بگیرید (ولتاژ باید مطابق پلاک بوبین باشد)' }, { fa: 'در حالت بی‌برق (LOTO) و با اطمینان از عدم وجود مسافر، آزاد بودن مسیر حرکت را با فلایویل (hand-wheeling) حس کنید' }, { fa: 'باز کردن دستی ترمز فقط با اهرم نجات استاندارد و با کنترل کامل کابین انجام شود — کابین به سمت سنگین‌تر حرکت می‌کند' }, { fa: 'اتصال سه فاز خروجی درایو به موتور را کنترل کنید' }],
         parts: [{ fa: 'بوبین/رکتیفایر ترمز' }, { fa: 'کنتاکتور خروجی' }],
-        next: { fa: 'اگر ترمز مشکوک است فلوی «ترمز باز نمی‌شود» را اجرا کنید.' } },
+        next: { fa: '⚠️ هرگز با پاراشوت درگیر یا قفل/کنتاکت درب بای‌پس حرکت نکنید. اگر ترمز مشکوک است فلوی «ترمز باز نمی‌شود» را اجرا کنید.' } },
       r5: { title: { fa: 'فرمان حرکت صادر نمی‌شود' },
         causes: [{ fa: 'رله/کنتاکتور فرمان معیوب' }, { fa: 'سیگنال احضار به تابلو نمی‌رسد (شستی، شاسی)' }, { fa: 'تابلو در حالت بازرسی/سرویس مانده (کلید Inspection سقف کابین)' }, { fa: 'خروجی فرمان درایو (Enable/Run) فعال نمی‌شود' }],
         actions: [{ fa: 'کلید بازرسی سقف کابین و موتورخانه را کنترل کنید — رایج‌ترین مورد فراموش‌شده!' }, { fa: 'ورودی/خروجی‌های تابلو را با LEDهای I/O دنبال کنید' }, { fa: 'بوبین کنتاکتورها را تست کنید' }],
@@ -3118,14 +3120,15 @@ const CALCULATORS = [
   },
   {
     id: 'c8',
-    title: { fa: 'جریان موتور سه‌فاز', en: 'Three-phase motor current' },
-    desc: { fa: 'جریان نامی از توان + پیشنهاد کابل و کلید', en: 'Rated current + cable & breaker suggestion' },
-    formula: 'I = P / (√3 × U × cosφ × η)',
+    title: { fa: 'جریان موتور سه‌فاز — تخمین اولیه کابل', en: 'Three-phase motor current — preliminary cable estimate' },
+    desc: { fa: 'تخمین اولیه جریان، کابل و کلید (نه طراحی نهایی)', en: 'Preliminary estimate of current, cable & breaker (not final design)' },
+    formula: 'I = P / (√3 × U × cosφ × η)  |  کابل پیشنهادی از جدول تقریبی آمپاسیته',
     inputs: [
       { id: 'p', label: { fa: 'توان موتور', en: 'Motor power' }, value: 7.5, step: 0.5, unit: 'kW' },
       { id: 'u', label: { fa: 'ولتاژ خط', en: 'Line voltage' }, value: 380, unit: 'V' },
       { id: 'pf', label: { fa: 'ضریب توان cosφ', en: 'Power factor' }, value: 0.85, step: 0.05 },
-      { id: 'eff', label: { fa: 'بازده موتور', en: 'Motor efficiency' }, value: 88, unit: '%' }
+      { id: 'eff', label: { fa: 'بازده موتور', en: 'Motor efficiency' }, value: 88, unit: '%' },
+      { id: 'len', label: { fa: 'طول کابل (یک‌طرفه)', en: 'Cable length (one-way)' }, value: 15, step: 1, unit: 'm' }
     ],
     compute(v) {
       const I = v.p * 1000 / (Math.sqrt(3) * v.u * v.pf * v.eff / 100);
@@ -3136,14 +3139,18 @@ const CALCULATORS = [
       if (I > 45) cable = '16 mm²';
       if (I > 62) cable = '25 mm²';
       const fuse = [10,16,20,25,32,40,50,63,80,100].find(f => f >= I * 1.25) || 125;
+      const dU = Math.sqrt(3) * I * (v.len || 15) * (0.0175 / parseFloat(cable));
+      const dUpct = dU / v.u * 100;
+      const warn = (v.len > 30 || dUpct > 3) ? ' ⚠️' : '';
       return [
-        { label: { fa: 'جریان نامی', en: 'Rated current' }, val: I.toFixed(1) + ' A' },
-        { label: { fa: 'پیشنهاد کابل مسی', en: 'Suggested copper cable' }, val: cable },
-        { label: { fa: 'کلید موتوری پیشنهادی', en: 'Suggested breaker' }, val: fuse + ' A' }
+        { label: { fa: 'جریان نامی تخمینی', en: 'Estimated rated current' }, val: I.toFixed(1) + ' A' },
+        { label: { fa: 'کابل مسی — تخمین اولیه', en: 'Copper cable — preliminary estimate' }, val: cable + warn },
+        { label: { fa: 'افت ولتاژ تخمینی در این طول', en: 'Estimated voltage drop at this length' }, val: dU.toFixed(1) + ' V (' + dUpct.toFixed(1) + ' %)' },
+        { label: { fa: 'کلید/بی‌متال پیشنهادی (اولیه)', en: 'Breaker/overload suggestion (preliminary)' }, val: fuse + ' A' }
       ];
     },
-    assume: { fa: 'مسیر کوتاه، دمای معمول، کابل مسی در سینی/داکت. با درایو VVVF جریان راه‌اندازی محدود می‌شود.', en: 'Short run, normal temp, copper in tray. VVVF limits inrush.' },
-    note: { fa: '🔧 راهنمای تکنسین — سایز نهایی کابل و حفاظت باید طبق مبحث ۱۳ / IEC توسط طراح برق تأیید شود.', en: '🔧 Guidance — final sizing per IEC/local code by the electrical designer.' }
+    assume: { fa: 'مسیر کوتاه، دمای ۳۰ درجه محیط، یک رشته کابل در هوا/داکت، کابل مسی، cosφ و η تخمینی. ضرایب تصحیح دما، گروه‌بندی و نحوه نصب لحاظ نشده است. VVVF جریان هجومی راه‌اندازی را محدود می‌کند.', en: 'Short run, 30 °C, single cable in air/tray, copper; temperature, grouping & derating factors NOT applied.' },
+    note: { fa: '⚠️ برآورد اولیه — نیازمند تأیید مهندسی. سایز نهایی باید طبق IEC 60364 / مبحث ۱۳ مقررات ملی ساختمان و با احتساب ضرایب تصحیح دما، گروه‌بندی، افت ولتاژ و نوع حفاظت توسط طراح برق تأیید شود.', en: '⚠️ PRELIMINARY ESTIMATE — ENGINEERING VERIFICATION REQUIRED per IEC 60364 / local code including derating (temperature, grouping) and voltage drop.' }
   },
   {
     id: 'c9',
@@ -3442,8 +3449,8 @@ CALCULATORS.push(
         { label: { fa: 'α بر حسب رادیان', en: 'α in rad' }, val: (alpha * Math.PI / 180).toFixed(3) + ' rad' }
       ];
     },
-    assume: { fa: 'مدل ساده‌شده هندسی: رشته سمت کابین قائم فرض شده و قطر فلکه‌ها در محاسبه زاویه صرف‌نظر شده است. اگر رشته کابین قائم نیست یا اختلاف قطر فلکه‌ها زیاد است، زاویه واقعی متفاوت خواهد بود.', en: 'Simplified geometry: car-side fall assumed vertical; pulley diameters neglected.' },
-    note: { fa: '⚠️ نیازمند تأیید مرجع فنی: کفایت زاویه α برای قابلیت کشش باید طبق محاسبه کشش EN 81-20 (پیوست M) و مدارک سازنده فلکه/موتور کنترل شود — این ابزار فقط هندسه را حساب می‌کند و هیچ حد قبول/رد ارائه نمی‌دهد.', en: '⚠️ Traction adequacy must be verified per EN 81-20 traction calc and manufacturer data — this tool computes geometry only.' }
+    assume: { fa: 'مدل ساده‌شده هندسی: رشته سمت کابین قائم فرض شده، قطر فلکه‌ها و خیز بکسل صرف‌نظر شده است. اگر رشته کابین قائم نیست یا اختلاف قطر فلکه‌ها زیاد است، زاویه واقعی متفاوت خواهد بود.', en: 'Simplified geometry: car-side fall assumed vertical; pulley diameters and rope sag neglected.' },
+    note: { fa: '⚠️ فقط هندسه رشته (Rope geometry) — نه اثبات قابلیت کشش. این ابزار هیچ اظهاری در مورد کفایت کشش (Traction) نمی‌دهد. اعتبارسنجی کشش مستلزم محاسبهٔ کامل طبق EN 81-20 پیوست M با در نظر گرفتن: نوع شیار (V / Undercut)، زاویه شیار، جنس شیار، ضریب اصطکاک، نیروهای بکسل در بارهای مختلف، جرم وزنه تعادل، شتاب، و دیتای سازنده فلکه/موتور است. زاویه α فقط یکی از پارامترهای ورودی آن محاسبه است.', en: '⚠️ Rope geometry only — NOT traction validation. Traction adequacy requires EN 81-20 Annex M calculation with groove type/angle, friction, loads, counterweight, acceleration, and sheave manufacturer data.' }
   },
   {
     id: 'h1', cat: 'hyd',
@@ -3584,8 +3591,23 @@ const MEASURE_FIELDS = [
       : v > 460 ? { status: 'critical', reason: { fa: 'اضافه‌ولتاژ خطرناک', en: 'Dangerous over-voltage' } } : { status: 'unknown' } },
   { id: 'v_st', fa: 'ولتاژ S-T', en: 'Voltage S-T', unit: 'V', cat: 'elec', decimals: 0, min: 0, eval: (v) => (MEASURE_FIELDS.find(f => f.id === 'v_rs').eval(v)) },
   { id: 'v_rt', fa: 'ولتاژ R-T', en: 'Voltage R-T', unit: 'V', cat: 'elec', decimals: 0, min: 0, eval: (v) => (MEASURE_FIELDS.find(f => f.id === 'v_rs').eval(v)) },
-  { id: 'v_control', fa: 'ولتاژ کنترل/فرمان', en: 'Control supply voltage', unit: 'V', cat: 'control', decimals: 0, min: 0, placeholder: 'مثلاً ۱۱۰ / ۶۰ / ۲۴' },
-  { id: 'i_motor', fa: 'جریان موتور', en: 'Motor current', unit: 'A', cat: 'drive', decimals: 1, min: 0 },
+  { id: 'v_control', fa: 'ولتاژ کنترل/فرمان', en: 'Control supply voltage', unit: 'V', cat: 'control', decimals: 0, min: 0, placeholder: 'مثلاً ۱۱۰ / ۶۰ / ۲۴',
+    eval: (v, ctx) => {
+      const rated = ctx && +ctx.v_control_rated;
+      if (!rated) return { status: 'model', reason: { fa: 'ارزیابی نیازمند ولتاژ نامی مدار فرمان (از پلاک ترانس/منوال) است', en: 'Evaluation requires the rated control voltage (from nameplate/manual)' } };
+      const lo = rated * 0.9, hi = rated * 1.1;
+      if (v >= lo && v <= hi) return { status: 'normal' };
+      if (v >= rated * 0.8 && v <= rated * 1.15) return { status: 'attention', reason: { fa: 'خارج از محدوده ±۱۰٪ ولتاژ نامی', en: 'Outside ±10 % of rated' } };
+      return { status: 'critical', reason: { fa: 'ولتاژ کنترل خارج از محدوده قابل قبول', en: 'Control voltage out of acceptable range' } };
+    } },
+  { id: 'i_motor', fa: 'جریان موتور', en: 'Motor current', unit: 'A', cat: 'drive', decimals: 1, min: 0,
+    eval: (v, ctx) => {
+      const rated = ctx && +ctx.i_rated;
+      if (!rated) return { status: 'model', reason: { fa: 'برای ارزیابی، جریان نامی موتور (از پلاک) لازم است', en: 'Rated motor current (nameplate) required for evaluation' } };
+      if (v <= rated * 1.05) return { status: 'normal' };
+      if (v <= rated * 1.2) return { status: 'attention', reason: { fa: 'بیش از جریان نامی — بررسی بار مکانیکی', en: 'Above rated — check mechanical load' } };
+      return { status: 'critical', reason: { fa: 'اضافه‌جریان قابل توجه — خطر آسیب موتور/درایو', en: 'Significant overcurrent — motor/drive damage risk' } };
+    } },
   { id: 'v_dcbus', fa: 'ولتاژ باس DC درایو', en: 'Drive DC bus voltage', unit: 'V', cat: 'drive', decimals: 0, min: 0,
     eval: (v, ctx) => {
       /* nominal DC bus ≈ √2 × line voltage. We infer 380 V vs 220 V from the
@@ -3649,6 +3671,7 @@ const MEAS_STATUS_META = {
   normal:   { icon: '🟢', key: 'measStatusNormal',   cls: 'b-green' },
   attention:{ icon: '🟡', key: 'measStatusAttention', cls: 'b-amber' },
   critical: { icon: '🔴', key: 'measStatusCritical', cls: 'b-red' },
+  model:    { icon: '🔵', key: 'measStatusModel', cls: 'b-blue' },
   unknown:  { icon: '⚪', key: 'measStatusUnknown', cls: 'b-gray' }
 };
 /* parse Persian/Arabic/European numerals and thousands separators into a Number.
@@ -3772,6 +3795,14 @@ const VVVF_DB = [
 
 /* suggested technician tools */
 const TOOL_SUGGESTIONS = ['مولتی‌متر', 'کلمپ‌متر (آمپرمتر انبری)', 'فازمتر', 'میگر (تستر عایق)', 'متر ۵ متری', 'کولیس', 'مانومتر', 'ترمومتر لیزری', 'تراز', 'شاقول', 'آچار آلن ست', 'آچار فرانسه', 'دم‌باریک و سیم‌چین', 'چراغ پیشانی', 'کلید سه‌گوش', 'گیج کشش بکسل', 'فیلر'];
+
+/* ================= VERSION SINGLE SOURCE OF TRUTH ================= */
+const APP_VERSION = '27.1.0';
+const DB_SCHEMA_VERSION = 2;
+const BACKUP_FORMAT_VERSION = 6;
+const CACHE_VERSION = 'zlift-pwa-v30';
+/* Display badge shown on Settings / about */
+const APP_BUILD = '2026-08-23';
 
 /* ================= Z Lift — SPA app ================= */
 'use strict';
@@ -4486,7 +4517,7 @@ async function render() {
 /* ================= DASHBOARD ================= */
 function renderDashboard() {
   const c = $('#content');
-  const projects = state.projects;
+  const projects = (state.projects || []).filter(p => !p.archived);
   const latest = projects[0];
   const stats = {
     projects: projects.length,
@@ -4707,6 +4738,7 @@ function renderProjects() {
       <select id="projStatusSel" style="background:var(--bg-card);border:1.5px solid var(--border);border-radius:12px;padding:9px 12px;color:inherit;outline:none">
         <option value="all">${t('statusFilter')}: ${t('all')}</option>
         ${Object.keys(STATUS_META).map(s2 => `<option value="${s2}" ${projFilter.status === s2 ? 'selected' : ''}>${t(STATUS_META[s2].key)}</option>`).join('')}
+        <option value="archived" ${projFilter.status === 'archived' ? 'selected' : ''}>📦 ${LANG === 'fa' ? 'بایگانی' : 'Archived'}</option>
       </select>
       <select id="projSortSel" style="background:var(--bg-card);border:1.5px solid var(--border);border-radius:12px;padding:9px 12px;color:inherit;outline:none">
         <option value="newest" ${projFilter.sort === 'newest' ? 'selected' : ''}>${t('sortBy')}: ${t('sortNewest')}</option>
@@ -4726,8 +4758,10 @@ function drawProjList() {
   if (!$('#projList')) return;
   const q = norm(projFilter.q);
   let list = state.projects;
+  if (projFilter.status === 'archived') list = list.filter(p => !!p.archived);
+  else list = list.filter(p => !p.archived);
   if (projFilter.type !== 'all') list = list.filter(p => p.elevatorType === projFilter.type);
-  if (projFilter.status !== 'all') list = list.filter(p => p.status === projFilter.status);
+  if (projFilter.status !== 'all' && projFilter.status !== 'archived') list = list.filter(p => p.status === projFilter.status);
   if (q) list = list.filter(p => hay(p.name, p.customer, p.location, p.controller, p.motor).includes(q));
   list = [...list];
   if (projFilter.sort === 'name') list.sort((a, b) => a.name.localeCompare(b.name, 'fa'));
@@ -4833,24 +4867,109 @@ function openProjectForm(id) {
   };
 }
 
-function deleteProject(id) {
-  confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteMsg'), async () => {
-    // optimistic
-    const rb = optimisticRemove(state.projects, id);
-    if (!rb) { closeModal(); return; }
-    closeModal();
-    navigate('/projects');
-    try {
-      await api('/projects/' + id, { method: 'DELETE' });
-      // services survive a project deletion (independent module) — just detach them
-      state.services.forEach(s => { if (s.projectId === id) s.projectId = ''; });
-      state.checklists = state.checklists.filter(c => c.projectId !== id);
-      toast(t('deleted'));
-    } catch (e) {
-      rb.restore();
-      toast(errMsg(e), 'err'); render();
+function projectImpactCount(pid) {
+  return {
+    services: (state.services || []).filter(s => s.projectId === pid).length,
+    measurements: (state.measurements || []).filter(m => m.projectId === pid).length,
+    photos: (state.photos || []).filter(x => x.projectId === pid).length,
+    invoices: (state.invoices || []).filter(i => i.projectId === pid).length,
+    diagSessions: (state.diagSessions || []).filter(d => d.projectId === pid).length,
+    issues: (state.issues || []).filter(x => x.projectId === pid).length,
+    contracts: (state.contracts || []).filter(c => c.projectId === pid).length,
+    reminders: (state.reminders || []).filter(r => r.projectId === pid).length,
+    checklists: (state.checklists || []).filter(c => c.projectId === pid).length
+  };
+}
+function archiveProject(id) {
+  const p = state.projects.find(x => x.id === id);
+  if (!p) return;
+  confirmDialog(
+    LANG === 'fa' ? 'بایگانی پروژه' : 'Archive project',
+    (LANG === 'fa'
+      ? 'پروژه به بایگانی منتقل می‌شود و از لیست فعال‌ها خارج می‌گردد. داده‌های تاریخی (سرویس، فاکتور، اندازه‌گیری و …) حفظ می‌شوند. ادامه؟'
+      : 'Project will be moved to archive and removed from active lists. Historical data (services, invoices, measurements…) is preserved. Continue?'),
+    async () => {
+      try {
+        p.archived = true; p.updatedAt = Date.now();
+        p.archivedAt = Date.now();
+        await api('/projects/' + id, { method: 'PUT', body: { archived: true, archivedAt: p.archivedAt } });
+        closeModal(); toast(LANG === 'fa' ? 'پروژه بایگانی شد' : 'Project archived'); render();
+      } catch (e) { toast(errMsg(e), 'err'); }
     }
-  });
+  );
+}
+function deleteProject(id) {
+  const p = state.projects.find(x => x.id === id);
+  if (!p) return;
+  const c = projectImpactCount(id);
+  const anyLinked = c.services + c.measurements + c.photos + c.invoices + c.diagSessions + c.issues + c.contracts + c.reminders + c.checklists;
+  // Show impact summary
+  const fmt = (n, fa, en) => n > 0 ? `• ${n} ${LANG === 'fa' ? fa : en}` : '';
+  const lines = [
+    fmt(c.services, 'گزارش سرویس', 'service reports'),
+    fmt(c.measurements, 'رکورد اندازه‌گیری', 'measurements'),
+    fmt(c.photos, 'عکس', 'photos'),
+    fmt(c.invoices, 'فاکتور', 'invoices'),
+    fmt(c.diagSessions, 'جلسه عیب‌یابی', 'diagnostic sessions'),
+    fmt(c.issues, 'ثبت خرابی', 'issues'),
+    fmt(c.contracts, 'قرارداد', 'contracts'),
+    fmt(c.reminders, 'یادآوری', 'reminders'),
+    fmt(c.checklists, 'چک‌لیست', 'checklists')
+  ].filter(Boolean);
+  const warnTitle = LANG === 'fa' ? 'حذف دائمی پروژه' : 'Permanently delete project';
+  const hasLinked = LANG === 'fa'
+    ? `این پروژه شامل موارد زیر است (حذف دائمی):\n\n${lines.join('\n')}\n\n⚠️ پیشنهاد می‌شود به‌جای حذف، از «بایگانی» استفاده کنید تا تاریخچه حفظ شود. در صورت حذف، سرویس‌ها به‌صورت بدون پروژه نگهداری می‌شوند ولی دسته‌بندی پروژه از بین می‌رود. حذف دائمی؟`
+    : `This project contains (permanent delete):\n\n${lines.join('\n')}\n\n⚠️ Prefer Archive to preserve history. On delete, services are detached (kept without project link) but the project grouping is lost. Delete permanently?`;
+  const noneMsg = LANG === 'fa'
+    ? 'این پروژه هیچ سابقه‌ای ندارد. آیا از حذف دائمی آن مطمئنید؟'
+    : 'This project has no history. Permanently delete?';
+  // custom modal with impact summary instead of default confirmDialog
+  openModal(`
+    <div class="modal-head"><h3>⚠️ ${esc(warnTitle)}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <p style="margin:0 0 8px"><b>${esc(p.name)}</b></p>
+      ${anyLinked ? `
+      <div class="note-block" style="background:var(--warn-soft);border-color:var(--warn);margin-bottom:10px">
+        ${lines.map(l => `<div style="margin:3px 0">${esc(l)}</div>`).join('')}
+      </div>
+      <p style="font-size:12.5px;color:var(--text-3);margin:0 0 10px">${
+        LANG === 'fa'
+        ? 'پیشنهاد: به‌جای حذف، پروژه را بایگانی کنید تا تاریخچه حفظ شود.'
+        : 'Tip: Archive instead of deleting to preserve history.'
+      }</p>` : `<p style="margin:0 0 10px">${esc(noneMsg)}</p>`}
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button>
+      ${anyLinked ? `<button class="btn" onclick="closeModal();archiveProject('${id}')">📦 ${LANG === 'fa' ? 'بایگانی پروژه' : 'Archive'}</button>` : ''}
+      <button class="btn btn-soft-danger" id="pdYes">${IC.trash} ${LANG === 'fa' ? 'حذف دائمی' : 'Delete permanently'}</button>
+    </div>
+  `, { size: 'sm' });
+  $('#pdYes').onclick = async () => {
+    closeModal();
+    await _doDeleteProject(id);
+  };
+}
+async function _doDeleteProject(id) {
+  const rb = optimisticRemove(state.projects, id);
+  if (!rb) return;
+  navigate('/projects');
+  try {
+    await api('/projects/' + id, { method: 'DELETE' });
+    // services survive a project deletion (independent module) — detach them (preserves history)
+    state.services.forEach(s => { if (s.projectId === id) s.projectId = ''; });
+    state.measurements.forEach(m => { if (m.projectId === id) m.projectId = ''; });
+    state.photos.forEach(x => { if (x.projectId === id) x.projectId = ''; });
+    state.invoices.forEach(i => { if (i.projectId === id) i.projectId = ''; });
+    state.diagSessions.forEach(d => { if (d.projectId === id) d.projectId = ''; });
+    state.issues.forEach(x => { if (x.projectId === id) x.projectId = ''; });
+    state.contracts.forEach(c => { if (c.projectId === id) c.projectId = ''; });
+    state.reminders.forEach(r => { if (r.projectId === id) r.projectId = ''; });
+    state.checklists = state.checklists.filter(c => c.projectId !== id);
+    toast(t('deleted'));
+  } catch (e) {
+    rb.restore();
+    toast(errMsg(e), 'err'); render();
+  }
 }
 
 function renderProjectDetail(id) {
@@ -6343,15 +6462,30 @@ function _diagStepBackDom() {
 function startDiagFlow(id) {
   const f = DIAG_FLOWS.find(x => x.id === id);
   if (!f) return;
-  diagSession = { flowId: id, path: [], current: f.start };
+  diagSession = { flowId: id, path: [], current: f.start, evidence: [], startedAt: Date.now() };
   pushUiLayer('diag', _diagStepBackDom);
   renderDiagnostics();
   window.scrollTo(0, 0);
 }
-function diagAnswer(nodeId) {
+function _diagQuickObs(key, kind) {
+  const f = DIAG_FLOWS.find(x => x.id === diagSession.flowId);
+  const cur = f && f.nodes[diagSession.current];
+  const q = cur && cur.q ? cur.q.fa : key;
+  const txt = kind === 'ok'
+    ? (LANG === 'fa' ? `تأیید شد: «${q}» نرمال است` : `Confirmed normal: "${q}"`)
+    : (LANG === 'fa' ? `مشاهده غیرنرمال: «${q}»` : `Abnormal observation: "${q}"`);
+  _diagEvidenceMark(kind, txt);
+}
+function _diagNoteObs() {
+  const note = prompt(LANG === 'fa' ? 'ثبت یادداشت/اندازه‌گیری:' : 'Record a note/measurement:');
+  if (note && note.trim()) _diagEvidenceMark('meas', note.trim());
+}
+function diagAnswer(nodeId, qText, aText) {
   if (!diagSession) return;                       // stale button after the flow was closed
   const f = DIAG_FLOWS.find(x => x.id === diagSession.flowId);
   if (!f || !f.nodes[nodeId]) return;
+  // record answer in evidence trail
+  if (qText) _diagEvidenceMark('hypo', (LANG === 'fa' ? 'پاسخ: ' : 'Answer: ') + qText + ' → ' + aText);
   diagSession.path.push(diagSession.current);
   diagSession.current = nodeId;
   pushUiLayer('diag', _diagStepBackDom);
@@ -6370,6 +6504,20 @@ function diagExit() {
   diagSession = null;
   renderDiagnostics();
 }
+function _diagEvidenceMark(kind, text) {
+  if (!diagSession) return;
+  diagSession.evidence = diagSession.evidence || [];
+  diagSession.evidence.push({ kind, text: String(text || '').slice(0, 240), at: Date.now() });
+  renderDiagnostics();
+}
+function _diagEvidencePanel() {
+  if (!diagSession || !diagSession.evidence || !diagSession.evidence.length) return '';
+  const icon = { ok: '✅', abn: '🚩', meas: '📐', elim: '➖', hypo: '❓', act: '🛠️' };
+  return `<div class="card" style="margin-top:12px">
+    <div style="font-size:12px;font-weight:700;color:var(--text-3);margin-bottom:8px">🧭 ${LANG === 'fa' ? 'شواهد ثبت‌شده در این جلسه' : 'Evidence gathered'}</div>
+    ${diagSession.evidence.map(e => `<div style="font-size:12.5px;margin:3px 0">${icon[e.kind] || '•'} ${esc(e.text)}</div>`).join('')}
+  </div>`;
+}
 
 function renderDiagFlow(c) {
   const f = DIAG_FLOWS.find(x => x.id === diagSession.flowId);
@@ -6386,6 +6534,7 @@ function renderDiagFlow(c) {
   }).join(' ← ');
 
   let body;
+  const obsKey = diagSession.flowId + ':' + diagSession.current;
   if (!isResult) {
     body = `
       <div class="card" style="border-inline-start:4px solid var(--accent)">
@@ -6393,8 +6542,13 @@ function renderDiagFlow(c) {
         <h3 style="font-size:17px;margin-bottom:14px">❓ ${esc(node.q.fa)}</h3>
         ${node.how ? `<div class="kv-cell" style="margin-bottom:9px"><div class="k">🔧 ${t('diagHow')}</div><div class="v" style="font-weight:500">${esc(node.how.fa)}</div></div>` : ''}
         ${node.expect ? `<div class="kv-cell" style="margin-bottom:14px;background:var(--ok-soft)"><div class="k">✅ ${t('diagExpect')}</div><div class="v" style="font-weight:500">${esc(node.expect.fa)}</div></div>` : ''}
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+          <button class="chip" style="cursor:pointer" onclick="_diagQuickObs('${obsKey}','ok')">✅ ${LANG === 'fa' ? 'تأیید شد (نرمال)' : 'Confirmed normal'}</button>
+          <button class="chip" style="cursor:pointer" onclick="_diagQuickObs('${obsKey}','abn')">🚩 ${LANG === 'fa' ? 'غیرنرمال' : 'Abnormal'}</button>
+          <button class="chip" style="cursor:pointer" onclick="_diagNoteObs('${obsKey}')">📝 ${LANG === 'fa' ? 'ثبت یادداشت/اندازه' : 'Note/measurement'}</button>
+        </div>
         <div style="display:flex;flex-direction:column;gap:9px">
-          ${node.opts.map(o => `<button class="btn btn-primary" style="justify-content:flex-start;text-align:start" onclick="diagAnswer('${o.n}')">➜ ${esc(o.l.fa)}</button>`).join('')}
+          ${node.opts.map(o => `<button class="btn btn-primary" style="justify-content:flex-start;text-align:start" onclick="diagAnswer('${o.n}','${esc(node.q.fa)}','${esc(o.l.fa)}')">➜ ${esc(o.l.fa)}</button>`).join('')}
         </div>
       </div>`;
   } else {
@@ -6447,7 +6601,8 @@ function renderDiagFlow(c) {
       ${f.first ? `<div class="kv-cell"><div class="k">🔍 ${t('diagFirst')}</div><div class="v" style="font-weight:600">${esc(f.first.fa)}</div></div>` : ''}
     </div>
     ${crumbs ? `<div style="font-size:11.5px;color:var(--text-3);margin-bottom:10px;line-height:2.2">🧭 ${crumbs}</div>` : ''}
-    ${body}`;
+    ${body}
+    ${_diagEvidencePanel()}`;
 }
 
 /* ================= KNOWLEDGE ================= */
@@ -8034,6 +8189,13 @@ function openInvoiceForm(id, presetProject, keepDraft) {
     const btn = $('#invSave'); btn.disabled = true;
     try {
       let saved;
+      // Build a diff of part-linked rows vs previously saved items for transactional stock sync.
+      const prevPartRows = inv ? (inv.items || []).filter(it => it && it.partId) : [];
+      const newPartRows = body.items.filter(it => it && it.partId);
+      const prevByPart = {};
+      prevPartRows.forEach(it => { prevByPart[it.partId] = (prevByPart[it.partId] || 0) + Math.max(0, Math.round(+it.qty || 0)); });
+      const newByPart = {};
+      newPartRows.forEach(it => { newByPart[it.partId] = (newByPart[it.partId] || 0) + Math.max(0, Math.round(+it.qty || 0)); });
       if (inv) {
         const d = await api('/invoices/' + inv.id, { method: 'PUT', body });
         Object.assign(inv, d.item); saved = inv;
@@ -8041,29 +8203,44 @@ function openInvoiceForm(id, presetProject, keepDraft) {
         const d = await api('/invoices', { method: 'POST', body });
         state.invoices.unshift(d.item); saved = d.item;
       }
-      // 1) give stock back for inventory rows removed from a saved invoice
-      for (const rp of invDraft.releasedParts) {
-        if (!(+rp.qty > 0)) continue;
-        const local = state.parts.find(x => x.id === rp.partId);
-        if (!local) continue;
-        try {
-          const d = await api('/parts/' + rp.partId, { method: 'PUT', body: { qty: (+local.qty || 0) + Math.round(+rp.qty || 0) } });
-          Object.assign(local, d.part);
-        } catch (e) {}
+      const invRef = t('invoice') + ' #' + saved.id.slice(0, 6).toUpperCase();
+      if (inv) {
+        // For edits, compute net qty changes per partId — a single transactional pass handles
+        // added / removed / increased / decreased rows without double-counting.
+        const allPartIds = new Set([...Object.keys(prevByPart), ...Object.keys(newByPart)]);
+        for (const pid of allPartIds) {
+          const prev = prevByPart[pid] || 0;
+          const now = newByPart[pid] || 0;
+          const delta = now - prev;
+          if (delta === 0) continue;
+          const local = state.parts.find(x => x.id === pid);
+          if (!local) continue;
+          try {
+            if (delta > 0) {
+              const d = await api('/parts-consume', { method: 'POST', body: { partId: pid, qty: delta, projectId: body.projectId, note: invRef + ' (+' + delta + ')' } });
+              Object.assign(local, d.part);
+            } else {
+              const d = await api('/parts/' + pid, { method: 'PUT', body: { qty: (+local.qty || 0) + (-delta) } });
+              Object.assign(local, d.part);
+            }
+          } catch (e) { toast(t('stockAlert'), 'err'); }
+        }
+        invDraft.releasedParts = [];
+        invDraft.consumedParts = [];
+      } else {
+        // For new invoices, consume every partId row at its final qty (consumedParts only tags
+        // which rows came from the picker; the qty is what the user typed, possibly changed).
+        for (const it of newPartRows) {
+          const qty = Math.max(1, Math.round(+it.qty || 1));
+          try {
+            const d = await api('/parts-consume', { method: 'POST', body: { partId: it.partId, qty, projectId: body.projectId, note: invRef } });
+            const local = state.parts.find(x => x.id === it.partId);
+            if (local) Object.assign(local, d.part);
+          } catch (e) {}
+        }
+        invDraft.consumedParts = [];
+        invDraft.releasedParts = [];
       }
-      invDraft.releasedParts = [];
-      // 2) consume newly-added inventory parts (only once, on save)
-      for (const cp of invDraft.consumedParts) {
-        const it = invDraft.items.find(x => x.rowKey && x.rowKey === cp.rowKey);
-        if (!it) continue;
-        const qty = Math.max(1, Math.round(+it.qty || 1));
-        try {
-          const d = await api('/parts-consume', { method: 'POST', body: { partId: cp.partId, qty, projectId: body.projectId, note: t('invoice') + ' #' + saved.id.slice(0, 6).toUpperCase() } });
-          const local = state.parts.find(x => x.id === cp.partId);
-          if (local) Object.assign(local, d.part);
-        } catch (e) {}
-      }
-      invDraft.consumedParts = [];
       invDraft = null;
       closeModal(); toast(t('saved')); render();
     } catch (e) { toast(errMsg(e), 'err'); btn.disabled = false; }
@@ -8075,12 +8252,36 @@ function invDelPay(i) {
   invBackToForm();
 }
 function deleteInvoice(id) {
-  confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteInvMsg'), async () => {
+  const inv = state.invoices.find(x => x.id === id);
+  const partRows = inv ? (inv.items || []).filter(it => it && it.partId) : [];
+  const partTotals = {};
+  partRows.forEach(it => { partTotals[it.partId] = (partTotals[it.partId] || 0) + Math.max(0, Math.round(+it.qty || 0)); });
+  const partCount = Object.values(partTotals).reduce((a, b) => a + b, 0);
+  const extra = partCount > 0
+    ? (LANG === 'fa' ? `\n\n⚠️ این فاکتور شامل ${faNum(partCount)} عدد قطعه از انبار می‌باشد — با حذف فاکتور، موجودی قطعات مربوطه بازگردانده می‌شود.`
+                    : `\n\n⚠️ This invoice consumed ${partCount} part(s) from inventory — deleting it will return them to stock.`)
+    : '';
+  confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteInvMsg') + extra, async () => {
     const rb = optimisticRemove(state.invoices, id);
     invDraft = null;
     if (!rb) { closeModal(); return; }
     closeModal(); render();
-    try { await api('/invoices/' + id, { method: 'DELETE' }); toast(t('deleted')); }
+    try {
+      await api('/invoices/' + id, { method: 'DELETE' });
+      // return consumed parts to stock (transactional best-effort)
+      for (const pid of Object.keys(partTotals)) {
+        const q = partTotals[pid];
+        if (!q) continue;
+        const local = state.parts.find(x => x.id === pid);
+        if (!local) continue;
+        try {
+          const d = await api('/parts/' + pid, { method: 'PUT', body: { qty: (+local.qty || 0) + q } });
+          Object.assign(local, d.part);
+        } catch (e) {}
+      }
+      toast(t('deleted'));
+      render();
+    }
     catch (e) { rb.restore(); toast(errMsg(e), 'err'); render(); }
   });
 }
@@ -8921,7 +9122,10 @@ function renderSettings() {
     <div class="card" style="margin-top:16px;text-align:center">
       <div style="font-size:32px;margin-bottom:4px">🛗</div>
       <strong style="font-size:17px">Z Lift</strong>
-      <div style="color:var(--text-3);font-size:12.5px;margin-top:4px">v27 · ${t('tagline')}</div>
+      <div style="color:var(--text-3);font-size:12.5px;margin-top:4px">
+        v${esc(APP_VERSION)} · DB v${faNum(DB_SCHEMA_VERSION)} · Backup v${faNum(BACKUP_FORMAT_VERSION)} · ${esc(APP_BUILD)}
+      </div>
+      <div style="color:var(--text-3);font-size:11.5px;margin-top:2px">${t('tagline')}</div>
       <button class="btn btn-ghost btn-sm" style="margin-top:12px;color:#2AABEE" onclick="openTgChannel()">${IC.telegram} ${t('tgChannel')}</button>
     </div>`;
   $('#stSaveCompany').onclick = guard('#stSaveCompany', async () => {
@@ -11487,8 +11691,11 @@ function validateBackup(bk) {
   if (!bk || typeof bk !== 'object') return { ok: false, why: 'format' };
   if (bk.app !== 'zlift') return { ok: false, why: 'app' };
   if (!Array.isArray(bk.projects)) return { ok: false, why: 'projects' };
+  // version compatibility: accept v1 and v2 backups; anything newer warns
+  const ver = +(bk.formatVersion || bk.version || 1);
+  if (ver > BACKUP_FORMAT_VERSION) return { ok: false, why: 'future-version' };
   // structural checks on core collections (old backups may miss newer ones — fine)
-  for (const k of ['projects', 'services', 'invoices', 'contracts', 'parts', 'notes', 'checklists', 'measurements', 'safetyLogs', 'reminders', 'photos', 'diagSessions', 'calcSaves', 'issues', 'tools']) {
+  for (const k of ['projects', 'archivedProjects', 'services', 'invoices', 'contracts', 'parts', 'notes', 'checklists', 'measurements', 'safetyLogs', 'reminders', 'photos', 'diagSessions', 'calcSaves', 'issues', 'tools']) {
     if (bk[k] !== undefined && !Array.isArray(bk[k])) return { ok: false, why: k };
   }
   // id sanity: every project/service must have a string id
@@ -11497,7 +11704,7 @@ function validateBackup(bk) {
   // prototype-pollution guard
   const poison = JSON.stringify(bk).includes('"__proto__"') || JSON.stringify(bk).includes('"constructor":{"prototype"');
   if (poison) return { ok: false, why: 'unsafe keys' };
-  return { ok: true };
+  return { ok: true, version: ver };
 }
 /* automatic local backup: keeps a rotating set of dated snapshots in
    localStorage (no network, no third party). Recovers from accidental
@@ -11529,7 +11736,7 @@ function runAutoBackup() {
     let db;
     try { db = JSON.parse(raw); } catch (e) { return; }
     if (!db || !Array.isArray(db.projects)) return;
-    const snap = { app: 'zlift-auto', version: 1, createdAt: Date.now(), data: db };
+    const snap = { app: 'zlift-auto', version: BACKUP_FORMAT_VERSION, appVersion: APP_VERSION, createdAt: Date.now(), data: db };
     let store = [];
     try { store = JSON.parse(localStorage.getItem(AUTO_BACKUP_KEY) || '[]'); if (!Array.isArray(store)) store = []; } catch (e) { store = []; }
     store.unshift(snap);
@@ -11880,10 +12087,18 @@ function _lsLoad() {
   if (!_lsDB.parts) _lsDB.parts = _lsSeed().parts;
   if (!_lsDB.settings) _lsDB.settings = { company: 'Z Lift', phone: '', address: '' };
   ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders', 'measurements', 'safetyLogs'].forEach(k => { if (!Array.isArray(_lsDB[k])) _lsDB[k] = []; });
-  if (!_lsDB.schemaVersion) _lsDB.schemaVersion = 1;
+  let _schemaChanged = false;
+  if (!_lsDB.schemaVersion) { _lsDB.schemaVersion = 1; _schemaChanged = true; }
+  /* schema migration: v1 → v2 adds archivedProjects collection */
+  if (+_lsDB.schemaVersion < DB_SCHEMA_VERSION) {
+    _lsDB.schemaVersion = DB_SCHEMA_VERSION;
+    if (!Array.isArray(_lsDB.archivedProjects)) _lsDB.archivedProjects = [];
+    _schemaChanged = true;
+  }
   if (!_lsDB.sessions || typeof _lsDB.sessions !== 'object') _lsDB.sessions = {};
   _lsPruneSessions();
   _lsMigrateServices();
+  if (_schemaChanged) _lsSave();
   return _lsDB;
 }
 
@@ -12306,22 +12521,39 @@ async function api(path, opts = {}) {
 
   /* backup / restore */
   if (path === '/backup' && method === 'GET') {
-    return { backup: { app: 'zlift', version: 5, appVersion: '27', exportedAt: Date.now(),
-      projects: db.projects, services: db.services, notes: db.notes,
+    return { backup: {
+      app: 'zlift',
+      version: BACKUP_FORMAT_VERSION,
+      formatVersion: BACKUP_FORMAT_VERSION,
+      appVersion: APP_VERSION,
+      dbSchemaVersion: DB_SCHEMA_VERSION,
+      exportedAt: Date.now(),
+      projects: db.projects,
+      archivedProjects: Array.isArray(db.archivedProjects) ? db.archivedProjects : [],
+      services: db.services, notes: db.notes,
       checklists: db.checklists, parts: db.parts, settings: db.settings,
       diagSessions: db.diagSessions, calcSaves: db.calcSaves, issues: db.issues, tools: db.tools, photos: db.photos, invoices: db.invoices, contracts: db.contracts, reminders: db.reminders,
-      measurements: db.measurements || [], safetyLogs: db.safetyLogs || [] } };
+      measurements: db.measurements || [], safetyLogs: db.safetyLogs || []
+    } };
   }
   if (path === '/backup' && method === 'PUT') {
     const bk = b.backup || b;
     if (!bk || bk.app !== 'zlift' || !Array.isArray(bk.projects)) throw _lsErr('bad_backup');
     db.projects = bk.projects;
+    db.archivedProjects = Array.isArray(bk.archivedProjects) ? bk.archivedProjects : [];
     db.services = Array.isArray(bk.services) ? bk.services : [];
     db.notes = Array.isArray(bk.notes) ? bk.notes : [];
     db.checklists = Array.isArray(bk.checklists) ? bk.checklists : [];
     db.parts = Array.isArray(bk.parts) ? bk.parts : [];
-    if (bk.settings && typeof bk.settings === 'object') db.settings = bk.settings;
+    if (bk.settings && typeof bk.settings === 'object') {
+      // preserve critical local settings on restore unless they exist in backup
+      const preserved = { autoBackup: db.settings && db.settings.autoBackup };
+      db.settings = bk.settings;
+      if (preserved.autoBackup !== undefined && db.settings.autoBackup === undefined) db.settings.autoBackup = preserved.autoBackup;
+    }
     ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders', 'measurements', 'safetyLogs'].forEach(k => { db[k] = Array.isArray(bk[k]) ? bk[k] : []; });
+    // re-stamp schema on restore so migrations run on next load
+    db.schemaVersion = DB_SCHEMA_VERSION;
     _lsSave();
     return { ok: true };
   }
