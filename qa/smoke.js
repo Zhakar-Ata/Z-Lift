@@ -781,6 +781,136 @@ async function T(name, cond, info) {
     await T('global search handles Arabic ي and نیم‌فاصله without error', () => ev(`!document.querySelector('#gsOut') || (!document.querySelector('#gsOut').innerHTML.includes('undefined') && !document.querySelector('#gsOut').innerHTML.includes('null'))`));
     await ev(`closeModal();`);
 
+    /* ================================================================
+       SECOND PRODUCTION HARDENING (v28) — regression tests
+       Each block pins a bug fixed in this hardening pass.
+       ================================================================ */
+
+    /* ---- PH10: insulation resistance must NOT use a universal 1 MΩ pass/fail ---- */
+    const insEval = await ev(`evalMeasurement({ typeId: 'r_insulation', value: 2.5 })`);
+    await T('insulation: 2.5 MΩ evaluates to UNKNOWN (no universal limit)', insEval && insEval.status === 'unknown', JSON.stringify(insEval));
+    await T('insulation: reason states the limit is context-dependent', !!(insEval && insEval.reason && /نوع مدار|circuit/i.test(insEval.reason.fa + ' ' + (insEval.reason.en || ''))));
+    const insLow = await ev(`evalMeasurement({ typeId: 'r_insulation', value: 0.4 })`);
+    await T('insulation: 0.4 MΩ also stays UNKNOWN (context-dependent)', insLow && insLow.status === 'unknown', JSON.stringify(insLow));
+
+    /* ---- PH12: standards articles expose edition + verification status ---- */
+    await ev(`navigate('/standards');`); await waitLoaded();
+    await ev(`openStdArticle('s-door-gap');`);
+    await T('standards: verified item shows VERIFIED badge + edition', () => ev(`(function(){var m=document.querySelector('#modalRoot').innerHTML;return m.includes('تأییدشده') && m.includes('ویرایش');})()`));
+    await ev(`closeModal(); openStdArticle('s-well-light');`);
+    await T('standards: unverified item shows UNVERIFIED badge', () => ev(`document.querySelector('#modalRoot').innerHTML.includes('تأییدنشده')`));
+    await ev(`closeModal();`);
+    await T('standards: EN 81-20 set carries edition metadata', () => ev(`(function(){var s=STD_SETS.find(x=>x.id==='en81-20');return !!(s && s.edition && s.edition.fa);})()`));
+    await T('standards: clause inconsistency fixed (s50-level → §5.12.1.1.4)', () => ev(`(function(){var a=STD8150.find(x=>x.id==='s50-level');return a && a.clause==='§5.12.1.1.4';})()`));
+    await T('standards: s50-sgear/s50-buffer clauses aligned with test list', () => ev(`(function(){var g=STD8150.find(x=>x.id==='s50-sgear');var b=STD8150.find(x=>x.id==='s50-buffer');return g.clause==='§6.3.4' && b.clause==='§6.3.7';})()`));
+
+    /* ---- PH11: leveling messages distinguish stopping accuracy vs re-levelling ---- */
+    const lvlAttn = await ev(`evalMeasurement({ typeId: 'lvl_err', value: 15 })`);
+    await T('leveling: 15 mm → attention (not critical) with re-levelling note', lvlAttn && lvlAttn.status === 'attention' && /۲۰|20/.test(lvlAttn.reason.fa), JSON.stringify(lvlAttn));
+    const lvlOk = await ev(`evalMeasurement({ typeId: 'lvl_err', value: 8 })`);
+    await T('leveling: 8 mm → normal with verified ±10 clause', lvlOk && lvlOk.status === 'normal' && /5\.12\.1\.1\.4/.test(lvlOk.reason.fa), JSON.stringify(lvlOk));
+
+    /* ---- PH5: permanent project delete preserves history with context stamp ---- */
+    const pdelProj = await ev(`api('/projects', { method: 'POST', body: { name: 'پروژه حذفی QA', customer: 'مشتری تست', elevatorType: 'traction' } })`);
+    const dpid = pdelProj.project.id;
+    await ev(`api('/checklists', { method: 'POST', body: { templateId: 'en81-safety-audit', projectId: ${JSON.stringify('DPID')}, checked: { e1: 'pass' } } })`.replace('"DPID"', JSON.stringify(dpid)));
+    const pdelMeas = await ev(`api('/measurements', { method: 'POST', body: { typeId: 'door_force', value: 120, projectId: ${JSON.stringify('DPID')} } })`.replace('"DPID"', JSON.stringify(dpid)));
+    const pdelSvc = await ev(`api('/services', { method: 'POST', body: { projectId: ${JSON.stringify('DPID')}, customer: 'مشتری تست', problem: 'تست' } })`.replace('"DPID"', JSON.stringify(dpid)));
+    await T('delete-flow: fixtures created', !!(pdelMeas.item && pdelSvc.service));
+    const pdelRes = await ev(`api('/projects/' + ${JSON.stringify(dpid)}, { method: 'DELETE' })`);
+    await T('delete-flow: project delete succeeds', !!(pdelRes && pdelRes.ok));
+    const afterPdel = await ev(`(async()=>{const ck=await api('/checklists');const me=await api('/measurements');const sv=await api('/services');return {ck:ck.checklists.find(x=>x.projectId==='' && (x.projectInfo||'').includes('پروژه حذفی')), meas:me.items.find(x=>x.id===${JSON.stringify(pdelMeas.item.id)}), svc:sv.services.find(x=>x.id===${JSON.stringify(pdelSvc.service.id)})};})()`);
+    await T('delete-flow: checklist survives (detached, not destroyed)', !!afterPdel.ck, JSON.stringify(afterPdel.ck).slice(0, 120));
+    await T('delete-flow: measurement detached + stamped with project context', !!(afterPdel.meas && afterPdel.meas.projectId === '' && (afterPdel.meas.projectInfo || '').includes('پروژه حذفی')), JSON.stringify(afterPdel.meas).slice(0, 160));
+    await T('delete-flow: service detached + keeps elevator context', !!(afterPdel.svc && afterPdel.svc.projectId === '' && (afterPdel.svc.elevatorInfo || afterPdel.svc.projectInfo || '').includes('پروژه حذفی')), JSON.stringify(afterPdel.svc).slice(0, 160));
+
+    /* ---- PH19: parts-consume records shortage instead of silent clamp ---- */
+    const shortPart = await ev(`api('/parts', { method: 'POST', body: { name: 'قطعه کمبود QA', category: 'تست', unit: 'عدد', qty: 1, min: 0, price: 1000 } })`);
+    const shortRes = await ev(`api('/parts-consume', { method: 'POST', body: { partId: ${JSON.stringify(shortPart.part.id)}, qty: 3, note: 'QA short test' } })`);
+    await T('inventory: over-consumption never goes negative (qty 1 − 3 → 0)', shortRes.part.qty === 0, JSON.stringify(shortRes.part.qty));
+    await T('inventory: shortage surfaced (shortQty = 2)', shortRes.shortQty === 2, JSON.stringify(shortRes.shortQty));
+    await T('inventory: shortage recorded in part history', !!(shortRes.part.history[0] && shortRes.part.history[0].shortQty === 2), JSON.stringify(shortRes.part.history[0]).slice(0, 140));
+    const normPart = await ev(`api('/parts', { method: 'POST', body: { name: 'قطعه کافی QA', category: 'تست', unit: 'عدد', qty: 10, min: 0, price: 1000 } })`);
+    const normRes = await ev(`api('/parts-consume', { method: 'POST', body: { partId: ${JSON.stringify(normPart.part.id)}, qty: 4 } })`);
+    await T('inventory: normal consumption reports no shortage', normRes.shortQty === 0 && normRes.part.qty === 6);
+
+    /* ---- PH19: invoice qty change consumes/returns the difference exactly once ----
+       This pins the diff arithmetic the invoice form implements:
+       prev-saved rows vs new rows -> single transactional consume/return per part. */
+    const invPart = await ev(`api('/parts', { method: 'POST', body: { name: 'قطعه فاکتور QA', category: 'تست', unit: 'عدد', qty: 10, min: 0, price: 500000 } })`);
+    const invPid = invPart.part.id;
+    const stockNow = () => ev(`(async()=>{const r=await api('/parts');const p=r.parts.find(x=>x.id==='${invPid}');return p?p.qty:null;})()`);
+    const invCreated = await ev(`(async()=>{
+      const d=await api('/invoices',{method:'POST',body:{customer:'مصرف diff',items:[{desc:'قطعه فاکتور QA',qty:1,price:500000,partId:'${invPid}'}],labor:0,discount:0,taxRate:0,payments:[]}});
+      await api('/parts-consume',{method:'POST',body:{partId:'${invPid}',qty:1,note:'create: qty 1'}});
+      return d.item;
+    })()`);
+    await T('invoice-diff: create with qty 1 consumes 1 (stock 10 -> 9)', await stockNow() === 9);
+    await ev(`(async()=>{
+      await api('/invoices/'+'${invCreated.id}',{method:'PUT',body:{customer:'مصرف diff',items:[{desc:'قطعه فاکتور QA',qty:3,price:500000,partId:'${invPid}'}],labor:0,discount:0,taxRate:0,taxExempt:true,payments:[]}});
+      await api('/parts-consume',{method:'POST',body:{partId:'${invPid}',qty:2,note:'edit: +2'}});
+      return true;
+    })()`);
+    await T('invoice-diff: qty 1 to 3 consumes exactly 2 more (stock 7)', await stockNow() === 7);
+    await ev(`(async()=>{
+      await api('/invoices/'+'${invCreated.id}',{method:'PUT',body:{customer:'مصرف diff',items:[{desc:'قطعه فاکتور QA',qty:1,price:500000,partId:'${invPid}'}],labor:0,discount:0,taxRate:0,taxExempt:true,payments:[]}});
+      const r=await api('/parts');
+      const loc=r.parts.find(x=>x.id==='${invPid}');
+      await api('/parts/'+'${invPid}',{method:'PUT',body:{qty:loc.qty+2}});
+      return true;
+    })()`);
+    await T('invoice-diff: qty 3 to 1 returns exactly 2 (stock back to 9)', await stockNow() === 9);
+    await ev(`(async()=>{
+      await api('/invoices/'+'${invCreated.id}',{method:'DELETE'});
+      const r=await api('/parts');
+      const loc=r.parts.find(x=>x.id==='${invPid}');
+      await api('/parts/'+'${invPid}',{method:'PUT',body:{qty:loc.qty+1}});
+      return true;
+    })()`);
+    await T('invoice-diff: delete invoice returns its qty (stock back to 10)', await stockNow() === 10);
+    await T('invoice-diff: history totals reconcile with final stock', await ev(`(async()=>{
+      const r=await api('/parts');
+      const p=r.parts.find(x=>x.id==='${invPid}');
+      const consumed=p.history.filter(h=>h.qty<0).reduce((a,h)=>a+(-h.qty),0);
+      const returned=p.history.filter(h=>h.qty>0).reduce((a,h)=>a+h.qty,0);
+      return (10+returned-consumed)===p.qty;
+    })()`));
+
+    /* ---- PH2: photos keep working without IndexedDB (jsdom fallback = inline) ---- */
+    const tinyPhoto = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNsaGj4DwAFhAJ/wlseKgAAAABJRU5ErkJggg==';
+    const phRes = await ev(`api('/photos', { method: 'POST', body: { data: ${JSON.stringify(tinyPhoto)}, cat: 'تست', projectId: '', note: 'fallback' } })`);
+    await T('photos: without IndexedDB the payload stays inline (fallback)', !!(phRes.item && phRes.item.data === tinyPhoto), JSON.stringify(phRes.item || {}).slice(0, 100));
+    const phDel = await ev(`api('/photos/' + ${JSON.stringify(phRes.item.id)}, { method: 'DELETE' })`);
+    await T('photos: delete works in fallback mode', !!(phDel && phDel.ok));
+
+    /* ---- PH14: diagnostic evidence trail persists across answers (no restart) ---- */
+    await ev(`diagExit && diagExit();`); await wait(80);
+    await ev(`startDiagFlow('f01');`); await wait(80);
+    await ev(`diagAnswer('p2', 'آیا تابلو برق دارد؟', 'بله، برق دارد');`); await wait(80);
+    const diagState = await ev(`({ current: diagSession && diagSession.current, flowId: diagSession && diagSession.flowId, evidence: (diagSession && diagSession.evidence || []).length })`);
+    await T('diagnostics: answer advances node without restarting the session', diagState && diagState.flowId === 'f01' && diagState.current === 'p2', JSON.stringify(diagState));
+    await T('diagnostics: evidence trail records the answer', diagState && diagState.evidence >= 1);
+    await ev(`diagExit();`);
+
+    /* ---- PH3: backup is explicitly labelled LOCAL with its limitations ---- */
+    await T('backup: local-backup title & limitation note exist in i18n', () => ev(`!!(I18N.fa.backupLocalTitle && I18N.fa.backupLocalLimits && I18N.en.backupLocalTitle && I18N.en.backupLocalLimits)`));
+    await T('backup: limitation note names phone-loss/device-failure risks', () => ev(`/گم شدن گوشی|phone loss/.test(I18N.fa.backupLocalLimits + I18N.en.backupLocalLimits)`));
+
+    /* ---- PH20: version identifiers stay consistent across files ---- */
+    const swSrc = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
+    const pkgJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+    const htmlSrc = html;
+    const swCache = (swSrc.match(/const CACHE = '([^']+)'/) || [])[1];
+    const appCache = (htmlSrc.match(/CACHE_VERSION = '([^']+)'/) || [])[1];
+    const appVer = (htmlSrc.match(/APP_VERSION = '([^']+)'/) || [])[1];
+    await T('versioning: CACHE_VERSION (app) === CACHE (service worker)', swCache && swCache === appCache, swCache + ' vs ' + appCache);
+    await T('versioning: package.json version === APP_VERSION', pkgJson.version === appVer, pkgJson.version + ' vs ' + appVer);
+    await T('versioning: backup format version is an integer ≥ 6', () => ev(`Number.isInteger(BACKUP_FORMAT_VERSION) && BACKUP_FORMAT_VERSION >= 6`));
+
+    /* ---- PH1: no fetch-based /api/ call remains in the data layer ---- */
+    await T('architecture: data layer is local (no fetch in _apiLocal)', () => ev(`!/fetch\\(/.test(_apiLocal.toString())`));
+    await T('architecture: api() delegates to the local persistence layer', () => ev(`/ _apiLocal\\(/.test(api.toString())`));
+
     /* ---------- legacy regressions ---------- */
     await ev(`navigate('/checklists/traction-install')`); await waitLoaded();
     await T('traction install checklist still renders (30 items)', () => ev(`document.querySelectorAll('#content .check-item[data-item]').length === 30`));

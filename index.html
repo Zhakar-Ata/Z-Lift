@@ -915,6 +915,9 @@ const I18N = {
     standards: 'استانداردها', stdSearch: 'جستجوی الزام، مقدار یا بند استاندارد…',
     stdBanner: 'مرجع سریع الزامات کلیدی EN 81-20:2020 (مطابق استاندارد ملی ISIRI 6303-20). برای تصمیم‌گیری سریع تکنسین در محل؛ در بازرسی رسمی، متن مصوب استاندارد ملاک است.',
     stdClause: 'بند', stdExpand: 'جزئیات کامل', stdNoMatch: 'الزامی با این عبارت یافت نشد',
+    stdStandard: 'استاندارد', stdEdition: 'ویرایش', stdVerification: 'وضعیت راستی‌آزمایی',
+    stdVerified: 'تأییدشده — با متن منتشرشدهٔ استاندارد تطبیق داده شد',
+    stdUnverified: 'تأییدنشده — بند و مقدار را قبل از استناد رسمی با متن مصوب استاندارد تطبیق دهید',
     stdDisclaimer: 'خلاصه کاربردی الزامات — جایگزین متن کامل استاندارد نیست.',
     // dashboard
     latestProject: 'آخرین پروژه', currentStatus: 'وضعیت فعلی', progress: 'پیشرفت پروژه',
@@ -987,6 +990,8 @@ const I18N = {
     confirmDeletePartMsg: 'این قطعه از انبار حذف می‌شود. مطمئن هستید؟',
     noParts: 'قطعه‌ای ثبت نشده', noPartsSub: 'قطعات مصرفی و یدکی خود را اینجا مدیریت کنید',
     lowStockOnly: 'فقط کمبودها', stockAlert: 'هشدار موجودی انبار', stockAlertSub: 'قطعه به حداقل موجودی رسیده',
+    stockShortMsg: 'موجودی «{n}» کافی نبود — {q} عدد کمبود ثبت شد (موجودی منفی نمی‌شود؛ موجودی را به‌روزرسانی کنید)',
+    stockShortTag: 'کمبود',
     tParts: 'انبار قطعات', tPartsSub: 'موجودی و کمبودها',
     tAnalytics: 'آمار و تحلیل', tAnalyticsSub: 'درآمد و عملکرد',
     // service due
@@ -1022,6 +1027,9 @@ const I18N = {
     // backup
     backup: 'پشتیبان‌گیری', backupExport: 'دانلود فایل پشتیبان', backupImport: 'بازیابی از فایل',
     backupHint: 'داده‌ها فقط روی همین دستگاه ذخیره می‌شوند — مرتب پشتیبان بگیرید.',
+    backupLocalTitle: 'پشتیبان‌گیری محلی (Local Backup)',
+    backupLocalLimits: '📱 این نسخهٔ پشتیبان فقط روی همین دستگاه/مرورگر ذخیره می‌شود و در برابر گم شدن گوشی، خرابی دستگاه، پاک شدن دادهٔ مرورگر یا خرابی حافظه محافظت نمی‌کند. برای محافظت واقعی، فایل JSON خروجی را بگیرید و در جای مطمئن (ایمیل / فضای ابری / حافظه جانبی) نگه دارید.',
+    backupLocalTag: 'پشتیبان محلی — نه جای خروجی JSON',
     backupDone: 'فایل پشتیبان آماده شد', restoreDone: 'بازیابی انجام شد', restoreBad: 'فایل پشتیبان نامعتبر است',
     restoreConfirmTitle: 'بازیابی پشتیبان', restoreConfirmMsg: 'داده‌های فعلی با محتوای فایل جایگزین می‌شود. ادامه می‌دهید؟', yesRestore: 'بله، بازیابی شود',
     // auth note
@@ -1209,6 +1217,9 @@ const I18N = {
     standards: 'Standards', stdSearch: 'Search requirement, value or clause…',
     stdBanner: 'Quick reference of key EN 81-20:2020 requirements (mirrored by ISIRI 6303-20). For quick on-site decisions; the approved standard text prevails in official inspection.',
     stdClause: 'Clause', stdExpand: 'Full details', stdNoMatch: 'No requirement found for this term',
+    stdStandard: 'Standard', stdEdition: 'Edition', stdVerification: 'Verification',
+    stdVerified: 'VERIFIED — cross-checked against published standard text',
+    stdUnverified: 'UNVERIFIED — verify clause and value against the approved standard text before formal citation',
     stdDisclaimer: 'Practical summary — not a substitute for the full standard text.',
     latestProject: 'Latest project', currentStatus: 'Current status', progress: 'Project progress',
     viewDetails: 'View details', newService: 'Log service', quickAccess: 'Quick access',
@@ -1272,6 +1283,8 @@ const I18N = {
     confirmDeletePartMsg: 'This part will be removed from inventory. Are you sure?',
     noParts: 'No parts yet', noPartsSub: 'Manage your spare and consumable parts here',
     lowStockOnly: 'Low stock only', stockAlert: 'Stock alert', stockAlertSub: 'part(s) at or below minimum',
+    stockShortMsg: 'Insufficient stock for "{n}" — shortage of {q} recorded (stock never goes negative; please correct the inventory)',
+    stockShortTag: 'short',
     tParts: 'Parts inventory', tPartsSub: 'Stock & shortages',
     tAnalytics: 'Analytics', tAnalyticsSub: 'Revenue & performance',
     svcDue: 'Service due', overdue: 'Overdue', dueSoon: 'Due soon',
@@ -1299,6 +1312,9 @@ const I18N = {
     recentFaults: 'Recent faults & open items', noFaults: 'No open faults ✅',
     backup: 'Backup', backupExport: 'Download backup file', backupImport: 'Restore from file',
     backupHint: 'Data lives only on this device — back up regularly.',
+    backupLocalTitle: 'Local backup',
+    backupLocalLimits: '📱 This backup copy lives only on this device/browser — it does NOT protect against phone loss, device failure, browser data clearing or storage corruption. For real protection, export the JSON file and keep it somewhere safe (email / cloud / USB drive).',
+    backupLocalTag: 'LOCAL BACKUP — not a substitute for JSON export',
     backupDone: 'Backup file ready', restoreDone: 'Restore complete', restoreBad: 'Invalid backup file',
     restoreConfirmTitle: 'Restore backup', restoreConfirmMsg: 'Current data will be replaced by the file contents. Continue?', yesRestore: 'Yes, restore',
     authLocalNote: 'Demo/local login — data is stored on this device only',
@@ -2896,14 +2912,14 @@ const KNOWLEDGE = [
     body: {
       fa: `<p>استاندارد ملی ایران ۶۳۰۳-۲۰ بر مبنای EN 81-20:2020 تدوین شده است. پرکاربردترین الزامات برای تکنسین (ماژول کامل با جزئیات در «استاندارد EN 81-20» همین اپ):</p>
 <h4>چاه، چاهک و فضاهای جان‌پناه</h4><ul><li>فضای جان‌پناه چاهک با کابین روی بافر فشرده: ایستاده 0.4×0.5×2.0 متر، خمیده 0.5×0.7×1.0 متر، خوابیده 0.7×1.0×0.5 متر (§5.2.5.8.1).</li><li>فضای جان‌پناه سقف کابین: ایستاده 0.4×0.5×2.0 یا خمیده 0.5×0.7×1.0 متر (§5.2.5.7.1).</li><li>بالاسری: با وزنه روی بافر فشرده، فاصله سقف کابین تا سقف چاه حداقل 1.0 + 0.035·v² متر (§5.2.5.7.2).</li><li>فاصله کف چاهک تا پایین‌ترین نقطه کابین حداقل ۰.۵ متر؛ پیش‌بند نزدیک دیوار ۰.۱ متر (§5.2.5.8.2).</li><li>دسترسی چاهک: عمق بالای ۲.۵ متر → درب دسترسی؛ کمتر → درب یا نردبان (§5.2.2.4).</li><li>روشنایی چاه: حداقل ۵۰ لوکس در ۱ متری سقف کابین و کف چاهک؛ ۲۰ لوکس سایر نقاط (§5.2.1.4.1).</li><li>کلید استپ، پریز و روشنایی چاهک الزامی (§5.2.1.5).</li></ul>
-<h4>درب‌ها</h4><ul><li>درگیری قفل درب طبقه حداقل ۷ میلی‌متر قبل از بسته شدن کنتاکت (§5.3.9.1).</li><li>فاصله لته‌ها حداکثر ۶ میلی‌متر (با سایش تا ۱۰) (§5.3.1.4).</li><li>نیروی بستن حداکثر ۱۵۰ نیوتن و انرژی جنبشی حداکثر ۱۰ ژول (§5.3.6.2).</li><li>درب کابین الزامی؛ باز شدن قفل فقط در ناحیه ±۰.۲۰ متر از تراز طبقه (§5.3.9.3).</li></ul>
-<h4>گاورنر، پاراشوت و محافظت حرکت</h4><ul><li>تریپ گاورنر: حداقل ۱۱۵٪ سرعت نامی؛ سقف بسته به نوع پاراشوت 0.8 / 1.0 / 1.5 / 1.25v+0.25/v (§5.6.2.2.2).</li><li>پاراشوت لحظه‌ای فقط تا سرعت ۰.۶۳ متر بر ثانیه؛ بالاتر → پیشرونده (§5.6.2.2.1).</li><li>محافظت اضافه‌سرعت صعود ACOP (§5.6.6) و محافظت حرکت ناخواسته UCMP با توقف حداکثر ۱.۲ متر (§5.6.7) الزامی.</li><li>فضای قابل دسترس زیر چاهک → پاراشوت وزنه تعادل الزامی (§5.6.2.6).</li></ul>
+<h4>درب‌ها</h4><ul><li>درگیری قفل درب طبقه حداقل ۷ میلی‌متر قبل از بسته شدن کنتاکت (§5.3.9).</li><li>فاصله لته‌ها حداکثر ۶ میلی‌متر (با سایش تا ۱۰) (§5.3.1.4).</li><li>نیروی بستن حداکثر ۱۵۰ نیوتن و انرژی جنبشی حداکثر ۱۰ ژول (§5.3.6.2).</li><li>درب کابین الزامی؛ باز شدن قفل فقط در ناحیه ±۰.۲۰ متر از تراز طبقه (§5.3.9.3).</li></ul>
+<h4>گاورنر، پاراشوت و محافظت حرکت</h4><ul><li>تریپ گاورنر: حداقل ۱۱۵٪ سرعت نامی؛ سقف بسته به نوع پاراشوت 0.8 / 1.0 / 1.5 / 1.25v+0.25/v (§5.6.2.2.1).</li><li>پاراشوت لحظه‌ای فقط تا سرعت ۰.۶۳ متر بر ثانیه؛ بالاتر → پیشرونده (§5.6.2.2.1).</li><li>محافظت اضافه‌سرعت صعود ACOP (§5.6.6) و محافظت حرکت ناخواسته UCMP با توقف حداکثر ۱.۲ متر (§5.6.7) الزامی.</li><li>فضای قابل دسترس زیر چاهک → پاراشوت وزنه تعادل الزامی (§5.6.2.6).</li></ul>
 <h4>بکسل، ترمز و هیدرولیک</h4><ul><li>ضریب اطمینان بکسل: حداقل ۱۲ (۳+ رشته) یا ۱۶ (۲ رشته) (§5.5.2.2)؛ نسبت D/d حداقل ۴۰ (§5.5.2.1).</li><li>ترمز: توقف و نگهداری با ۱۲۵٪ بار نامی (§5.9.2.2)؛ تست §6.3.1.</li><li>هیدرولیک: رلیف حداکثر ۱۴۰٪ فشار بار کامل (§5.9.3.5.3)؛ تست فشار استاتیک ۲۰۰٪ به مدت ۵ دقیقه (§6.3.10)؛ شیر پاراشوت (§5.6.3) و پایین‌بر دستی (§5.9.3.9).</li></ul>
 <h4>الکتریکال و ارتباط</h4><ul><li>کنتاکت‌های ایمنی از نوع مثبت‌گسست (§5.11.2).</li><li>زنگ اضطراری + اینترکام دوطرفه با مرکز نجات و باطری حداقل ۱ ساعت (§5.12.3).</li><li>روشنایی اضطراری کابین (§5.4.10) و دقت توقف ±۱۰ میلی‌متر (§5.12.1.1.4).</li></ul>
 <h4>ظرفیت و مساحت کابین</h4><table><tr><th>ظرفیت (kg)</th><th>نفر</th><th>حداکثر مساحت (m²)</th></tr><tr><td>320</td><td>4</td><td>0.95</td></tr><tr><td>450</td><td>6</td><td>1.30</td></tr><tr><td>630</td><td>8</td><td>1.66</td></tr><tr><td>800</td><td>10</td><td>2.00</td></tr><tr><td>1000</td><td>13</td><td>2.40</td></tr></table>
 <p class="hint">این جدول با محدود کردن مساحت کف از اضافه‌بار جلوگیری می‌کند (هر نفر ۷۵ کیلوگرم) — جدول ۶ استاندارد.</p>
 <p><a href="#/standards">🛡️ مشاهده ماژول کامل استاندارد EN 81-20 ←</a></p>`,
-      en: `<p>ISIRI 6303-20 mirrors EN 81-20:2020. Key items: pit refuge 0.5×0.7×1.0 m crouching (§5.2.5.8.1); headroom 1.0 + 0.035·v² m (§5.2.5.7.2); lock engagement ≥7 mm (§5.3.9.1); door force ≤150 N / 10 J (§5.3.6.2); governor trip ≥115% (§5.6.2.2.2); UCMP ≤1.2 m (§5.6.7); rope SF ≥12/16 (§5.5.2.2); brake 125% (§5.9.2.2); relief ≤140% (§5.9.3.5.3); pressure test 200%/5 min (§6.3.10); alarm §5.12.3. Full module: <a href="#/standards">EN 81-20 Standards ←</a></p>`
+      en: `<p>ISIRI 6303-20 mirrors EN 81-20:2020. Key items: pit refuge 0.5×0.7×1.0 m crouching (§5.2.5.8.1); headroom 1.0 + 0.035·v² m (§5.2.5.7.2); lock engagement ≥7 mm (§5.3.9); door force ≤150 N / 10 J (§5.3.6.2); governor trip ≥115% (§5.6.2.2.1); UCMP ≤1.2 m (§5.6.7); rope SF ≥12/16 (§5.5.2.2); brake 125% (§5.9.2.2); relief ≤140% (§5.9.3.5.3); pressure test 200%/5 min (§6.3.10); alarm §5.12.3. Clause/edition verification status is shown per item in the standards module. Full module: <a href="#/standards">EN 81-20 Standards ←</a></p>`
     }
   },
   {
@@ -3625,12 +3641,20 @@ const MEASURE_FIELDS = [
     } },
   { id: 'i_brake', fa: 'جریان/ولتاژ بوبین ترمز', en: 'Brake coil voltage/current', unit: 'V', cat: 'drive', decimals: 0, min: 0 },
   { id: 'r_insulation', fa: 'مقاومت عایقی (میگر)', en: 'Insulation resistance', unit: 'MΩ', cat: 'elec', decimals: 1, min: 0,
-    eval: (v) => v >= 1 ? { status: 'normal' } : v > 0 && v < 1 ? { status: 'critical', reason: { fa: 'مقاومت عایقی زیر ۱ مگااهم — غیرمجاز', en: 'Insulation below 1 MΩ — unacceptable' } } : { status: 'unknown' } },
+    /* NO universal pass/fail limit: the acceptable value depends on the circuit under test
+       (motor winding / power wiring / control circuit), the test voltage, the equipment and the
+       applicable standard or manufacturer requirement. Common electrical practice uses roughly
+       "1 MΩ per 1000 V of test voltage + 1 MΩ" as a rule of thumb — informative only, NOT a limit. */
+    eval: (v) => (v == null || isNaN(v)) ? { status: 'unknown' } : {
+      status: 'unknown',
+      reason: { fa: 'حد مجاز به نوع مدار، تجهیزات، روش تست و مرجع فنی وابسته است.', en: 'The acceptable limit depends on the circuit, equipment, test method and technical reference.' },
+      next: { fa: 'با مدار مورد نظر، ولتاژ تست و الزام سازنده/استاندارد مربوطه تطبیق دهید (قاعده سرانگشتی عمومی برقی: حدود kV+1 مگااهم). مقادیر خیلی پایین (زیر چند ده کیلواهم) تقریباً در هر مرجعی مردود است.', en: 'Compare against the circuit, test voltage and manufacturer/standard requirement (general electrical rule of thumb: ≈ kV+1 MΩ). Very low readings (tens of kΩ or below) fail under any reference.' }
+    } },
   { id: 'p_hyd', fa: 'فشار هیدرولیک', en: 'Hydraulic pressure', unit: 'bar', cat: 'mech', decimals: 1, min: 0 },
   { id: 'temp', fa: 'دما (موتور/روغن)', en: 'Temperature (motor/oil)', unit: '°C', cat: 'mech', decimals: 0,
     eval: (v) => v < 70 ? { status: 'normal' } : v < 85 ? { status: 'attention', reason: { fa: 'دما بالا است؛ خنک‌کاری و بار را بررسی کنید', en: 'Temperature high — check cooling and load' } } : { status: 'critical', reason: { fa: 'دما بسیار بالا — خطر آسیب', en: 'Excessive temperature — damage risk' } } },
   { id: 'lvl_err', fa: 'خطای همسطحی', en: 'Leveling error', unit: 'mm', cat: 'mech', decimals: 0, signed: true,
-    eval: (v) => Math.abs(v) <= 10 ? { status: 'normal' } : Math.abs(v) <= 20 ? { status: 'attention', reason: { fa: 'خارج از دقت توقف ±۱۰ میلی‌متر (EN 81-20)', en: 'Outside ±10 mm stopping accuracy (EN 81-20)' } } : { status: 'critical', reason: { fa: 'همسطحی بسیار نامناسب', en: 'Severe leveling error' } } },
+    eval: (v) => Math.abs(v) <= 10 ? { status: 'normal', reason: { fa: 'دقت توقف ±۱۰ میلی‌متر — تأییدشده (EN 81-20:2020 §5.12.1.1.4)', en: '±10 mm stopping accuracy — verified (EN 81-20:2020 §5.12.1.1.4)' } } : Math.abs(v) <= 20 ? { status: 'attention', reason: { fa: 'خارج از دقت توقف ±۱۰ میلی‌متر (EN 81-20 §5.12.1.1.4)؛ محدوده ±۲۰ مربوط به هم‌ترازسازی مجدد است — با ویرایش مصوب تطبیق دهید', en: 'Outside ±10 mm stopping accuracy (EN 81-20 §5.12.1.1.4); ±20 relates to re-levelling — verify against the approved edition' } } : { status: 'critical', reason: { fa: 'همسطحی بسیار نامناسب — خطر زمین‌خوردن مسافر', en: 'Severe leveling error — trip hazard' } } },
   { id: 't_travel', fa: 'زمان سفر', en: 'Travel time', unit: 's', cat: 'mech', decimals: 1, min: 0 },
   { id: 'vib', fa: 'لرزش (توصیفی)', en: 'Vibration (descriptive)', unit: '', cat: 'mech', text: true },
   // EN 81 verified checks
@@ -3646,11 +3670,11 @@ const MEASURE_FIELDS = [
       return { status: 'normal' };
     } },
   { id: 'door_force', fa: 'نیروی بستن درب', en: 'Door closing force', unit: 'N', cat: 'safety', decimals: 0, min: 0,
-    eval: (v) => v <= 150 ? { status: 'normal' } : { status: 'critical', reason: { fa: 'بیش از حد مجاز ۱۵۰ نیوتن (EN 81-20)', en: 'Above 150 N limit (EN 81-20)' } } },
+    eval: (v) => v <= 150 ? { status: 'normal', reason: { fa: 'حد ۱۵۰ نیوتن — تأییدشده (EN 81-20:2020 §5.3.6.2)', en: '150 N limit — verified (EN 81-20:2020 §5.3.6.2)' } } : { status: 'critical', reason: { fa: 'بیش از حد مجاز ۱۵۰ نیوتن (EN 81-20 §5.3.6.2 — تأییدشده)', en: 'Above 150 N limit (EN 81-20 §5.3.6.2 — verified)' } } },
   { id: 'door_gap', fa: 'فاصله لته‌های درب', en: 'Door panel gap', unit: 'mm', cat: 'safety', decimals: 0, min: 0,
-    eval: (v) => v <= 6 ? { status: 'normal' } : v <= 10 ? { status: 'attention', reason: { fa: 'بالای ۶ میلی‌متر؛ فقط با سایش تا ۱۰ قابل قبول', en: 'Above 6 mm; only acceptable up to 10 from wear' } } : { status: 'critical', reason: { fa: 'بیش از ۱۰ میلی‌متر؛ مردود (EN 81-20)', en: 'Over 10 mm; fail (EN 81-20)' } } },
+    eval: (v) => v <= 6 ? { status: 'normal', reason: { fa: 'حد ۶ میلی‌متر — تأییدشده (EN 81-20:2020 §5.3.1.4)', en: '6 mm limit — verified (EN 81-20:2020 §5.3.1.4)' } } : v <= 10 ? { status: 'attention', reason: { fa: 'بالای ۶ میلی‌متر؛ فقط با سایش تا ۱۰ (§5.3.1.4 — درب شیشه‌ای همیشه ≤۶)', en: 'Above 6 mm; wear limit 10 (§5.3.1.4 — glass doors always ≤6)' } } : { status: 'critical', reason: { fa: 'بیش از ۱۰ میلی‌متر؛ مردود (EN 81-20 §5.3.1.4)', en: 'Over 10 mm; fail (EN 81-20 §5.3.1.4)' } } },
   { id: 'lock_eng', fa: 'درگیری قفل درب طبقه', en: 'Landing lock engagement', unit: 'mm', cat: 'safety', decimals: 0, min: 0,
-    eval: (v) => v >= 7 ? { status: 'normal' } : { status: 'critical', reason: { fa: 'کمتر از ۷ میلی‌متر؛ مردود (EN 81-20)', en: 'Below 7 mm; fail (EN 81-20)' } } },
+    eval: (v) => v >= 7 ? { status: 'normal', reason: { fa: 'حداقل ۷ میلی‌متر — تأییدشده (EN 81-20 §5.3.9)', en: 'Min 7 mm — verified (EN 81-20 §5.3.9)' } } : { status: 'critical', reason: { fa: 'کمتر از ۷ میلی‌متر؛ مردود (EN 81-20 §5.3.9 — کنتاکت نباید بسته شود)', en: 'Below 7 mm; fail (EN 81-20 §5.3.9 — contact must not close)' } } },
   // safety state observations (boolean)
   { id: 'safety_chain', fa: 'وضعیت زنجیرهٔ ایمنی', en: 'Safety chain state', unit: '', cat: 'safety', state: ['closed', 'open'],
     eval: (v) => v === 'closed' ? { status: 'normal' } : v === 'open' ? { status: 'critical', reason: { fa: 'زنجیرهٔ ایمنی باز است', en: 'Safety chain is open' }, next: { fa: 'از اولین کنتاکت، نقطهٔ قطع را پیدا کنید', en: 'Trace from the first contact to find the open point' } } : { status: 'unknown' } },
@@ -3797,10 +3821,10 @@ const VVVF_DB = [
 const TOOL_SUGGESTIONS = ['مولتی‌متر', 'کلمپ‌متر (آمپرمتر انبری)', 'فازمتر', 'میگر (تستر عایق)', 'متر ۵ متری', 'کولیس', 'مانومتر', 'ترمومتر لیزری', 'تراز', 'شاقول', 'آچار آلن ست', 'آچار فرانسه', 'دم‌باریک و سیم‌چین', 'چراغ پیشانی', 'کلید سه‌گوش', 'گیج کشش بکسل', 'فیلر'];
 
 /* ================= VERSION SINGLE SOURCE OF TRUTH ================= */
-const APP_VERSION = '27.1.0';
+const APP_VERSION = '28.0.0';
 const DB_SCHEMA_VERSION = 2;
 const BACKUP_FORMAT_VERSION = 6;
-const CACHE_VERSION = 'zlift-pwa-v30';
+const CACHE_VERSION = 'zlift-pwa-v31';
 /* Display badge shown on Settings / about */
 const APP_BUILD = '2026-08-23';
 
@@ -3821,22 +3845,17 @@ const state = {
   route: location.hash.slice(1) || '/dashboard'
 };
 
-/* ---------- api ---------- */
+/* ---------- DATA ACCESS LAYER ----------
+   ARCHITECTURE (v2): Z Lift is a fully offline PWA — there is NO backend server.
+   Every `api(path, opts)` call below resolves against the local persistence layer
+   (see the "LOCAL PERSISTENCE" section near the end of this file):
+     • structured data → localStorage['zlift_db'] (+ mirror + auto-snapshots)
+     • photos (large blobs) → IndexedDB when available, inline fallback
+   The function signature mimics a REST API on purpose: a future sync layer can be
+   introduced by replacing only this single seam — the rest of the app stays as-is.
+   No network request is made anywhere for application data. */
 async function api(path, opts = {}) {
-  const headers = { 'Content-Type': 'application/json' };
-  if (state.token) headers['Authorization'] = 'Bearer ' + state.token;
-  const res = await fetch('/api' + path, {
-    method: opts.method || 'GET',
-    headers,
-    body: opts.body ? JSON.stringify(opts.body) : undefined
-  });
-  if (res.status === 401 && !path.startsWith('/auth/')) {
-    doLocalLogout();
-    throw new Error('unauthorized');
-  }
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) { const e = new Error(data.error || 'error'); e.code = data.error; e.status = res.status; throw e; }
-  return data;
+  return _apiLocal(path, opts);
 }
 
 /* ---------- utils ---------- */
@@ -3871,6 +3890,15 @@ function fieldError(sel, msgKey) {
   return false;
 }
 function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+/* inventory shortage notice: /parts-consume clamps stock at zero and reports a
+   shortage — make sure the technician actually SEES that it happened */
+function warnStockShort(res, partName) {
+  try {
+    if (res && +res.shortQty > 0) {
+      toast(t('stockShortMsg').replace('{n}', partName || '?').replace('{q}', faNum(+res.shortQty)), 'err');
+    }
+  } catch (e) {}
+}
 /* wrap an async save handler: disables the button during the call and
    swallows double-clicks (duplicate-submission protection) */
 function guard(btnSel, fn) {
@@ -3885,7 +3913,7 @@ function guard(btnSel, fn) {
 }
 /* turn an API error code into a message the technician can act on */
 const ERR_KEYS = {
-  name_required: 'requiredTitle', customer_required: 'requiredCustomer',
+    name_required: 'requiredTitle', customer_required: 'requiredCustomer',
   not_found: 'errNotFound', too_large: 'photoTooLarge', bad_backup: 'restoreBad',
   unauthorized: 'errSessionExpired', invalid_credentials: 'errInvalidCred',
   username_taken: 'errUserTaken', weak_password: 'errWeakPass', bad_username: 'errBadUser'
@@ -4371,6 +4399,9 @@ function enterApp() {
   setTimeout(checkRemindersNotify, 1500);
   /* create a rotating local snapshot once a day (no network, no third party) */
   setTimeout(autoBackupIfDue, 2500);
+  /* one-way verified migration of inline photo payloads to IndexedDB (fail-safe:
+     without IndexedDB, or on any error, photos simply stay inline) */
+  setTimeout(() => { _migratePhotosToIdb(); }, 800);
 }
 const NAV = [
   { section: 'navMain' },
@@ -4918,8 +4949,8 @@ function deleteProject(id) {
   ].filter(Boolean);
   const warnTitle = LANG === 'fa' ? 'حذف دائمی پروژه' : 'Permanently delete project';
   const hasLinked = LANG === 'fa'
-    ? `این پروژه شامل موارد زیر است (حذف دائمی):\n\n${lines.join('\n')}\n\n⚠️ پیشنهاد می‌شود به‌جای حذف، از «بایگانی» استفاده کنید تا تاریخچه حفظ شود. در صورت حذف، سرویس‌ها به‌صورت بدون پروژه نگهداری می‌شوند ولی دسته‌بندی پروژه از بین می‌رود. حذف دائمی؟`
-    : `This project contains (permanent delete):\n\n${lines.join('\n')}\n\n⚠️ Prefer Archive to preserve history. On delete, services are detached (kept without project link) but the project grouping is lost. Delete permanently?`;
+    ? `این پروژه شامل موارد زیر است (حذف دائمی):\n\n${lines.join('\n')}\n\n⚠️ پیشنهاد می‌شود به‌جای حذف، از «بایگانی» استفاده کنید. در صورت حذف دائمی، سوابق از بین نمی‌روند؛ از پروژه جدا و با نام/مشخصات همین آسانسور مهر می‌خورند («سوابق بدون پروژه»). حذف دائمی؟`
+    : `This project contains (permanent delete):\n\n${lines.join('\n')}\n\n⚠️ Prefer Archive instead. On permanent delete, history records are preserved — detached from the project but stamped with this elevator's name/details. Delete permanently?`;
   const noneMsg = LANG === 'fa'
     ? 'این پروژه هیچ سابقه‌ای ندارد. آیا از حذف دائمی آن مطمئنید؟'
     : 'This project has no history. Permanently delete?';
@@ -4934,8 +4965,8 @@ function deleteProject(id) {
       </div>
       <p style="font-size:12.5px;color:var(--text-3);margin:0 0 10px">${
         LANG === 'fa'
-        ? 'پیشنهاد: به‌جای حذف، پروژه را بایگانی کنید تا تاریخچه حفظ شود.'
-        : 'Tip: Archive instead of deleting to preserve history.'
+        ? 'پیشنهاد: به‌جای حذف، پروژه را بایگانی کنید. سوابق تکنسینی هرگز همراه پروژه حذف نمی‌شوند — فقط از پروژه جدا می‌شوند.'
+        : 'Tip: Archive instead. Technical history is never destroyed with the project — it is only detached.'
       }</p>` : `<p style="margin:0 0 10px">${esc(noneMsg)}</p>`}
     </div>
     <div class="modal-foot">
@@ -4952,19 +4983,17 @@ function deleteProject(id) {
 async function _doDeleteProject(id) {
   const rb = optimisticRemove(state.projects, id);
   if (!rb) return;
+  const p = rb.removed; // the removed project (for context stamping)
+  const pInfo = p ? [p.name, p.customer, p.location].filter(Boolean).join(' — ') : '';
+  const stampAll = (list) => { (list || []).forEach(r => { if (r && r.projectId === id) { if (pInfo && !r.projectInfo) r.projectInfo = pInfo; r.projectId = ''; } }); };
   navigate('/projects');
   try {
     await api('/projects/' + id, { method: 'DELETE' });
-    // services survive a project deletion (independent module) — detach them (preserves history)
-    state.services.forEach(s => { if (s.projectId === id) s.projectId = ''; });
-    state.measurements.forEach(m => { if (m.projectId === id) m.projectId = ''; });
-    state.photos.forEach(x => { if (x.projectId === id) x.projectId = ''; });
-    state.invoices.forEach(i => { if (i.projectId === id) i.projectId = ''; });
-    state.diagSessions.forEach(d => { if (d.projectId === id) d.projectId = ''; });
-    state.issues.forEach(x => { if (x.projectId === id) x.projectId = ''; });
-    state.contracts.forEach(c => { if (c.projectId === id) c.projectId = ''; });
-    state.reminders.forEach(r => { if (r.projectId === id) r.projectId = ''; });
-    state.checklists = state.checklists.filter(c => c.projectId !== id);
+    // mirror the server-side detach-and-stamp in local state (records survive,
+    // keeping the elevator context; checklists are detached, not destroyed)
+    state.services.forEach(s => { if (s.projectId === id) { if (p && !s.customer) s.customer = p.customer || p.name || ''; if (p && !s.elevatorInfo) s.elevatorInfo = [p.name, p.location].filter(Boolean).join(' — '); } });
+    stampAll(state.services); stampAll(state.measurements); stampAll(state.photos); stampAll(state.invoices);
+    stampAll(state.diagSessions); stampAll(state.issues); stampAll(state.contracts); stampAll(state.reminders); stampAll(state.checklists);
     toast(t('deleted'));
   } catch (e) {
     rb.restore();
@@ -5130,7 +5159,7 @@ function renderProjectDetail(id) {
         <button class="btn btn-ghost btn-sm" onclick="openPhotoForm('${p.id}')">${IC.cam} ${t('addPhoto')}</button></div>`;
       out += pPhotos.length
         ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px">${pPhotos.map(ph => `
-            <img src="${safePhotoSrc(ph.data)}" onclick="viewPhoto('${ph.id}')" title="${esc(ph.cat || '')}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:11px;border:1px solid var(--border);cursor:pointer" />`).join('')}</div>`
+            <img src="${photoDataSync(ph) || PHOTO_PLACEHOLDER}" data-phid="${esc(ph.id)}" onclick="viewPhoto('${ph.id}')" title="${esc(ph.cat || '')}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:11px;border:1px solid var(--border);cursor:pointer;background:var(--bg-soft)" />`).join('')}</div>`
         : `<p style="font-size:12.5px;color:var(--text-3)">${t('noPhotos')}</p>`;
       return out;
     })()}
@@ -5149,6 +5178,7 @@ function renderProjectDetail(id) {
     $('#progBar').style.width = v + '%';
     saveProg(v);
   };
+  hydratePhotoImgs();
 }
 
 /* ================= SERVICES (independent module) ================= */
@@ -5503,6 +5533,7 @@ async function svcApplyStock(serviceId, projectId) {
       try {
         const d = await api('/parts-consume', { method: 'POST', body: { partId, qty: delta, projectId: projectId || '', serviceId, note } });
         consumed.push(d.part);
+        warnStockShort(d, d.part && d.part.name);
       } catch (e) { /* stock can't move on — report saved anyway */ }
     } else if (delta < 0) {
       const local = (state.parts || []).find(x => x.id === partId);
@@ -6769,19 +6800,19 @@ const STD81 = [
     ],
     note: { fa: 'کاهش ۰.۵ به ۰.۱ متر فقط برای پیش‌بند/درب کابین و فقط در فاصله ۱۵ سانتی‌متری دیوار مجاز است.', en: 'The 0.5→0.1 m reduction applies only to apron/car door parts within 0.15 m of the wall.' } },
   /* ---------- doors ---------- */
-  { id: 's-door-lock', cat: 'doors', icon: '🔒', title: { fa: 'درگیری قفل درب طبقه', en: 'Landing door lock engagement' }, clause: '§5.3.9.1', kind: 'limit',
+  { id: 's-door-lock', cat: 'doors', icon: '🔒', title: { fa: 'درگیری قفل درب طبقه', en: 'Landing door lock engagement' }, clause: '§5.3.9', kind: 'limit', verif: true,
     vals: [
       { fa: 'درگیری مکانیکی قفل قبل از بسته شدن کنتاکت الکتریکی', en: 'Mechanical engagement before the electrical contact closes', v: '≥ 7', unit: 'mm' },
       { fa: 'کنتاکت ایمنی از نوع مثبت‌گسست', en: 'Safety contact, positive opening type', v: '§5.11.2', unit: '' }
     ],
     note: { fa: 'با درگیری کمتر از ۷ میلی‌متر مدار ایمنی نباید بسته شود — رایج‌ترین مردودی بازرسی.', en: 'Below 7 mm engagement the safety circuit must not close — a very common inspection failure.' } },
-  { id: 's-door-gap', cat: 'doors', icon: '🚪', title: { fa: 'فاصله لته‌های درب', en: 'Door panel gaps' }, clause: '§5.3.1.4', kind: 'limit',
+  { id: 's-door-gap', cat: 'doors', icon: '🚪', title: { fa: 'فاصله لته‌های درب', en: 'Door panel gaps' }, clause: '§5.3.1.4', kind: 'limit', verif: true,
     vals: [
       { fa: 'فاصله بین لته‌ها یا لته و چهارچوب/آستانه هنگام بسته بودن درب', en: 'Gap between panels or panel/frame/sill when closed', v: '≤ 6', unit: 'mm' },
       { fa: 'حد مجاز بر اثر سایش', en: 'Allowed after wear', v: '≤ 10', unit: 'mm' }
     ],
     note: { fa: 'بیش از ۱۰ میلی‌متر در هر شرایطی مردود است.', en: 'More than 10 mm fails in all cases.' } },
-  { id: 's-door-force', cat: 'doors', icon: '💪', title: { fa: 'نیروی بستن درب', en: 'Door closing force' }, clause: '§5.3.6.2', kind: 'limit',
+  { id: 's-door-force', cat: 'doors', icon: '💪', title: { fa: 'نیروی بستن درب', en: 'Door closing force' }, clause: '§5.3.6.2', kind: 'limit', verif: true,
     vals: [
       { fa: 'حداکثر نیروی بستن درب (جلوگیری از آسیب به نفر)', en: 'Max closing force (injury protection)', v: '≤ 150', unit: 'N' },
       { fa: 'حداکثر انرژی جنبشی لته‌ها', en: 'Max kinetic energy of panels', v: '≤ 10', unit: 'J' }
@@ -6827,7 +6858,7 @@ const STD81 = [
     ],
     note: { fa: 'بعد از فشردن دکمه، ادامه ارتباط نباید نیاز به اقدام مجدد مسافر داشته باشد. الزامات تفصیلی: EN 81-28.', en: 'After initiation, communication must not require further passenger action. Details: EN 81-28.' } },
   /* ---------- governor & safety gear ---------- */
-  { id: 's-gov-trip', cat: 'gov', icon: '⚙️', title: { fa: 'سرعت عملکرد گاورنر', en: 'Governor tripping speed' }, clause: '§5.6.2.2.2', kind: 'limit',
+  { id: 's-gov-trip', cat: 'gov', icon: '⚙️', title: { fa: 'سرعت عملکرد گاورنر', en: 'Governor tripping speed' }, clause: '§5.6.2.2.1', kind: 'limit', verif: true,
     vals: [
       { fa: 'حداقل سرعت تریپ: ۱۱۵٪ سرعت نامی', en: 'Minimum tripping speed: 115% of rated speed', v: '≥ 1.15·v', unit: '' },
       { fa: 'سقف — پاراشوت لحظه‌ای (به‌جز غلتک‌محور)', en: 'Max — instantaneous (except captive roller)', v: '0.8', unit: 'm/s' },
@@ -6990,7 +7021,7 @@ const STD81 = [
       { fa: 'کنترل حرکت فقط از روی سقف کابین', en: 'Movement control only from the car roof', v: 'الزامی', unit: '' }
     ],
     note: { fa: 'کار روی سقف کابین فقط در این حالت؛ استپ در دسترس باشد.', en: 'Car-roof work only in this mode; keep the stop switch at hand.' } },
-  { id: 's-elec-level', cat: 'elec', icon: '🎯', title: { fa: 'دقت توقف', en: 'Stopping / levelling accuracy' }, clause: '§5.12.1.1.4', kind: 'limit',
+  { id: 's-elec-level', cat: 'elec', icon: '🎯', title: { fa: 'دقت توقف', en: 'Stopping / levelling accuracy' }, clause: '§5.12.1.1.4', kind: 'limit', verif: true,
     vals: [
       { fa: 'دقت توقف (اختلاف آستانه کابین و طبقه)', en: 'Stopping accuracy (car sill to landing sill)', v: '± 10', unit: 'mm' },
       { fa: 'تست قبل از بهره‌برداری', en: 'Test before putting into service', v: '§6.3.12', unit: '' }
@@ -7034,14 +7065,14 @@ const STD8150_CATS = [
   { id: 'elec', fa: '⚡ آزمون‌های الکتریکی', en: 'Electrical tests' }
 ];
 const STD8150 = [
-  { id: 's50-gov', cat: 'safety', icon: '⚙️', title: { fa: 'آزمون تریپ گاورنر', en: 'Governor tripping test' }, clause: '§5.6.2.2.2', kind: 'test',
+  { id: 's50-gov', cat: 'safety', icon: '⚙️', title: { fa: 'آزمون تریپ گاورنر', en: 'Governor tripping test' }, clause: '§5.6.2.2.1', kind: 'test', verif: true,
     vals: [
       { fa: 'پاراشوت پیشرونده → سرعت تریپ حداقل ۱۱۵٪ سرعت نامی', en: 'Progressive safety gear → trip ≥ 115% rated speed', v: '≥ 1.15·v', unit: '' },
       { fa: 'پاراشوت لحظه‌ای (فقط تا سرعت ≤ ۰.۶۳ m/s) → سقف تریپ', en: 'Instantaneous (only ≤ 0.63 m/s) → trip cap', v: '≤ 0.8', unit: 'm/s' },
       { fa: 'تست با قطع موتور و حرکت کابین به سمت پایین', en: 'Tested with motor off, car descending', v: '—', unit: '' }
     ],
     note: { fa: 'سرعت تریپ روی پلاک گاورنر حک شده و باید با پروژه مطابقت داده شود.', en: 'Tripping speed is stamped on the governor and must match the project.' } },
-  { id: 's50-sgear', cat: 'safety', icon: '🛑', title: { fa: 'آزمون پاراشوت (Safety Gear)', en: 'Safety gear test' }, clause: '§6.3.7', kind: 'test',
+  { id: 's50-sgear', cat: 'safety', icon: '🛑', title: { fa: 'آزمون پاراشوت (Safety Gear)', en: 'Safety gear test' }, clause: '§6.3.4', kind: 'test',
     vals: [
       { fa: 'با بار اسمی، کابین رو به پایین و تریپ گاورنر', en: 'With rated load, car descending, governor tripped', v: 'الزامی', unit: '' },
       { fa: 'توقف کامل و نگه‌داشتن کابین روی ریل‌ها', en: 'Full stop and hold on the guide rails', v: 'الزامی', unit: '' },
@@ -7054,7 +7085,7 @@ const STD8150 = [
       { fa: 'بدون لغزش محسوس روی فلکه کشش', en: 'No significant slip on the traction sheave', v: '—', unit: '' }
     ],
     note: { fa: 'این آزمون پرکاربردترین مورد در بازرسی بهره‌برداری است.', en: 'This is the most common commissioning test.' } },
-  { id: 's50-buffer', cat: 'safety', icon: '🛞', title: { fa: 'آزمون بافر', en: 'Buffer test' }, clause: '§6.3.8', kind: 'test',
+  { id: 's50-buffer', cat: 'safety', icon: '🛞', title: { fa: 'آزمون بافر', en: 'Buffer test' }, clause: '§6.3.7', kind: 'test',
     vals: [
       { fa: 'فرورفتن کامل بافر (کابین با سرعت نامی + اضافه‌بار) و برگشت کامل', en: 'Full compression (car at rated speed + overload) and full recovery', v: 'الزامی', unit: '' },
       { fa: 'ضربه‌گیر روغنی: کنترل سطح روغن پس از آزمون', en: 'Oil buffer: check oil level after test', v: '—', unit: '' }
@@ -7067,13 +7098,13 @@ const STD8150 = [
       { fa: 'ریست فقط به صورت دستی توسط تکنسین', en: 'Reset only manually by an authorised person', v: '—', unit: '' }
     ],
     note: { fa: 'بعد از هر توقف UCMP باید علت ثبت و سیستم ریست دستی شود.', en: 'After each UCM stop, log the cause and reset manually.' } },
-  { id: 's50-lock', cat: 'safety', icon: '🔒', title: { fa: 'آزمون قفل درب طبقه', en: 'Door lock test' }, clause: '§5.3.9.1', kind: 'test',
+  { id: 's50-lock', cat: 'safety', icon: '🔒', title: { fa: 'آزمون قفل درب طبقه', en: 'Door lock test' }, clause: '§5.3.9', kind: 'test', verif: true,
     vals: [
       { fa: 'درگیری حداقل ۷ میلی‌متر لنگه و زبانه قفل', en: 'Min 7 mm engagement of the locking element', v: '≥ 7', unit: 'mm' },
       { fa: 'کنتاکت ایمنی قفل: حرکت با قفل باز ممکن نباشد', en: 'Safety contact: no travel with an unlocked door', v: 'الزامی', unit: '' }
     ],
     note: { fa: 'برای هر طبقه جداگانه تست شود.', en: 'Test on every landing separately.' } },
-  { id: 's50-door', cat: 'field', icon: '🚪', title: { fa: 'آزمون نیروی بستن درب', en: 'Door closing force test' }, clause: '§5.3.6.2', kind: 'test',
+  { id: 's50-door', cat: 'field', icon: '🚪', title: { fa: 'آزمون نیروی بستن درب', en: 'Door closing force test' }, clause: '§5.3.6.2', kind: 'test', verif: true,
     vals: [
       { fa: 'نیروی بستن درب (پیک، بیش از ۵۰ میلی‌متر مانده به بسته‌شدن)', en: 'Closing force (peak, before final 50 mm)', v: '≤ 150', unit: 'N' },
       { fa: 'انرژی جنبشی درب', en: 'Kinetic energy of the door', v: '≤ 10', unit: 'J' }
@@ -7085,12 +7116,13 @@ const STD8150 = [
       { fa: 'شیر رلیف (فشارشکن) حداکثر ۱۴۰٪ فشار کاری', en: 'Relief valve ≤ 140% working pressure', v: '≤ 140%', unit: '' }
     ],
     note: { fa: 'هیچ نشتی یا تغییر شکل دائمی در طول تست نباید دیده شود.', en: 'No leakage or permanent deformation during the test.' } },
-  { id: 's50-level', cat: 'field', icon: '🎯', title: { fa: 'آزمون دقت همسطحی', en: 'Levelling accuracy test' }, clause: '§6.3.11', kind: 'test',
+  { id: 's50-level', cat: 'field', icon: '🎯', title: { fa: 'آزمون دقت همسطحی', en: 'Levelling accuracy test' }, clause: '§5.12.1.1.4', kind: 'test', verif: true,
     vals: [
-      { fa: 'خطای همسطحی در حالت عادی (دقت نگهداری)', en: 'Levelling error in normal operation', v: '≤ ±20', unit: 'mm' },
-      { fa: 'در حالت تخلیه/بارگیری صفر تا بار اسمی', en: 'From empty to rated load', v: '—', unit: '' }
+      { fa: 'دقت توقف (حالت عادی)', en: 'Stopping accuracy (normal operation)', v: '≤ ±10', unit: 'mm' },
+      { fa: 'هم‌ترازسازی مجدد زیر بار (ورود/خروج مسافر)', en: 'Re-levelling under loading/unloading', v: '≤ ±20', unit: 'mm' },
+      { fa: 'آزمون قبل از بهره‌برداری (مرجع)', en: 'Test before putting into service (reference)', v: '§6.3.12', unit: '' }
     ],
-    note: { fa: 'مقدار دقیق بسته به طراحی ممکن است کمتر باشد.', en: 'Exact value may be tighter depending on the design.' } },
+    note: { fa: 'دقت توقف ±۱۰ میلی‌متر تأییدشده است؛ مقدار ±۲۰ برای هم‌ترازسازی مجدد را با ویرایش مصوب متن استاندارد تطبیق دهید. طراحی می‌تواند دقت محدودتری تعیین کند.', en: 'The ±10 mm stopping accuracy is verified; cross-check the ±20 mm re-levelling figure against the approved edition. Design may specify tighter accuracy.' } },
   { id: 's50-elec', cat: 'elec', icon: '⚡', title: { fa: 'آزمون‌های الکتریکی', en: 'Electrical tests' }, clause: '§6.3 / Annex', kind: 'test',
     vals: [
       { fa: 'تست تداوم و مقاومت ارت (PE)', en: 'Continuity & earth (PE) resistance test', v: 'الزامی', unit: '' },
@@ -7193,10 +7225,14 @@ const STD13015 = [
 
 /* unified standards library (selectable via tabs) */
 const STD_SETS = [
-  { id: 'en81-20', name: { fa: 'EN 81-20', en: 'EN 81-20' }, short: { fa: 'الزامات ایمنی ساخت و نصب', en: 'Safety rules for construction & installation' }, cats: STD81_CATS, list: STD81 },
-  { id: 'en81-50', name: { fa: 'EN 81-50', en: 'EN 81-50' }, short: { fa: 'آزمون‌ها و آزمایش اجزاء ایمنی', en: 'Test rules for safety components' }, cats: STD8150_CATS, list: STD8150 },
-  { id: 'en81-28', name: { fa: 'EN 81-28', en: 'EN 81-28' }, short: { fa: 'آلارم اضطراری و ارتباط دوسویه', en: 'Remote alarm & two-way communication' }, cats: STD8128_CATS, list: STD8128 },
-  { id: 'en13015', name: { fa: 'EN 13015', en: 'EN 13015' }, short: { fa: 'قوانین سرویس و نگهداری', en: 'Rules for maintenance instructions' }, cats: STD13015_CATS, list: STD13015 }
+  { id: 'en81-20', name: { fa: 'EN 81-20', en: 'EN 81-20' }, short: { fa: 'الزامات ایمنی ساخت و نصب', en: 'Safety rules for construction & installation' },
+    edition: { fa: '۲۰۲۰ (هم‌ارز استاندارد ملی ۶۳۰۳-۲۰)', en: '2020 (aligned with ISIRI 6303-20)' }, cats: STD81_CATS, list: STD81 },
+  { id: 'en81-50', name: { fa: 'EN 81-50', en: 'EN 81-50' }, short: { fa: 'آزمون‌ها و آزمایش اجزاء ایمنی', en: 'Test rules for safety components' },
+    edition: { fa: 'ویرایش دقیق نیازمند تطبیق', en: 'edition requires verification' }, cats: STD8150_CATS, list: STD8150 },
+  { id: 'en81-28', name: { fa: 'EN 81-28', en: 'EN 81-28' }, short: { fa: 'آلارم اضطراری و ارتباط دوسویه', en: 'Remote alarm & two-way communication' },
+    edition: { fa: 'ویرایش دقیق نیازمند تطبیق', en: 'edition requires verification' }, cats: STD8128_CATS, list: STD8128 },
+  { id: 'en13015', name: { fa: 'EN 13015', en: 'EN 13015' }, short: { fa: 'قوانین سرویس و نگهداری', en: 'Rules for maintenance instructions' },
+    edition: { fa: 'ویرایش دقیق نیازمند تطبیق', en: 'edition requires verification' }, cats: STD13015_CATS, list: STD13015 }
 ];
 let stdSet = 'en81-20';
 function stdCur() { return STD_SETS.find(x => x.id === stdSet) || STD_SETS[0]; }
@@ -7262,9 +7298,17 @@ function openStdArticle(id) {
   openModal(`
     <div class="modal-head"><h3>${s.icon} ${esc(s.title[LANG] || s.title.fa)}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body kb-article">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
         <span class="badge b-blue" style="direction:ltr;font-size:13px">${esc(set.name[LANG] || set.name.fa)} ${esc(s.clause)}</span>
         <span style="font-size:11.5px;color:var(--text-3)">${t('stdClause')}</span>
+      </div>
+      <div class="kv-cell" style="margin-bottom:12px;padding:8px 10px">
+        <div class="k" style="margin:2px 0">${t('stdStandard')}: <b style="color:var(--text)">${esc(set.name[LANG] || set.name.fa)}</b> · ${t('stdEdition')}: <b style="color:var(--text)">${esc(set.edition ? (set.edition[LANG] || set.edition.fa) : '—')}</b></div>
+        <div class="k" style="margin:2px 0">${t('stdVerification')}:
+          ${s.verif
+            ? `<span class="badge b-green" style="font-size:11.5px">✅ ${t('stdVerified')}</span>`
+            : `<span class="badge b-amber" style="font-size:11.5px">⚠️ ${t('stdUnverified')}</span>`}
+        </div>
       </div>
       <div class="calc-result" style="margin-bottom:12px">
         ${s.vals.map(v => `<div class="r-row" style="flex-wrap:wrap;gap:4px 10px">
@@ -7597,7 +7641,7 @@ function evalMeasures(list) {
     const min = 1.15 * vr;
     if (vg != null) {
       const maxCap = vr > 1 ? (1.25 * vr + 0.25 / vr) : 1.5;
-      msgs.push({ ok: vg >= min && vg < maxCap, text: (LANG === 'fa' ? 'گاورنر: ' : 'Governor: ') + faNum(vg) + ' m/s — ' + (LANG === 'fa' ? 'محدوده مجاز برای این سرعت: ' : 'allowed range for this speed: ') + faNum(min.toFixed(2)) + ' تا ' + faNum(maxCap.toFixed(2)) + ' m/s (EN 81-20 §5.6.2.2.2)' });
+      msgs.push({ ok: vg >= min && vg < maxCap, text: (LANG === 'fa' ? 'گاورنر: ' : 'Governor: ') + faNum(vg) + ' m/s — ' + (LANG === 'fa' ? 'محدوده مجاز برای این سرعت: ' : 'allowed range for this speed: ') + faNum(min.toFixed(2)) + ' تا ' + faNum(maxCap.toFixed(2)) + ' m/s (EN 81-20 §5.6.2.2.1)' });
     }
   }
   return msgs;
@@ -7733,7 +7777,7 @@ function openConsumeForm(partId) {
       <div class="field"><label>${t('prNotes')}</label><input id="cn_note" /></div>
       ${Array.isArray(part.history) && part.history.length ? `
         <div class="section-title" style="margin:14px 0 8px"><h3 style="font-size:13.5px">📜 ${t('consumeHistory')}</h3></div>
-        ${part.history.slice(0, 5).map(h => { const q = +h.qty || 0; const disp = q > 0 && h.note !== 'adjustment' ? -q : q; return `<div class="kv-cell" style="margin-bottom:6px"><div class="v" style="font-weight:500;font-size:12.5px">${disp > 0 ? '+' : ''}${faNum(disp)} · ${fmtDate(h.date)}${h.projectId ? ' · ' + esc(projName(h.projectId)) : ''}${h.note === 'adjustment' ? ' · ' + t('adjustLabel') : (h.note ? ' · ' + esc(h.note) : '')}</div></div>`; }).join('')}` : ''}
+        ${part.history.slice(0, 5).map(h => { const q = +h.qty || 0; const disp = q > 0 && h.note !== 'adjustment' ? -q : q; return `<div class="kv-cell" style="margin-bottom:6px"><div class="v" style="font-weight:500;font-size:12.5px">${disp > 0 ? '+' : ''}${faNum(disp)}${h.shortQty ? ' <span style="color:var(--danger)">⚠️ ' + faNum(h.shortQty) + ' ' + t('stockShortTag') + '</span>' : ''} · ${fmtDate(h.date)}${h.projectId ? ' · ' + esc(projName(h.projectId)) : ''}${h.note === 'adjustment' ? ' · ' + t('adjustLabel') : (h.note ? ' · ' + esc(h.note) : '')}</div></div>`; }).join('')}` : ''}
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button>
@@ -7750,6 +7794,7 @@ function openConsumeForm(partId) {
     try {
       const d = await api('/parts-consume', { method: 'POST', body: { partId: part.id, qty, projectId: $('#cn_project').value, note: $('#cn_note').value } });
       Object.assign(part, d.part);
+      warnStockShort(d, part.name);
       closeModal(); toast(t('consumeDone') + ' — ' + faNum(part.qty) + ' ' + part.unit); drawParts();
     } catch (e) { toast(errMsg(e), 'err'); }
   });
@@ -7758,6 +7803,8 @@ function openConsumeForm(partId) {
 /* ================= PHOTOS ================= */
 function photoCats() { return t('photoCats').split('|'); }
 /* only allow safe raster data-URIs — blocks javascript:/svg vectors from malicious backups */
+/* 1×1 transparent PNG shown until an IndexedDB-backed photo hydrates */
+const PHOTO_PLACEHOLDER = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNsaGj4DwAFhAJ/wlseKgAAAABJRU5ErkJggg==';
 function safePhotoSrc(d) {
   return (typeof d === 'string' && /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(d)) ? d : '';
 }
@@ -7820,13 +7867,14 @@ function viewPhoto(id) {
   openModal(`
     <div class="modal-head"><h3>📷 ${esc(ph.cat || '')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body" style="text-align:center">
-      <img src="${safePhotoSrc(ph.data)}" style="max-width:100%;border-radius:12px" />
+      <img src="${photoDataSync(ph) || PHOTO_PLACEHOLDER}" data-phid="${esc(ph.id)}" style="max-width:100%;border-radius:12px;background:var(--bg-soft)" />
       <p style="font-size:12.5px;color:var(--text-2);margin-top:8px">${fmtDateTime(ph.createdAt)}${ph.projectId ? ' · ' + esc(projName(ph.projectId)) : ''}${ph.note ? '<br>' + esc(ph.note) : ''}</p>
     </div>
     <div class="modal-foot">
       <button class="btn btn-soft-danger" onclick="deletePhoto('${ph.id}')">${IC.trash} ${t('delete')}</button>
       <button class="btn btn-primary" onclick="closeModal()">${t('close')}</button>
     </div>`, { size: 'lg' });
+  hydratePhotoImgs();
 }
 function deletePhoto(id) {
   confirmDialog(t('confirmDeleteTitle'), t('confirmDeletePhotoMsg'), async () => {
@@ -8219,6 +8267,7 @@ function openInvoiceForm(id, presetProject, keepDraft) {
             if (delta > 0) {
               const d = await api('/parts-consume', { method: 'POST', body: { partId: pid, qty: delta, projectId: body.projectId, note: invRef + ' (+' + delta + ')' } });
               Object.assign(local, d.part);
+              warnStockShort(d, local.name);
             } else {
               const d = await api('/parts/' + pid, { method: 'PUT', body: { qty: (+local.qty || 0) + (-delta) } });
               Object.assign(local, d.part);
@@ -8235,7 +8284,7 @@ function openInvoiceForm(id, presetProject, keepDraft) {
           try {
             const d = await api('/parts-consume', { method: 'POST', body: { partId: it.partId, qty, projectId: body.projectId, note: invRef } });
             const local = state.parts.find(x => x.id === it.partId);
-            if (local) Object.assign(local, d.part);
+            if (local) { Object.assign(local, d.part); warnStockShort(d, local.name); }
           } catch (e) {}
         }
         invDraft.consumedParts = [];
@@ -9109,7 +9158,7 @@ function renderSettings() {
     <div class="card" style="margin-top:16px">
       <div class="card-title">💾 ${t('setData')}</div>
       <div class="kv-cell" style="margin-bottom:12px"><div class="k">📊 ${t('storageUsage')}</div><div class="v">${usage}</div>
-        <div class="k" style="margin-top:6px">🕓 ${t('backupStatus')}: ${backupStatusBadge()}</div></div>
+        <div class="k" style="margin-top:6px">🕓 ${t('backupStatus')}: ${backupStatusBadge()} <span class="badge b-amber" style="font-size:10.5px">📱 ${t('backupLocalTag')}</span></div></div>
       <label style="display:flex;gap:10px;align-items:center;font-size:13px;margin-bottom:12px;cursor:pointer">
         <input type="checkbox" id="st_autobackup" ${(s.autoBackup !== false) ? 'checked' : ''} style="width:20px;height:20px" />
         <span>${t('backupAutoOn')}</span>
@@ -11729,14 +11778,26 @@ function autoBackupIfDue() {
     runAutoBackup();
   } catch (e) { /* storage full / private mode — never block the app */ }
 }
-function runAutoBackup() {
+async function runAutoBackup() {
   try {
     const raw = localStorage.getItem('zlift_db');
     if (!raw) return;
     let db;
     try { db = JSON.parse(raw); } catch (e) { return; }
     if (!db || !Array.isArray(db.projects)) return;
-    const snap = { app: 'zlift-auto', version: BACKUP_FORMAT_VERSION, appVersion: APP_VERSION, createdAt: Date.now(), data: db };
+    /* keep the snapshot self-contained: hydrate IndexedDB photo payloads so a
+       snapshot restored on another device still shows photos */
+    let data = db;
+    if (IDB_PHOTOS.available() && Array.isArray(db.photos) && db.photos.some(p => p && p.inIdb && !p.data)) {
+      try {
+        data = JSON.parse(JSON.stringify(db));
+        data.photos = await Promise.all(data.photos.map(async p => {
+          if (!p || !p.inIdb || p.data) return p;
+          try { const d = await IDB_PHOTOS.get(p.id); return Object.assign({}, p, { data: d || '' }); } catch (e) { return p; }
+        }));
+      } catch (e) { data = db; }
+    }
+    const snap = { app: 'zlift-auto', version: BACKUP_FORMAT_VERSION, appVersion: APP_VERSION, createdAt: Date.now(), data };
     let store = [];
     try { store = JSON.parse(localStorage.getItem(AUTO_BACKUP_KEY) || '[]'); if (!Array.isArray(store)) store = []; } catch (e) { store = []; }
     store.unshift(snap);
@@ -11757,9 +11818,10 @@ function restoreAutoBackup(idx) {
 
 function openBackupModal() {
   openModal(`
-    <div class="modal-head"><h3>💾 ${t('backup')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="modal-head"><h3>💾 ${t('backupLocalTitle')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body">
       <div class="note-block" style="margin-bottom:14px">⚠️ ${t('backupHint')}</div>
+      <div class="note-block" style="background:var(--warn-soft);border-color:var(--warn);margin-bottom:14px">${t('backupLocalLimits')}</div>
       ${(() => {
         try {
           const raw = localStorage.getItem('zlift_db') || '';
@@ -11920,6 +11982,7 @@ async function toggleNotify(on) {
 function clearAllData() {
   confirmDialog(t('confirmDeleteTitle'), t('setClearAllMsg'), () => {
     try { localStorage.removeItem('zlift_db'); localStorage.removeItem('zlift_db_mirror'); } catch (e) {}
+    if (IDB_PHOTOS.available()) { try { IDB_PHOTOS.clear(); } catch (e) {} }   // photo payloads too
     doLocalLogout();
     try { location.reload(); } catch (e) {}
   });
@@ -12070,6 +12133,100 @@ function _lsSeed() {
 }
 
 let _lsDB = null;
+/* ================= INDEXEDDB PHOTO STORE (v28) =================
+   Photos are the only large blobs in the app. localStorage reliably holds only
+   ~5 MB, so photo data now lives in IndexedDB when the browser provides it:
+     • metadata (id, cat, projectId, note, createdAt, inIdb) stays in zlift_db
+     • the base64 payload is stored as a separate IDB record  { id → data }
+   SAFE MIGRATION (_migratePhotosToIdb): photos found inline in zlift_db are
+   COPIED to IDB first; the localStorage copy is stripped only after every copy
+   is verified readable; if anything fails the inline data is left untouched.
+   FALLBACK: environments without IndexedDB (or on any IDB error) keep the
+   previous behaviour — inline data in localStorage. The flag `inIdb` on each
+   photo record marks where the payload lives, so export/restore and rendering
+   hydrate transparently. */
+const IDB_PHOTOS = (() => {
+  const DB_NAME = 'zlift-photos', STORE = 'photos', VERSION = 1;
+  let dbp = null;
+  function available() {
+    try { return typeof indexedDB !== 'undefined' && indexedDB && typeof indexedDB.open === 'function'; }
+    catch (e) { return false; }
+  }
+  function open() {
+    if (!available()) return Promise.reject(new Error('idb-unavailable'));
+    if (dbp) return dbp;
+    dbp = new Promise((resolve, reject) => {
+      let req;
+      try { req = indexedDB.open(DB_NAME, VERSION); } catch (e) { reject(e); return; }
+      req.onupgradeneeded = () => {
+        try { if (!req.result.objectStoreNames.contains(STORE)) req.result.createObjectStore(STORE, { keyPath: 'id' }); }
+        catch (e) { reject(e); }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => { dbp = null; reject(req.error || new Error('idb-open-failed')); };
+      req.onblocked = () => { dbp = null; reject(new Error('idb-blocked')); };
+    });
+    return dbp;
+  }
+  function tx(mode, fn) {
+    return open().then(db => new Promise((resolve, reject) => {
+      let t, out;
+      try { t = db.transaction(STORE, mode); } catch (e) { reject(e); return; }
+      const st = t.objectStore(STORE);
+      try { out = fn(st); } catch (e) { reject(e); return; }
+      t.oncomplete = () => resolve(out && 'result' in out ? out.result : undefined);
+      t.onerror = () => reject(t.error || new Error('idb-tx-failed'));
+      t.onabort = () => reject(t.error || new Error('idb-tx-abort'));
+    }));
+  }
+  return {
+    available,
+    put(id, data) { return tx('readwrite', st => st.put({ id, data })); },
+    get(id) { return tx('readonly', st => st.get(id)).then(r => (r && typeof r.data === 'string') ? r.data : null); },
+    del(id) { return tx('readwrite', st => st.delete(id)); },
+    clear() { return tx('readwrite', st => st.clear()); },
+    count() { return tx('readonly', st => st.count()); }
+  };
+})();
+/* resolve a photo record to a displayable data-URL — sync when the payload is
+   inline, async (IDB) otherwise. Never throws. */
+function photoDataSync(ph) {
+  return (ph && typeof ph.data === 'string' && ph.data) ? safePhotoSrc(ph.data) : '';
+}
+function hydratePhotoImgs() {
+  const imgs = $$('#content img[data-phid], #modalRoot img[data-phid]');
+  imgs.forEach(img => {
+    const ph = state.photos.find(p => p.id === img.dataset.phid);
+    if (!ph || img.dataset.hydrated) return;
+    const inline = photoDataSync(ph);
+    if (inline) { img.src = inline; img.dataset.hydrated = '1'; return; }
+    if (!ph.inIdb || !IDB_PHOTOS.available()) return;
+    img.dataset.hydrated = '1';
+    IDB_PHOTOS.get(ph.id).then(d => { if (d) img.src = safePhotoSrc(d); }).catch(() => {});
+  });
+}
+/* move inline photo payloads from zlift_db into IndexedDB (one-way, verified) */
+async function _migratePhotosToIdb() {
+  try {
+    if (!IDB_PHOTOS.available()) return false;
+    const db = _lsDB;
+    if (!db || !Array.isArray(db.photos)) return false;
+    const inline = db.photos.filter(p => p && typeof p.data === 'string' && p.data.length > 4000);
+    if (!inline.length) return false;
+    let copied = 0;
+    for (const p of inline) {
+      try { await IDB_PHOTOS.put(p.id, p.data); const back = await IDB_PHOTOS.get(p.id); if (back === p.data) copied++; }
+      catch (e) { break; }                       // any failure → keep localStorage intact
+    }
+    if (copied !== inline.length) return false;   // not fully verified → NO stripping (rollback = do nothing)
+    inline.forEach(p => { p.data = ''; p.inIdb = true; });
+    state.photos.forEach(sp => { const m = inline.find(x => x.id === sp.id); if (m) { sp.data = ''; sp.inIdb = true; } });
+    _lsSave();
+    hydratePhotoImgs();
+    return true;
+  } catch (e) { return false; }
+}
+
 function _lsLoad() {
   if (_lsDB) return _lsDB;
   try { _lsDB = JSON.parse(localStorage.getItem('zlift_db')); } catch (e) { _lsDB = null; }
@@ -12191,8 +12348,9 @@ function normSvcParts(arr) {
 }
 function _lsErr(code, status) { const e = new Error(code); e.code = code; e.status = status || 400; return e; }
 
-/* ---- OVERRIDES the server api() from app.js ---- */
-async function api(path, opts = {}) {
+/* ---- LOCAL PERSISTENCE — the actual data-access implementation ----
+   Mimics a REST API but resolves entirely against localStorage/IndexedDB. */
+async function _apiLocal(path, opts = {}) {
   const db = _lsLoad();
   const method = (opts.method || 'GET').toUpperCase();
   const b = opts.body || {};
@@ -12261,16 +12419,22 @@ async function api(path, opts = {}) {
       return { project: p };
     }
     if (method === 'DELETE') {
-      // services stay: independent module — detach optional reference
+      /* Historical technical records are NEVER destroyed with the project:
+         they are detached but stamped with the elevator/project context so the
+         service history stays logically connected to the correct elevator. */
+      const pInfo = [p.name, p.customer, p.location].filter(Boolean).join(' — ');
+      const stamp = (rec) => { if (!rec.projectInfo) rec.projectInfo = pInfo; rec.projectId = ''; };
       db.services.forEach(s => {
         if (s.projectId === p.id) {
           if (!s.customer) s.customer = p.customer || p.name || '';
           if (!s.elevatorInfo) s.elevatorInfo = [p.name, p.location].filter(Boolean).join(' — ');
-          s.projectId = '';
+          stamp(s);
         }
       });
+      ['measurements', 'photos', 'invoices', 'diagSessions', 'issues', 'contracts', 'reminders', 'checklists'].forEach(k => {
+        if (Array.isArray(db[k])) db[k].forEach(r => { if (r && r.projectId === p.id) stamp(r); });
+      });
       db.projects = db.projects.filter(x => x.id !== p.id);
-      db.checklists = db.checklists.filter(c => c.projectId !== p.id);
       _lsSave();
       return { ok: true };
     }
@@ -12462,6 +12626,13 @@ async function api(path, opts = {}) {
     if (!parts[1] && method === 'POST') {
       if (parts[0] === 'photos' && String(b.data || '').length > 2500000) throw _lsErr('too_large', 413);
       const item = Object.assign({}, b, { id: _lsUid(), createdAt: Date.now(), updatedAt: Date.now() });
+      if (parts[0] === 'photos' && typeof item.data === 'string' && item.data) {
+        /* offload the payload to IndexedDB; keep inline on any failure */
+        try {
+          await IDB_PHOTOS.put(item.id, item.data);
+          item.inIdb = true; item.data = '';
+        } catch (e) { item.inIdb = false; }
+      }
       coll.push(item); _lsSave();
       return { item };
     }
@@ -12473,7 +12644,10 @@ async function api(path, opts = {}) {
         item.updatedAt = Date.now(); _lsSave();
         return { item };
       }
-      if (method === 'DELETE') { db[parts[0]] = coll.filter(x => x.id !== item.id); _lsSave(); return { ok: true }; }
+      if (method === 'DELETE') {
+        if (parts[0] === 'photos' && item.inIdb && IDB_PHOTOS.available()) { try { await IDB_PHOTOS.del(item.id); } catch (e) {} }
+        db[parts[0]] = coll.filter(x => x.id !== item.id); _lsSave(); return { ok: true };
+      }
     }
   }
 
@@ -12482,14 +12656,17 @@ async function api(path, opts = {}) {
     const part = db.parts.find(x => x.id === b.partId);
     if (!part) throw _lsErr('not_found', 404);
     const qty = Math.max(1, +b.qty || 1);
-    part.qty = Math.max(0, part.qty - qty);
+    const prevQ = Math.max(0, +part.qty || 0);
+    /* stock never goes negative; when the request exceeds what is on the shelf the
+       shortage is recorded and surfaced (shortQty) instead of being silently swallowed */
+    const shortQty = Math.max(0, qty - prevQ);
+    part.qty = Math.max(0, prevQ - qty);
     part.updatedAt = Date.now();
     if (!Array.isArray(part.history)) part.history = [];
-    const prevQ = part.qty + qty;
-    part.history.unshift({ id: _lsUid(), qty: -qty, date: Date.now(), projectId: String(b.projectId || ''), serviceId: String(b.serviceId || ''), note: String(b.note || ''), prevQty: prevQ, newQty: part.qty });
+    part.history.unshift({ id: _lsUid(), qty: -qty, shortQty: shortQty || undefined, date: Date.now(), projectId: String(b.projectId || ''), serviceId: String(b.serviceId || ''), note: String(b.note || ''), prevQty: prevQ, newQty: part.qty });
     if (part.history.length > 100) part.history.length = 100;
     _lsSave();
-    return { part };
+    return { part, shortQty: shortQty || 0, stock: part.qty };
   }
 
   /* reminders */
@@ -12521,6 +12698,18 @@ async function api(path, opts = {}) {
 
   /* backup / restore */
   if (path === '/backup' && method === 'GET') {
+    /* the export must be self-contained: re-hydrate IDB photo payloads so the
+       JSON file works on any device (best-effort — unreadable payloads exported as-is) */
+    let exportPhotos = db.photos;
+    try {
+      if (IDB_PHOTOS.available() && db.photos.some(p => p && p.inIdb && !p.data)) {
+        exportPhotos = await Promise.all(db.photos.map(async p => {
+          if (!p || !p.inIdb || p.data) return p;
+          try { const d = await IDB_PHOTOS.get(p.id); return Object.assign({}, p, { data: d || '' }); }
+          catch (e) { return p; }
+        }));
+      }
+    } catch (e) { exportPhotos = db.photos; }
     return { backup: {
       app: 'zlift',
       version: BACKUP_FORMAT_VERSION,
@@ -12532,7 +12721,7 @@ async function api(path, opts = {}) {
       archivedProjects: Array.isArray(db.archivedProjects) ? db.archivedProjects : [],
       services: db.services, notes: db.notes,
       checklists: db.checklists, parts: db.parts, settings: db.settings,
-      diagSessions: db.diagSessions, calcSaves: db.calcSaves, issues: db.issues, tools: db.tools, photos: db.photos, invoices: db.invoices, contracts: db.contracts, reminders: db.reminders,
+      diagSessions: db.diagSessions, calcSaves: db.calcSaves, issues: db.issues, tools: db.tools, photos: exportPhotos, invoices: db.invoices, contracts: db.contracts, reminders: db.reminders,
       measurements: db.measurements || [], safetyLogs: db.safetyLogs || []
     } };
   }
@@ -12552,6 +12741,16 @@ async function api(path, opts = {}) {
       if (preserved.autoBackup !== undefined && db.settings.autoBackup === undefined) db.settings.autoBackup = preserved.autoBackup;
     }
     ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders', 'measurements', 'safetyLogs'].forEach(k => { db[k] = Array.isArray(bk[k]) ? bk[k] : []; });
+    /* offload restored photo payloads into IndexedDB (inline fallback) so a
+       restore does not blow the localStorage quota */
+    if (IDB_PHOTOS.available() && Array.isArray(db.photos)) {
+      for (const p of db.photos) {
+        if (p && typeof p.data === 'string' && p.data.length > 4000) {
+          try { await IDB_PHOTOS.put(p.id, p.data); p.inIdb = true; p.data = ''; }
+          catch (e) { p.inIdb = false; }
+        }
+      }
+    }
     // re-stamp schema on restore so migrations run on next load
     db.schemaVersion = DB_SCHEMA_VERSION;
     _lsSave();
@@ -12656,6 +12855,12 @@ init();
     }
     window.addEventListener('appinstalled', () => {
       const btn = document.getElementById('installBtn');
+      if (btn) btn.classList.add('hidden');
+    });
+  </script>
+</body>
+</html>
+ = document.getElementById('installBtn');
       if (btn) btn.classList.add('hidden');
     });
   </script>
