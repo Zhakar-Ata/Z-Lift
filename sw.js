@@ -7,7 +7,7 @@
      (defensive only: Z Lift has no backend today — all data is local; this branch
      exists so a future optional sync endpoint keeps working offline)
    Bump CACHE on every release so old shells are evicted. */
-const CACHE = 'zlift-pwa-v33';
+const CACHE = 'zlift-pwa-v34';
 const CORE = [
   './',
   './index.html',
@@ -67,8 +67,9 @@ self.addEventListener('message', e => {
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE)
-      // never let one missing file abort the whole install
-      .then(c => Promise.all(CORE.map(u => c.add(u).catch(() => {}))))
+      /* Precache is atomic: activating a release with a missing required module
+         is worse than keeping the previous complete offline shell. */
+      .then(c => c.addAll(CORE))
       .then(() => self.skipWaiting())
   );
 });

@@ -70,6 +70,15 @@ function _lsMigrateServices() {
       changed = true;
     }
   });
+  // Older builds could leave optional links dangling after deleting a service or
+  // photo. Detach those links without deleting the historical parent record.
+  const serviceIds = new Set(db.services.map(x => x.id));
+  const photoIds = new Set((db.photos || []).map(x => x.id));
+  (db.invoices || []).forEach(x => { if (x.serviceId && !serviceIds.has(x.serviceId)) { x.serviceId = ''; changed = true; } });
+  (db.measurements || []).forEach(x => {
+    if (x.serviceId && !serviceIds.has(x.serviceId)) { x.serviceId = ''; changed = true; }
+    if (x.photoId && !photoIds.has(x.photoId)) { x.photoId = ''; changed = true; }
+  });
   if (changed) _lsSave();
 }
 
@@ -136,11 +145,32 @@ function invoicePartQuantities(items) {
   });
   return totals;
 }
+function _invoiceFiniteNonNegative(value) {
+  const n = Number(value == null || value === '' ? 0 : value);
+  return Number.isFinite(n) && n >= 0;
+}
+function validateInvoicePayloadInput(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) throw _lsErr('invalid_invoice');
+  if (body.items != null && !Array.isArray(body.items)) throw _lsErr('invalid_invoice');
+  if (body.payments != null && !Array.isArray(body.payments)) throw _lsErr('invalid_invoice');
+  for (const row of (body.items || [])) {
+    if (!row || typeof row !== 'object' || !_invoiceFiniteNonNegative(row.qty) || !_invoiceFiniteNonNegative(row.price)) throw _lsErr('invalid_invoice');
+    if ((row.desc || row.partId || +row.price) && !(Number(row.qty) > 0)) throw _lsErr('invalid_invoice');
+  }
+  for (const pay of (body.payments || [])) {
+    if (!pay || typeof pay !== 'object' || !_invoiceFiniteNonNegative(pay.amount) || !(Number(pay.amount) > 0)) throw _lsErr('invalid_invoice');
+    if (pay.date != null && (!Number.isFinite(Number(pay.date)) || Number(pay.date) <= 0)) throw _lsErr('invalid_invoice');
+  }
+  for (const key of ['labor', 'discount']) if (!_invoiceFiniteNonNegative(body[key])) throw _lsErr('invalid_invoice');
+  if (body.taxRate != null && (!Number.isFinite(Number(body.taxRate)) || Number(body.taxRate) < 0 || Number(body.taxRate) > 100)) throw _lsErr('invalid_invoice');
+  if (body.date != null && (!Number.isFinite(Number(body.date)) || Number(body.date) <= 0)) throw _lsErr('invalid_invoice');
+}
 function normalizeInvoicePayload(body) {
+  validateInvoicePayloadInput(body);
   const items = (Array.isArray(body.items) ? body.items : []).slice(0, 200).map(row => ({
     desc: String(row && row.desc || '').slice(0, 240),
-    qty: Math.max(0, Math.round(+(row && row.qty) || 0)),
-    price: Math.max(0, Math.round(+(row && row.price) || 0)),
+    qty: Math.round(Number(row.qty)),
+    price: Math.round(Number(row.price)),
     partId: row && row.partId ? String(row.partId) : undefined
   })).filter(row => row.desc || row.price || row.partId);
   const payments = (Array.isArray(body.payments) ? body.payments : []).slice(0, 200).map(pay => ({
@@ -153,6 +183,17 @@ function normalizeInvoicePayload(body) {
     labor: Math.max(0, Math.round(+body.labor || 0)), discount: Math.max(0, Math.round(+body.discount || 0)),
     taxRate: body.taxExempt ? 0 : Math.max(0, Math.min(100, +body.taxRate || 0)), taxExempt: !!body.taxExempt
   });
+}
+function uniqueInvoiceNumber(db, requested, ignoreId) {
+  const used = new Set((db.invoices || []).filter(x => x && x.id !== ignoreId && x.number != null).map(x => String(x.number).trim()).filter(Boolean));
+  if (requested != null && String(requested).trim()) {
+    const value = String(requested).trim().slice(0, 80);
+    if (used.has(value)) throw _lsErr('duplicate_invoice_number');
+    return value;
+  }
+  let seq = Math.max(0, Math.floor(+((db.settings || {}).invoiceSeq) || 0));
+  do { seq++; } while (used.has(String(seq)));
+  return { number: String(seq), seq };
 }
 function applyInvoiceInventory(db, beforeItems, afterItems, invoiceId, projectId, effectVersion) {
   const before = invoicePartQuantities(beforeItems), after = invoicePartQuantities(afterItems);
@@ -318,7 +359,12 @@ async function _apiLocal(path, opts = {}) {
       await _lsSave();
       return { service: s };
     }
-    if (method === 'DELETE') { db.services = db.services.filter(x => x.id !== s.id); await _lsSave(); return { ok: true }; }
+    if (method === 'DELETE') {
+      db.services = db.services.filter(x => x.id !== s.id);
+      (db.invoices || []).forEach(x => { if (x.serviceId === s.id) x.serviceId = ''; });
+      (db.measurements || []).forEach(x => { if (x.serviceId === s.id) x.serviceId = ''; });
+      await _lsSave(); return { ok: true };
+    }
   }
 
   /* notes */
@@ -397,9 +443,11 @@ async function _apiLocal(path, opts = {}) {
     }
     db.settings = db.settings || {};
     const oldSeq = +db.settings.invoiceSeq || 0;
-    const seq = Math.max(1, oldSeq + 1);
+    const numberResult = uniqueInvoiceNumber(db, b.number, null);
+    const invoiceNumber = typeof numberResult === 'string' ? numberResult : numberResult.number;
+    const seq = typeof numberResult === 'string' ? oldSeq : numberResult.seq;
     const item = Object.assign({}, payload, {
-      id: _lsUid(), number: b.number ? String(b.number) : String(seq),
+      id: _lsUid(), number: invoiceNumber,
       taxRate: payload.taxExempt ? 0 : Math.max(0, Math.min(100, +(b.taxRate != null ? b.taxRate : db.settings.taxRate) || 0)),
       inventoryApplied: true, inventoryEffectVersion: 1,
       createdAt: Date.now(), updatedAt: Date.now()
@@ -431,7 +479,11 @@ async function _apiLocal(path, opts = {}) {
         const changedParts = applyInvoiceInventory(db, item.items || [], payload.items || [], item.id, payload.projectId, version);
         Object.keys(payload).forEach(k => { if (k !== 'id' && k !== 'createdAt' && k !== 'number') item[k] = payload[k]; });
         item.inventoryApplied = true; item.inventoryEffectVersion = version;
-        if (!item.number) { db.settings.invoiceSeq = Math.max(1, (+db.settings.invoiceSeq || 0) + 1); item.number = String(db.settings.invoiceSeq); }
+        if (!item.number) {
+          const generated = uniqueInvoiceNumber(db, null, item.id);
+          db.settings.invoiceSeq = generated.seq;
+          item.number = generated.number;
+        }
         item.taxRate = item.taxExempt ? 0 : Math.max(0, Math.min(100, +item.taxRate || 0));
         item.updatedAt = Date.now();
         await _lsSave();
@@ -471,7 +523,9 @@ async function _apiLocal(path, opts = {}) {
       const expectedMax = parseNum(b.expectedMax != null ? b.expectedMax : b.expectedRange && b.expectedRange.max);
       const item = {
         id: _lsUid(), typeId, kind: b.kind === 'state' ? 'state' : (field && field.text ? 'text' : 'numeric'),
-        value, point: String(b.point || b.location || '').slice(0, 120), location: String(b.location || b.point || '').slice(0, 120),
+        value, unit: field ? String(field.unit || '') : String(b.unit || '').slice(0, 30),
+        point: String(b.point || b.measurementPoint || '').slice(0, 120), measurementPoint: String(b.measurementPoint || b.point || '').slice(0, 120),
+        location: String(b.location || '').slice(0, 120), mode: String(b.mode || '').slice(0, 120),
         component: String(b.component || b.equipment || '').slice(0, 120), equipment: String(b.equipment || b.component || '').slice(0, 120),
         manufacturer: String(b.manufacturer || '').slice(0, 120), model: String(b.model || '').slice(0, 120),
         configuration: String(b.configuration || '').slice(0, 300), testMethod: String(b.testMethod || '').slice(0, 300),
@@ -479,10 +533,12 @@ async function _apiLocal(path, opts = {}) {
         expectedRange: { min: expectedMin, max: expectedMax, unit: field ? field.unit : String((b.expectedRange && b.expectedRange.unit) || '') },
         reference: String(b.reference || '').slice(0, 300), thresholdClass: (field && field.thresholdClass) || THRESHOLD_CLASS.UNKNOWN,
         context: b.context && typeof b.context === 'object' ? Object.assign({}, b.context) : {},
-        condition: String(b.condition || '').slice(0, 200), note: String(b.note || b.technicianNote || '').slice(0, 500),
-        technicianNote: String(b.technicianNote || b.note || '').slice(0, 500),
+        condition: String(b.condition || '').slice(0, 200), observation: String(b.observation || b.technicianNote || '').slice(0, 500),
+        note: String(b.note || '').slice(0, 500), technicianNote: String(b.technicianNote || b.observation || '').slice(0, 500),
         refType: ['tech', 'standard', 'manual'].includes(b.refType) ? b.refType : 'tech',
         projectId: b.projectId && db.projects.find(x => x.id === b.projectId) ? b.projectId : '',
+        serviceId: b.serviceId && db.services.find(x => x.id === b.serviceId) ? String(b.serviceId) : '',
+        photoId: b.photoId && db.photos.find(x => x.id === b.photoId) ? String(b.photoId) : '',
         diagSessionId: b.diagSessionId ? String(b.diagSessionId) : '',
         technician: String(b.technician || (me && me.name) || ''),
         ts: +b.ts || +b.timestamp || Date.now(), timestamp: +b.timestamp || +b.ts || Date.now(),
@@ -503,13 +559,16 @@ async function _apiLocal(path, opts = {}) {
           if (field && !field.state && !field.text) { const n = parseNum(b.value); item.value = n == null ? item.value : n; }
           else item.value = b.value;
         }
-        ['point', 'location', 'component', 'equipment', 'manufacturer', 'model', 'configuration', 'testMethod', 'reference', 'condition', 'note', 'technicianNote', 'refType'].forEach(k => { if (b[k] !== undefined) item[k] = String(b[k]); });
+        ['point', 'measurementPoint', 'location', 'mode', 'component', 'equipment', 'manufacturer', 'model', 'configuration', 'testMethod', 'reference', 'condition', 'observation', 'note', 'technicianNote', 'refType'].forEach(k => { if (b[k] !== undefined) item[k] = String(b[k]).slice(0, k === 'note' || k === 'observation' || k === 'technicianNote' ? 500 : 300); });
+        item.unit = field ? String(field.unit || '') : String(b.unit || item.unit || '').slice(0, 30);
         ['testVoltage', 'expectedMin', 'expectedMax'].forEach(k => { if (b[k] !== undefined) item[k] = parseNum(b[k]); });
         if (b.expectedRange && typeof b.expectedRange === 'object') item.expectedRange = { min: parseNum(b.expectedRange.min), max: parseNum(b.expectedRange.max), unit: String(b.expectedRange.unit || (field && field.unit) || '') };
         else item.expectedRange = { min: item.expectedMin, max: item.expectedMax, unit: (field && field.unit) || '' };
         item.thresholdClass = (field && field.thresholdClass) || THRESHOLD_CLASS.UNKNOWN;
         if (b.context && typeof b.context === 'object') item.context = Object.assign({}, b.context);
         if (b.projectId !== undefined) item.projectId = b.projectId && db.projects.find(x => x.id === b.projectId) ? b.projectId : '';
+        if (b.serviceId !== undefined) item.serviceId = b.serviceId && db.services.find(x => x.id === b.serviceId) ? String(b.serviceId) : '';
+        if (b.photoId !== undefined) item.photoId = b.photoId && db.photos.find(x => x.id === b.photoId) ? String(b.photoId) : '';
         if (b.ts !== undefined || b.timestamp !== undefined) { item.ts = +(b.ts || b.timestamp) || item.ts; item.timestamp = item.ts; }
         try { const result = evalMeasurement(item); item.status = result.status || 'unknown'; item.reason = result.reason || null; item.nextStep = result.next || null; } catch (e) {}
         item.updatedAt = Date.now(); await _lsSave();
@@ -546,7 +605,10 @@ async function _apiLocal(path, opts = {}) {
         return { item };
       }
       if (method === 'DELETE') {
-        if (parts[0] === 'photos' && item.inIdb && IDB_PHOTOS.available()) { try { await IDB_PHOTOS.del(item.id); } catch (e) {} }
+        if (parts[0] === 'photos') {
+          if (item.inIdb && IDB_PHOTOS.available()) { try { await IDB_PHOTOS.del(item.id); } catch (e) {} }
+          (db.measurements || []).forEach(x => { if (x.photoId === item.id) x.photoId = ''; });
+        }
         db[parts[0]] = coll.filter(x => x.id !== item.id); await _lsSave(); return { ok: true };
       }
     }

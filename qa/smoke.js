@@ -739,7 +739,11 @@ async function T(name, cond, info) {
     await ev(`state.measurements=null;loadAll(true);`);
     await T('persian-digit measurement saved and normalized to 380', m1 && m1.item && m1.item.value === 380, JSON.stringify(m1));
     await T('saved measurement is in state', () => ev(`state.measurements.some(m=>m.typeId==='v_rs'&&m.value===380)`));
+    const structuredMeasurement = await ev(`(async()=>{var s=_lsLoad().services[0];var d=await api('/measurements',{method:'POST',body:{typeId:'temp',kind:'numeric',value:31,unit:'WRONG',projectId:s&&s.projectId||'',serviceId:s&&s.id||'',location:'machine room',point:'motor frame',mode:'stopped',observation:'no visible damage',note:'repeat next visit',ts:Date.now()}});return d.item})()`);
+    await T('structured measurement persists service/location/point/mode/observation and authoritative unit', structuredMeasurement && structuredMeasurement.serviceId && structuredMeasurement.location === 'machine room' && structuredMeasurement.point === 'motor frame' && structuredMeasurement.mode === 'stopped' && structuredMeasurement.observation === 'no visible damage' && structuredMeasurement.unit === '°C', JSON.stringify(structuredMeasurement));
     await ev(`navigate('/measurements');`); await waitLoaded();
+    await T('measurement form exposes structured technician context fields', () => ev(`openMeasForm();!!document.querySelector('#m_service')&&!!document.querySelector('#m_location')&&!!document.querySelector('#m_mode')&&!!document.querySelector('#m_unit')&&!!document.querySelector('#m_observation')&&!!document.querySelector('#m_photo')`));
+    await ev(`closeModal()`);
     await T('measurements page renders list + status badge', () => ev(`document.querySelector('#content').innerHTML.includes('۳۸۰')||document.querySelector('#content').innerHTML.includes('380')`));
     await T('measurements page shows red-flag for critical safety observation', async () => {
       await ev(`api('/measurements',{method:'POST',body:{typeId:'safety_chain',kind:'state',value:'open',point:'تابلو',ts:Date.now()}});state.measurements=null;loadAll(true);navigate('/measurements');`);
@@ -767,6 +771,10 @@ async function T(name, cond, info) {
       return d.item;
     })()`);
     await T('invoice gets a sequential legal number', !!(invTax && invTax.number && /^\d+$/.test(invTax.number)), JSON.stringify(invTax));
+    const duplicateInvoiceNumber = await ev(`(async()=>{try{await api('/invoices',{method:'POST',body:{number:${JSON.stringify(invTax.number)},customer:'duplicate',items:[{desc:'x',qty:1,price:1}],payments:[]}});return 'accepted'}catch(e){return e.code}})()`);
+    await T('duplicate invoice number is rejected before mutation', duplicateInvoiceNumber === 'duplicate_invoice_number', duplicateInvoiceNumber);
+    const invalidInvoice = await ev(`(async()=>{try{await api('/invoices',{method:'POST',body:{customer:'invalid',items:[{desc:'x',qty:-1,price:1}],payments:[]}});return 'accepted'}catch(e){return e.code}})()`);
+    await T('negative invoice quantity is rejected', invalidInvoice === 'invalid_invoice', invalidInvoice);
     await ev(`state.invoices=null;loadAll(true);`);
     await T('invoice VAT calculated (9% of 1,000,000 = 90,000; total 1,090,000)', () => {
       const id = invTax.id;
@@ -789,6 +797,9 @@ async function T(name, cond, info) {
     await T('validateBackup rejects non-zlift object', () => ev(`validateBackup({foo:1}).ok===false`));
     await T('validateBackup rejects missing projects', () => ev(`validateBackup({app:'zlift',services:[]}).ok===false`));
     await T('validateBackup rejects corrupt/array field', () => ev(`validateBackup({app:'zlift',projects:[],services:'nope'}).ok===false`));
+    await T('validateBackup rejects malformed version metadata', () => ev(`validateBackup({app:'zlift',version:'not-a-version',projects:[]}).why==='version'`));
+    await T('validateBackup rejects duplicate invoice numbers', () => ev(`(function(){var b=JSON.parse(JSON.stringify(${JSON.stringify(goodBackup.backup)}));var seed=b.invoices[0];b.invoices.push(Object.assign({},seed,{id:'duplicate-invoice-number-qa'}));return validateBackup(b).why==='invoices:duplicate-number';})()`));
+    await T('validateBackup rejects negative invoice values', () => ev(`(function(){var b=JSON.parse(JSON.stringify(${JSON.stringify(goodBackup.backup)}));b.invoices[0].items[0].qty=-1;return validateBackup(b).why==='invoices:item';})()`));
     await T('validateBackup accepts a valid backup', () => ev(`validateBackup(${JSON.stringify(goodBackup.backup)}).ok===true`));
     await ev(`typeof runAutoBackup==='function' && runAutoBackup();`);
     await T('auto backup created a snapshot', () => ev(`listAutoBackups && listAutoBackups().length>=1`));
@@ -992,6 +1003,7 @@ async function T(name, cond, info) {
     const appCache = (htmlSrc.match(/CACHE_VERSION = '([^']+)'/) || [])[1];
     const appVer = (htmlSrc.match(/APP_VERSION = '([^']+)'/) || [])[1];
     await T('versioning: CACHE_VERSION (app) === CACHE (service worker)', swCache && swCache === appCache, swCache + ' vs ' + appCache);
+    await T('PWA install requires one complete atomic core precache', /\.addAll\(CORE\)/.test(swSrc) && !/CORE\.map\([^\n]+catch/.test(swSrc));
     await T('versioning: package.json version === APP_VERSION', pkgJson.version === appVer, pkgJson.version + ' vs ' + appVer);
     await T('versioning: backup format version is an integer ≥ 6', () => ev(`Number.isInteger(BACKUP_FORMAT_VERSION) && BACKUP_FORMAT_VERSION >= 6`));
 

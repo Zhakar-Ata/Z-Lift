@@ -3,15 +3,20 @@ function validateBackup(bk) {
   if (!bk || typeof bk !== 'object') return { ok: false, why: 'format' };
   if (bk.app !== 'zlift') return { ok: false, why: 'app' };
   if (!Array.isArray(bk.projects)) return { ok: false, why: 'projects' };
-  // version compatibility: accept v1 and v2 backups; anything newer warns
-  const ver = +(bk.formatVersion || bk.version || 1);
+  // Backward compatible, but the declared format itself must be a real integer.
+  const ver = Number(bk.formatVersion != null ? bk.formatVersion : (bk.version != null ? bk.version : 1));
+  if (!Number.isInteger(ver) || ver < 1) return { ok: false, why: 'version' };
   if (ver > BACKUP_FORMAT_VERSION) return { ok: false, why: 'future-version' };
   // structural checks on core collections (old backups may miss newer ones — fine)
   for (const k of ['projects', 'archivedProjects', 'services', 'invoices', 'contracts', 'parts', 'notes', 'checklists', 'measurements', 'safetyLogs', 'reminders', 'photos', 'diagSessions', 'calcSaves', 'issues', 'tools']) {
     if (bk[k] !== undefined && !Array.isArray(bk[k])) return { ok: false, why: k };
   }
   if (bk.settings !== undefined && (!bk.settings || typeof bk.settings !== 'object' || Array.isArray(bk.settings))) return { ok: false, why: 'settings' };
-  if (bk.dbSchemaVersion != null && +bk.dbSchemaVersion > DB_SCHEMA_VERSION) return { ok: false, why: 'future-schema' };
+  if (bk.dbSchemaVersion != null) {
+    const schema = Number(bk.dbSchemaVersion);
+    if (!Number.isInteger(schema) || schema < 1) return { ok: false, why: 'schema' };
+    if (schema > DB_SCHEMA_VERSION) return { ok: false, why: 'future-schema' };
+  }
   // ids must be non-empty strings and unique within every collection
   const idsByCollection = {};
   for (const k of ['projects', 'archivedProjects', 'services', 'invoices', 'contracts', 'parts', 'notes', 'checklists', 'measurements', 'safetyLogs', 'reminders', 'photos', 'diagSessions', 'calcSaves', 'issues', 'tools']) {
@@ -29,6 +34,37 @@ function validateBackup(bk) {
   const projectIds = idsByCollection.projects || new Set();
   for (const k of ['services', 'invoices', 'contracts', 'checklists', 'measurements', 'reminders', 'photos', 'diagSessions', 'issues']) {
     for (const row of (bk[k] || [])) if (row.projectId && !projectIds.has(row.projectId)) return { ok: false, why: k + ':project-relation' };
+  }
+  const serviceIds = idsByCollection.services || new Set();
+  const photoIds = idsByCollection.photos || new Set();
+  for (const inv of (bk.invoices || [])) if (inv.serviceId && !serviceIds.has(inv.serviceId)) return { ok: false, why: 'invoices:service-relation' };
+  for (const m of (bk.measurements || [])) {
+    if (m.serviceId && !serviceIds.has(m.serviceId)) return { ok: false, why: 'measurements:service-relation' };
+    if (m.photoId && !photoIds.has(m.photoId)) return { ok: false, why: 'measurements:photo-relation' };
+  }
+  // Domain validation for records that can cause financial or safety decisions.
+  const invoiceNumbers = new Set();
+  for (const inv of (bk.invoices || [])) {
+    if (typeof inv.customer !== 'string' || !inv.customer.trim()) return { ok: false, why: 'invoices:customer' };
+    if (!Array.isArray(inv.items) || (inv.payments !== undefined && !Array.isArray(inv.payments))) return { ok: false, why: 'invoices:structure' };
+    if (inv.number != null && String(inv.number).trim()) {
+      const number = String(inv.number).trim();
+      if (invoiceNumbers.has(number)) return { ok: false, why: 'invoices:duplicate-number' };
+      invoiceNumbers.add(number);
+    }
+    for (const row of inv.items) {
+      if (!row || typeof row !== 'object' || !Number.isFinite(Number(row.qty)) || Number(row.qty) < 0 || !Number.isFinite(Number(row.price)) || Number(row.price) < 0) return { ok: false, why: 'invoices:item' };
+    }
+    for (const pay of (inv.payments || [])) {
+      if (!pay || typeof pay !== 'object' || !Number.isFinite(Number(pay.amount)) || Number(pay.amount) <= 0) return { ok: false, why: 'invoices:payment' };
+    }
+    for (const key of ['labor', 'discount']) if (inv[key] != null && (!Number.isFinite(Number(inv[key])) || Number(inv[key]) < 0)) return { ok: false, why: 'invoices:' + key };
+    if (inv.taxRate != null && (!Number.isFinite(Number(inv.taxRate)) || Number(inv.taxRate) < 0 || Number(inv.taxRate) > 100)) return { ok: false, why: 'invoices:tax' };
+  }
+  for (const m of (bk.measurements || [])) {
+    if (typeof m.typeId !== 'string' || !m.typeId) return { ok: false, why: 'measurements:type' };
+    if (m.status != null && !['normal', 'attention', 'critical', 'unknown'].includes(m.status)) return { ok: false, why: 'measurements:status' };
+    if ((m.kind || 'numeric') === 'numeric' && !Number.isFinite(Number(m.value))) return { ok: false, why: 'measurements:value' };
   }
   for (const ph of (bk.photos || [])) {
     if (ph.data && !safePhotoSrc(ph.data)) return { ok: false, why: 'photos:data' };

@@ -34,12 +34,17 @@ function renderSafetyGate(tp, selectedProject, ackKey) {
         const entry = {
           id: _lsUid(), checklistId: tp.id, projectId: selectedProject || '',
           ts: Date.now(), technician: (state.user && state.user.name) || '',
-          appVersion: '27'
+          appVersion: APP_VERSION
         };
-        await api('/safetyLogs', { method: 'POST', body: entry });
+        const saved = await api('/safetyLogs', { method: 'POST', body: entry });
         if (!Array.isArray(state.safetyLogs)) state.safetyLogs = [];
-        state.safetyLogs.unshift(entry);
-      } catch (e) { /* never block the technician on a log failure */ }
+        state.safetyLogs.unshift(saved && saved.item ? saved.item : entry);
+      } catch (e) {
+        // The acknowledgement still governs continuation, but logging failure
+        // must not be silent or be mistaken for a persisted audit record.
+        console.warn('[ZLift] safety acknowledgement log failed', e);
+        toast(t('safetyLogFailed'), 'err');
+      }
       try { sessionStorage.setItem(ackKey, '1'); } catch (e) {}
       navigate('/checklists/' + tp.id + (selectedProject ? '?project=' + selectedProject : ''));
     };
