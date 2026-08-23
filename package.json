@@ -1,7 +1,7 @@
 {
   "name": "z-lift-qa",
   "private": true,
-  "version": "29.0.0",
+  "version": "29.1.0",
   "description": "Z Lift QA — end-to-end smoke test of the PWA front-end (jsdom)",
   "scripts": {
     "test": "node qa/smoke.js"
