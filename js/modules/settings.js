@@ -66,7 +66,7 @@ function renderSettings() {
     <div class="card" style="margin-top:16px">
       <div class="card-title">💾 ${t('setData')}</div>
       <div class="kv-cell" style="margin-bottom:12px"><div class="k">📊 ${t('storageUsage')}</div><div class="v">${usage}</div>
-        <div class="k" style="margin-top:6px">🕓 ${t('backupStatus')}: ${backupStatusBadge()} <span class="badge b-amber" style="font-size:10.5px">📱 ${t('backupLocalTag')}</span></div></div>
+        <div class="k" style="margin-top:6px">🕓 ${t('backupStatus')}: ${backupStatusBadge()} <span class="badge b-green" style="font-size:10.5px">JSON</span></div></div>
       <label style="display:flex;gap:10px;align-items:center;font-size:13px;margin-bottom:12px;cursor:pointer">
         <input type="checkbox" id="st_autobackup" ${(s.autoBackup !== false) ? 'checked' : ''} style="width:20px;height:20px" />
         <span>${t('backupAutoOn')}</span>

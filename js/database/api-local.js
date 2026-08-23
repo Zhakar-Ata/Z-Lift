@@ -673,7 +673,11 @@ async function _apiLocal(path, opts = {}) {
         }));
       }
     } catch (e) { exportPhotos = db.photos; }
-    return { backup: {
+    const safeSettings = {};
+    ['company', 'phone', 'address', 'defaultTech', 'taxRate', 'invoiceSeq', 'autoBackup', 'notify'].forEach(k => {
+      if (db.settings && db.settings[k] !== undefined) safeSettings[k] = db.settings[k];
+    });
+    const backup = {
       app: 'zlift',
       version: BACKUP_FORMAT_VERSION,
       formatVersion: BACKUP_FORMAT_VERSION,
@@ -681,14 +685,16 @@ async function _apiLocal(path, opts = {}) {
       dbSchemaVersion: DB_SCHEMA_VERSION,
       storage: { primary: STRUCTURED_DB.status().mode, structuredMigrationVersion: STRUCTURED_DB.migrationVersion, photoStore: IDB_PHOTOS.available() ? 'indexedDB' : 'inline-fallback' },
       exportedAt: Date.now(),
+      language: (typeof LANG !== 'undefined' ? LANG : 'fa'),
       relationships: { projectElevatorModel: '1:1', projectKey: 'projectId', serviceHistoryPolicy: 'detach-and-stamp-on-project-delete' },
       projects: db.projects,
       archivedProjects: Array.isArray(db.archivedProjects) ? db.archivedProjects : [],
       services: db.services, notes: db.notes,
-      checklists: db.checklists, parts: db.parts, settings: db.settings,
+      checklists: db.checklists, parts: db.parts, settings: safeSettings,
       diagSessions: db.diagSessions, calcSaves: db.calcSaves, issues: db.issues, tools: db.tools, photos: exportPhotos, invoices: db.invoices, contracts: db.contracts, reminders: db.reminders,
       measurements: db.measurements || [], safetyLogs: db.safetyLogs || []
-    } };
+    };
+    return { backup: (typeof enrichBackupMetadata === 'function') ? enrichBackupMetadata(backup) : backup };
   }
   if (path === '/backup' && method === 'PUT') {
     const bk = b.backup || b;
