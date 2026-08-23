@@ -703,7 +703,7 @@ async function T(name, cond, info) {
       evalMeasurement({typeId:'temp',kind:'numeric',value:90}).status==='critical' &&
       evalMeasurement({typeId:'lock_eng',kind:'numeric',value:4}).status==='critical' &&
       evalMeasurement({typeId:'door_gap',kind:'numeric',value:8}).status==='attention' &&
-      evalMeasurement({typeId:'i_motor',kind:'numeric',value:14}).status==='unknown'
+      evalMeasurement({typeId:'i_motor',kind:'numeric',value:14}).status==='model'
     `));
     await ev(`state.settings.taxRate=9`);
     const m1 = await ev(`api('/measurements',{method:'POST',body:{typeId:'v_rs',kind:'numeric',value:'۳۸۰',point:'ورودی تابلو',projectId:'',ts:Date.now()}})`);
