@@ -10,7 +10,23 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
-const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+const rawHtml = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+
+// In modular architecture, scripts are external — inline them for jsdom
+function inlineScripts(htmlStr) {
+  return htmlStr.replace(/<script\s+src="([^"]+)"[^>]*><\/script>/g, (match, src) => {
+    const filePath = path.join(ROOT, src);
+    if (!fs.existsSync(filePath)) {
+      console.warn('WARNING: script not found: ' + src);
+      return '<script>/* MISSING: ' + src + ' */</script>';
+    }
+    const content = fs.readFileSync(filePath, 'utf8');
+    return '<script>\n' + content + '\n</script>';
+  });
+}
+const html = inlineScripts(rawHtml);
+// For version regex checks, combine all sources
+const allSources = rawHtml + '\n' + fs.readFileSync(path.join(ROOT, 'js/core/app-core.js'), 'utf8');
 
 let pass = 0, fail = 0;
 const failures = [];
@@ -606,15 +622,15 @@ async function T(name, cond, info) {
       return !/class="empty"[^>]*style=/.test(src.replace(/class="empty" data-cal="noevents" style="margin-top:12px"/g, ''));
     });
     await T('dark theme drives native controls (color-scheme)', () => {
-      const src = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+      const src = fs.readFileSync(path.join(ROOT, 'css/app.css'), 'utf8');
       return /html\[data-theme="dark"\] \{\s*color-scheme: dark;/.test(src) && /html\[data-theme="light"\] \{\s*color-scheme: light;/.test(src);
     });
     await T('reduced-motion and touch-hover rules are present', () => {
-      const src = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+      const src = fs.readFileSync(path.join(ROOT, 'css/app.css'), 'utf8');
       return src.includes('prefers-reduced-motion: reduce') && src.includes('@media (hover: none)');
     });
     await T('print stylesheet sets page margins and avoids broken rows', () => {
-      const src = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+      const src = fs.readFileSync(path.join(ROOT, 'css/app.css'), 'utf8');
       return src.includes('@page { size: A4; margin: 14mm; }') && src.includes('display: table-header-group');
     });
     await T('theme toggle updates the browser theme colour', () => ev(`(() => {
@@ -971,7 +987,7 @@ async function T(name, cond, info) {
     /* ---- PH20: version identifiers stay consistent across files ---- */
     const swSrc = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
     const pkgJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
-    const htmlSrc = html;
+    const htmlSrc = allSources;
     const swCache = (swSrc.match(/const CACHE = '([^']+)'/) || [])[1];
     const appCache = (htmlSrc.match(/CACHE_VERSION = '([^']+)'/) || [])[1];
     const appVer = (htmlSrc.match(/APP_VERSION = '([^']+)'/) || [])[1];
