@@ -72,7 +72,7 @@ function renderMeasurements() {
           ${measStatusHtml(m.status)}
         </div>
         ${redFlagHtml(m._res || null)}
-        <div class="kb-tags" style="margin-top:8px"><span class="badge b-gray">${fmtDateTime(m.ts)}</span>${m.technician ? `<span class="badge b-gray">${esc(m.technician)}</span>` : ''}${m.note ? `<span class="badge b-gray">${esc(m.note)}</span>` : ''}</div>
+        <div class="kb-tags" style="margin-top:8px"><span class="badge b-gray">${fmtDateTime(m.ts)}</span>${m.technician ? `<span class="badge b-gray">${esc(m.technician)}</span>` : ''}${m.location ? `<span class="badge b-gray">📍 ${esc(m.location)}</span>` : ''}${m.mode ? `<span class="badge b-gray">${esc(m.mode)}</span>` : ''}${m.photoId ? `<span class="badge b-gray">📷</span>` : ''}${m.note ? `<span class="badge b-gray">${esc(m.note)}</span>` : ''}</div>
       </div>`;
     }).join('');
   }
@@ -82,12 +82,14 @@ function renderMeasurements() {
 }
 function openMeasForm(id) {
   const m = id ? (state.measurements || []).find(x => x.id === id) : null;
-  const v = m || { typeId: 'v_rs', kind: 'numeric', value: '', point: '', component: '', manufacturer: '', model: '', configuration: '', testMethod: '', testVoltage: '', expectedMin: '', expectedMax: '', reference: '', projectId: measFilter.projectId || '', condition: '', note: '', refType: 'manual' };
+  const v = m || { typeId: 'v_rs', kind: 'numeric', value: '', point: '', location: '', mode: '', component: '', manufacturer: '', model: '', configuration: '', testMethod: '', testVoltage: '', expectedMin: '', expectedMax: '', reference: '', projectId: measFilter.projectId || '', serviceId: '', photoId: '', observation: '', condition: '', note: '', refType: 'manual' };
   const fieldOpts = MEASURE_CATS.map(cat => {
     const fs = MEASURE_FIELDS.filter(f => f.cat === cat.id);
     return `<optgroup label="${cat.icon} ${t(cat.key)}">` + fs.map(f => `<option value="${f.id}" ${v.typeId === f.id ? 'selected' : ''}>${esc(f[LANG] || f.fa)}${f.unit ? ' (' + f.unit + ')' : ''}</option>`).join('') + '</optgroup>';
   }).join('');
   const projectOpts = `<option value="">—</option>` + state.projects.map(p => `<option value="${p.id}" ${v.projectId === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
+  const serviceOpts = `<option value="">—</option>` + (state.services || []).slice().sort((a, b) => (+b.date || 0) - (+a.date || 0)).slice(0, 80).map(s => `<option value="${s.id}" ${v.serviceId === s.id ? 'selected' : ''}>${esc(svcTarget(s))} — ${fmtDate(s.date)}</option>`).join('');
+  const photoOpts = `<option value="">—</option>` + (state.photos || []).filter(ph => !v.projectId || !ph.projectId || ph.projectId === v.projectId).slice(0, 80).map(ph => `<option value="${ph.id}" ${v.photoId === ph.id ? 'selected' : ''}>${esc(ph.cat || t('photos'))}${ph.note ? ' — ' + esc(ph.note) : ''}</option>`).join('');
   openModal(`
     <div class="modal-head"><h3>${m ? '✏️ ' + t('measAdd') : '📐 ' + t('measAdd')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body"><form class="form-grid" onsubmit="return false">
@@ -95,7 +97,11 @@ function openMeasForm(id) {
       <div class="field span2"><label>${t('measType')}</label><select id="m_type">${fieldOpts}</select></div>
       <div class="field"><label>${t('svcDate')}</label>${jdateInput('m_date', v.ts || Date.now())}</div>
       <div class="field"><label>${t('svcProject')}</label><select id="m_project">${projectOpts}</select></div>
-      <div class="field span2"><label>${t('measPoint')}</label><input id="m_point" value="${esc(v.point || '')}" placeholder="${esc(t('measPoint'))}" /></div>
+      <div class="field span2"><label>${t('measService')}</label><select id="m_service">${serviceOpts}</select></div>
+      <div class="field"><label>${t('measLocation')}</label><input id="m_location" value="${esc(v.location || '')}" /></div>
+      <div class="field"><label>${t('measPoint')}</label><input id="m_point" value="${esc(v.point || '')}" placeholder="${esc(t('measPoint'))}" /></div>
+      <div class="field"><label>${t('measMode')}</label><input id="m_mode" value="${esc(v.mode || '')}" placeholder="${esc(t('measModeHint'))}" /></div>
+      <div class="field"><label>${t('measUnit')}</label><input id="m_unit" value="" readonly /></div>
       <div class="field" id="m_valueWrap"><label>${t('measValue')}</label><input id="m_value" inputmode="decimal" value="${esc(v.value != null ? v.value : '')}" /><span style="font-size:11px;color:var(--text-3)">${t('measPersianHint')}</span></div>
       <div class="field"><label>${t('measComp')}</label><input id="m_comp" value="${esc(v.component || '')}" /></div>
       <div class="field span2" id="m_stateWrap" style="display:none"><label>${t('measValue')}</label><select id="m_state"></select></div>
@@ -113,7 +119,9 @@ function openMeasForm(id) {
         <option value="manual" ${v.refType==='manual'?'selected':''}>${t('measRefManual')}</option></select>
       </div>
       <div class="field"><label>${t('measThresholdClass')}</label><input id="m_class" value="${esc(v.thresholdClass || '')}" readonly /></div>
-      <div class="field span2"><label>${t('measReferenceText')}</label><input id="m_reference" value="${esc(v.reference || '')}" placeholder="عنوان سند، ویرایش، بند یا صفحه" /></div>
+      <div class="field span2"><label>${t('measReferenceText')}</label><input id="m_reference" value="${esc(v.reference || '')}" placeholder="${esc(t('measReferenceHint'))}" /></div>
+      <div class="field span2"><label>${t('measObservation')}</label><textarea id="m_observation" rows="2">${esc(v.observation || v.technicianNote || '')}</textarea></div>
+      <div class="field span2"><label>${t('measPhoto')}</label><select id="m_photo">${photoOpts}</select></div>
       <div class="field span2"><label>${t('noteTitle')}</label><input id="m_note" value="${esc(v.note || '')}" /></div>
       <div class="span2" id="m_preview"></div>
     </form></div>
@@ -142,6 +150,7 @@ function openMeasForm(id) {
       $('#m_value').type = 'number';
     }
     $('#m_class').value = f.thresholdClass || THRESHOLD_CLASS.UNKNOWN;
+    $('#m_unit').value = f.unit || '—';
     const electrical = ['elec', 'control', 'drive'].includes(f.cat);
     $('#m_safety').innerHTML = electrical
       ? `<div class="safety-banner" style="margin:0">⚡ ${LANG === 'fa' ? 'ایزولاسیون و LOTO → کنترل وسیله آزمون روی منبع معلوم → تأیید نبود ولتاژ/انرژی → اندازه‌گیری طبق روش مصوب → کنترل مجدد وسیله آزمون → بازیابی ایمن. فازمتر یک‌پل کافی نیست؛ میگر باید از درایو/برد جدا باشد.' : 'Isolate and LOTO → prove the test instrument → verify absence of voltage/energy → measure under an approved method → re-prove the instrument → restore safely. A one-pole tester is insufficient; isolate drives/boards before insulation testing.'}</div>`
@@ -196,15 +205,18 @@ function openMeasForm(id) {
     }
     const formRec = formMeasurement();
     const rec = {
-      typeId: f.id, kind, value,
-      projectId: $('#m_project').value, point: $('#m_point').value.trim(), location: $('#m_point').value.trim(),
+      typeId: f.id, kind, value, unit: f.unit || '',
+      projectId: $('#m_project').value, serviceId: $('#m_service').value,
+      location: $('#m_location').value.trim(), point: $('#m_point').value.trim(), measurementPoint: $('#m_point').value.trim(),
+      mode: $('#m_mode').value.trim(), photoId: $('#m_photo').value,
       component: $('#m_comp').value.trim(), equipment: $('#m_comp').value.trim(),
       manufacturer: formRec.manufacturer, model: formRec.model, configuration: formRec.configuration,
       testMethod: formRec.testMethod, testVoltage: formRec.testVoltage,
       expectedMin: formRec.expectedMin, expectedMax: formRec.expectedMax,
       expectedRange: { min: formRec.expectedMin, max: formRec.expectedMax, unit: f.unit || '' },
       reference: formRec.reference, thresholdClass: f.thresholdClass || THRESHOLD_CLASS.UNKNOWN,
-      condition: $('#m_cond').value.trim(), note: $('#m_note').value.trim(), technicianNote: $('#m_note').value.trim(),
+      condition: $('#m_cond').value.trim(), observation: $('#m_observation').value.trim(),
+      note: $('#m_note').value.trim(), technicianNote: $('#m_observation').value.trim(),
       refType: $('#m_ref').value || 'manual', context: formRec.context,
       ts: jdateVal('m_date') || Date.now(), timestamp: jdateVal('m_date') || Date.now(),
       technician: (state.user && state.user.name) || '', status: 'unknown'

@@ -1,10 +1,10 @@
 /* ================= VERSION SINGLE SOURCE OF TRUTH ================= */
-var APP_VERSION = '29.0.0';
+var APP_VERSION = '29.1.0';
 var DB_SCHEMA_VERSION = 3;
 var BACKUP_FORMAT_VERSION = 7;
-var CACHE_VERSION = 'zlift-pwa-v33';
+var CACHE_VERSION = 'zlift-pwa-v34';
 /* Display badge shown on Settings / about */
-var APP_BUILD = '2026-08-23';
+var APP_BUILD = '2026-08-24';
 
 /* ================= Z Lift — SPA app ================= */
 'use strict';
@@ -27,8 +27,8 @@ var state = {
    ARCHITECTURE (v2): Z Lift is a fully offline PWA — there is NO backend server.
    Every `api(path, opts)` call below resolves against the local persistence layer
    (see the "LOCAL PERSISTENCE" section near the end of this file):
-     • structured data → localStorage['zlift_db'] (+ mirror + auto-snapshots)
-     • photos (large blobs) → IndexedDB when available, inline fallback
+     • structured data → IndexedDB `zlift-data`; explicit localStorage fallback
+     • photos (large blobs) → IndexedDB `zlift-photos`, inline fallback
    The function signature mimics a REST API on purpose: a future sync layer can be
    introduced by replacing only this single seam — the rest of the app stays as-is.
    No network request is made anywhere for application data. */
@@ -92,6 +92,7 @@ function guard(btnSel, fn) {
 /* turn an API error code into a message the technician can act on */
 var ERR_KEYS = {
     name_required: 'requiredTitle', customer_required: 'requiredCustomer',
+  invalid_invoice: 'invInvalidRecord', duplicate_invoice_number: 'invDuplicateNumber',
   not_found: 'errNotFound', invoice_part_not_found: 'errNotFound', insufficient_stock: 'stockAlert', too_large: 'photoTooLarge', bad_backup: 'restoreBad',
   unauthorized: 'errSessionExpired', invalid_credentials: 'errInvalidCred',
   username_taken: 'errUserTaken', weak_password: 'errWeakPass', bad_username: 'errBadUser'
