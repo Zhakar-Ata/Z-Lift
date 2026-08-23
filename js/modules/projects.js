@@ -169,9 +169,12 @@ function archiveProject(id) {
       : 'Project will be moved to archive and removed from active lists. Historical data (services, invoices, measurements…) is preserved. Continue?'),
     async () => {
       try {
-        p.archived = true; p.updatedAt = Date.now();
-        p.archivedAt = Date.now();
-        await api('/projects/' + id, { method: 'PUT', body: { archived: true, archivedAt: p.archivedAt } });
+        const archivedAt = Date.now();
+        const d = await api('/projects/' + id, { method: 'PUT', body: { archived: true, archivedAt } });
+        /* state follows the persisted record returned by the API — the flag
+           is now durable in the database itself, not kept alive only by the
+           shared in-memory object reference */
+        if (d && d.project) Object.assign(p, d.project);
         closeModal(); toast(LANG === 'fa' ? 'پروژه بایگانی شد' : 'Project archived'); render();
       } catch (e) { toast(errMsg(e), 'err'); }
     }

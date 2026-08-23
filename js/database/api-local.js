@@ -293,6 +293,12 @@ async function _apiLocal(path, opts = {}) {
       ['capacityKg', 'persons', 'floors', 'stops', 'speed', 'serviceIntervalDays', 'nominalVoltage'].forEach(f => { if (b[f] !== undefined) p[f] = +b[f] || 0; });
       if (b.voltageTolerance !== undefined) p.voltageTolerance = b.voltageTolerance == null || b.voltageTolerance === '' ? null : Math.max(0, +b.voltageTolerance || 0);
       if (b.progress !== undefined) p.progress = Math.max(0, Math.min(100, +b.progress || 0));
+      /* archive flags are persisted explicitly through the API path — the
+         client must never depend on shared object references for archival
+         (reference-based persistence breaks under cloning, rehydration or
+         multi-tab use). Omitting the fields (normal edit) preserves state. */
+      if (b.archived !== undefined) p.archived = !!b.archived;
+      if (b.archivedAt !== undefined) p.archivedAt = +b.archivedAt || Date.now();
       if (p.elevatorType !== 'hydraulic') p.elevatorType = 'traction';
       p.updatedAt = Date.now(); await _lsSave();
       return { project: p };
