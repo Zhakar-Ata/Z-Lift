@@ -1167,6 +1167,144 @@ async function T(name, cond, info) {
     })()`);
     await T('P2A OBS-2: legacy archivedProjects entries fold into archived projects (never deleted); dangling legacy calcSave restored via documented detach; export carries the empty collection', p2aObs && p2aObs.ok, JSON.stringify(p2aObs));
 
+    /* ---- PHASE 2A VERIFICATION — BUG-3: repair/recovery must not produce
+       poorer history than the normal delete path ----
+       Scenario A (project exists → technician deletes it) detaches AND stamps.
+       Scenario B (old device already carries a dangling projectId → boot runs
+       repairProjectRefs) used to only blank projectId, turning the record into
+       an unexplained orphan. Both paths must leave usable historical context. */
+    const p2aRepairParity = await ev(`(async()=>{
+      const mk = n => api('/projects', { method: 'POST', body: { name: n, customer: 'Cust-' + n, location: 'Loc-' + n } }).then(d => d.project);
+      /* SCENARIO A — normal delete */
+      const pA = await mk('P2A-Parity-A');
+      const csA = (await api('/calcSaves', { method: 'POST', body: { calcId: 'c1', name: 'calcA', projectId: pA.id } })).item;
+      const slA = (await api('/safetyLogs', { method: 'POST', body: { checklistId: 't', projectId: pA.id } })).item;
+      await api('/projects/' + pA.id, { method: 'DELETE' });
+      const aCalc = _lsDB.calcSaves.find(x => x.id === csA.id);
+      const aSafe = _lsDB.safetyLogs.find(x => x.id === slA.id);
+      const aOk = aCalc && aCalc.projectId === '' && String(aCalc.projectInfo || '').includes('P2A-Parity-A')
+               && aSafe && aSafe.projectId === '' && String(aSafe.projectInfo || '').includes('P2A-Parity-A');
+      /* SCENARIO B — legacy dangling ref repaired at boot */
+      const pB = await mk('P2A-Parity-B');
+      const csB = (await api('/calcSaves', { method: 'POST', body: { calcId: 'c1', name: 'calcB', projectId: pB.id } })).item;
+      const slB = (await api('/safetyLogs', { method: 'POST', body: { checklistId: 't', projectId: pB.id } })).item;
+      const lostId = pB.id;
+      _lsDB.projects = _lsDB.projects.filter(x => x.id !== lostId);   /* legacy delete that missed the detach */
+      const repaired = STRUCTURED_DB.repairProjectRefs(_lsDB);
+      await _lsSave();
+      const bCalc = _lsDB.calcSaves.find(x => x.id === csB.id);
+      const bSafe = _lsDB.safetyLogs.find(x => x.id === slB.id);
+      /* the record must SURVIVE, be detached, and still carry context — not a bare orphan */
+      const bOk = repaired
+        && bCalc && bCalc.projectId === '' && !!bCalc.projectInfo && String(bCalc.projectInfo).includes(lostId)
+        && bSafe && bSafe.projectId === '' && !!bSafe.projectInfo && String(bSafe.projectInfo).includes(lostId)
+        && bCalc.name === 'calcB';   /* the record's own payload is untouched */
+      /* the repaired aggregate must pass strict verification (device stays on IndexedDB) */
+      let verifyOk = false;
+      try { await STRUCTURED_DB.verifyAggregate(JSON.parse(JSON.stringify(_lsDB))); verifyOk = true; } catch (e) {}
+      return { ok: aOk && bOk && verifyOk, aOk, bOk, verifyOk };
+    })()`);
+    await T('P2A BUG-3: recovery repair is equivalent to normal delete — surviving records keep historical context instead of becoming bare orphans', p2aRepairParity && p2aRepairParity.ok, JSON.stringify(p2aRepairParity));
+
+    /* ---- PHASE 2A VERIFICATION — BUG-4: repair coverage must equal strict
+       verification coverage ----
+       verifyAggregate rejects a dangling projectId in 11 collections, but the
+       repair pass only normalized 2 of them. A legacy dangling ref in any of
+       the other 9 made boot verification throw on every start and permanently
+       stranded the device in the localStorage fallback. */
+    await T('P2A BUG-4: repairProjectRefs normalizes every project-owned collection that strict verification checks (no unrecoverable boot)', () => ev(`(function(){
+      const cols = ['services','invoices','contracts','checklists','measurements','reminders','photos','diagSessions','issues','calcSaves','safetyLogs'];
+      const db = { projects: [{ id: 'live' }] };
+      cols.forEach((k, i) => { db[k] = [{ id: 'dg-' + i, projectId: 'ghost-project' }]; });
+      const changed = STRUCTURED_DB.repairProjectRefs(db);
+      const allDetached = cols.every(k => db[k][0].projectId === '');
+      const allStamped  = cols.every(k => !!db[k][0].projectInfo && String(db[k][0].projectInfo).includes('ghost-project'));
+      const noneDeleted = cols.every(k => db[k].length === 1);
+      /* idempotent: a second pass reports no further change and does not re-stamp */
+      const second = STRUCTURED_DB.repairProjectRefs(db);
+      return changed === true && allDetached && allStamped && noneDeleted && second === false;
+    })()`));
+
+    /* an existing, valid stamp from the richer delete path is never overwritten
+       by the poorer recovery stamp */
+    await T('P2A BUG-4: recovery repair never downgrades a context stamp already written by the delete path', () => ev(`(function(){
+      const db = { projects: [], calcSaves: [{ id: 'c1', projectId: 'ghost', projectInfo: 'Tower A — Client — Tehran' }] };
+      STRUCTURED_DB.repairProjectRefs(db);
+      return db.calcSaves[0].projectId === '' && db.calcSaves[0].projectInfo === 'Tower A — Client — Tehran';
+    })()`));
+
+    /* ordering guard: archived projects are folded back BEFORE refs are
+       repaired, so a legitimately archived project never gets its records
+       falsely detached */
+    await T('P2A BUG-4: fold-before-repair ordering keeps records attached to a legacy archived project', () => ev(`(function(){
+      const db = { projects: [], archivedProjects: [{ id: 'pa', name: 'Arch Tower', updatedAt: 9 }],
+        calcSaves: [{ id: 'c9', projectId: 'pa' }] };
+      STRUCTURED_DB.foldArchivedProjects(db);
+      STRUCTURED_DB.repairProjectRefs(db);
+      return db.calcSaves[0].projectId === 'pa' && db.projects[0].archived === true;
+    })()`));
+
+    /* ---- PHASE 2A VERIFICATION — project isolation across all six record
+       kinds required by the verification brief ---- */
+    const p2aIsolation = await ev(`(async()=>{
+      const mk = n => api('/projects', { method: 'POST', body: { name: n, customer: 'C-' + n, location: 'L-' + n } }).then(d => d.project);
+      const A = await mk('P2A-Iso-A');
+      const B = await mk('P2A-Iso-B');
+      const seed = async (p) => ({
+        service:     (await api('/services',     { method: 'POST', body: { projectId: p.id, customer: 'c', problem: 'p' } })).service,
+        measurement: (await api('/measurements', { method: 'POST', body: { projectId: p.id, typeId: 'voltage', value: 380 } })).item,
+        diag:        (await api('/diagSessions', { method: 'POST', body: { projectId: p.id, flowId: 'f01', current: 'n1' } })).item,
+        checklist:   (await api('/checklists',   { method: 'POST', body: { projectId: p.id, templateId: 'traction-install', checked: {} } })).checklist,
+        calc:        (await api('/calcSaves',    { method: 'POST', body: { projectId: p.id, calcId: 'c1', name: 'k' } })).item,
+        safety:      (await api('/safetyLogs',   { method: 'POST', body: { projectId: p.id, checklistId: 't' } })).item
+      });
+      const recA = await seed(A), recB = await seed(B);
+      const snapB = JSON.stringify(recB);
+      await api('/projects/' + A.id, { method: 'DELETE' });
+      const fresh = await STRUCTURED_DB.verifyAggregate(JSON.parse(JSON.stringify(_lsDB)));
+      const find = (coll, id) => (fresh[coll] || []).find(x => x.id === id);
+      /* Project B is completely untouched */
+      const bIntact =
+           find('services', recB.service.id)         && find('services', recB.service.id).projectId === B.id
+        && find('measurements', recB.measurement.id) && find('measurements', recB.measurement.id).projectId === B.id
+        && find('diagSessions', recB.diag.id)        && find('diagSessions', recB.diag.id).projectId === B.id
+        && find('checklists', recB.checklist.id)     && find('checklists', recB.checklist.id).projectId === B.id
+        && find('calcSaves', recB.calc.id)           && find('calcSaves', recB.calc.id).projectId === B.id
+        && find('safetyLogs', recB.safety.id)        && find('safetyLogs', recB.safety.id).projectId === B.id
+        && fresh.projects.some(x => x.id === B.id);
+      /* Project A's records all survive, detached and stamped */
+      const kinds = [['services', recA.service.id], ['measurements', recA.measurement.id], ['diagSessions', recA.diag.id],
+                     ['checklists', recA.checklist.id], ['calcSaves', recA.calc.id], ['safetyLogs', recA.safety.id]];
+      const aPreserved = kinds.every(([coll, id]) => {
+        const r = find(coll, id);
+        return r && r.projectId === '' && String(r.projectInfo || r.elevatorInfo || '').includes('P2A-Iso-A');
+      });
+      const aGone = !fresh.projects.some(x => x.id === A.id);
+      return { ok: bIntact && aPreserved && aGone, bIntact, aPreserved, aGone, snapB: snapB.length > 0 };
+    })()`);
+    await T('P2A ISOLATION: deleting project A preserves all six of its record kinds with context and leaves project B completely untouched', p2aIsolation && p2aIsolation.ok, JSON.stringify(p2aIsolation));
+
+    /* ---- PHASE 2A VERIFICATION — detached history survives a full
+       backup → restore round-trip with its context intact ---- */
+    const p2aHistoryBackup = await ev(`(async()=>{
+      const p = (await api('/projects', { method: 'POST', body: { name: 'P2A-Hist', customer: 'HistCo', location: 'Shiraz' } })).project;
+      const calc = (await api('/calcSaves', { method: 'POST', body: { projectId: p.id, calcId: 'c1', name: 'histcalc' } })).item;
+      const svc  = (await api('/services',  { method: 'POST', body: { projectId: p.id, customer: '', problem: 'hist' } })).service;
+      await api('/projects/' + p.id, { method: 'DELETE' });
+      const exported = (await api('/backup')).backup;
+      const v = validateBackup(exported);
+      if (!v.ok) return { ok: false, step: 'export:' + v.why };
+      await api('/backup', { method: 'PUT', body: { backup: exported } });
+      const fresh = await STRUCTURED_DB.verifyAggregate(JSON.parse(JSON.stringify(_lsDB)));
+      const c = fresh.calcSaves.find(x => x.id === calc.id);
+      const s = fresh.services.find(x => x.id === svc.id);
+      /* the service keeps BOTH its own customer field and the project stamp */
+      return { ok: !!c && c.projectId === '' && String(c.projectInfo || '').includes('P2A-Hist')
+                && !!s && s.projectId === '' && String(s.projectInfo || '').includes('P2A-Hist')
+                && s.customer === 'HistCo' };
+    })()`);
+    await T('P2A HISTORY: detached-and-stamped records keep their elevator context through export → import → verified re-read', p2aHistoryBackup && p2aHistoryBackup.ok, JSON.stringify(p2aHistoryBackup));
+
     /* ---- PH20: version identifiers stay consistent across files ---- */
     const swSrc = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
     const pkgJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));

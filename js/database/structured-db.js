@@ -160,17 +160,43 @@ var STRUCTURED_DB = (() => {
      localStorage source, staged restore candidate). They never remove a
      record — they only repair relationships using the app's documented
      detach policy. */
+
+  /* Single source of truth for "records owned by a project". repairProjectRefs
+     and verifyAggregate MUST stay in sync: verification rejects a dangling
+     projectId in any of these collections, so the repair pass has to be able
+     to normalize every one of them. When the two lists drifted apart, a
+     dangling ref in an unrepaired-but-verified collection made boot
+     verification throw forever and pushed the device into the localStorage
+     fallback with no way back. */
+  const PROJECT_OWNED = ['services', 'invoices', 'contracts', 'checklists', 'measurements',
+    'reminders', 'photos', 'diagSessions', 'issues', 'calcSaves', 'safetyLogs'];
+
   function repairProjectRefs(db) {
-    /* Older builds detached every project-owned record on project delete
-       EXCEPT calcSaves and safetyLogs, which could keep a dangling
-       projectId. Strict verification covers those collections now, so any
-       pre-existing dangling ref is normalized here (same policy as the
-       service-repair in the localStorage layer: clear the dead link). */
+    /* Older builds could leave a dangling projectId behind after a project was
+       deleted (calcSaves/safetyLogs were missing from the detach list, and an
+       interrupted write can strand any collection). Such a reference is
+       normalized here with the SAME policy the live project-delete path uses:
+       detach-and-stamp — never delete the record.
+
+       The delete path holds the project object and can stamp the full
+       "name — customer — location" context. By the time this recovery pass
+       runs the project row is already gone, so the only surviving fact about
+       the historical elevator is the dead identifier itself. It is preserved
+       in the existing `projectInfo` field (no new schema) instead of being
+       discarded: records detached from the same lost project keep a shared,
+       greppable stamp, and the id can still be resolved against any older
+       backup that predates the deletion. Blanking projectId without the stamp
+       turned the record into an unexplained orphan — strictly poorer history
+       than the normal delete path produces. */
     let changed = false;
     const ids = new Set((db.projects || []).filter(Boolean).map(p => p.id));
-    ['calcSaves', 'safetyLogs'].forEach(k => {
+    PROJECT_OWNED.forEach(k => {
       (Array.isArray(db[k]) ? db[k] : []).forEach(r => {
-        if (r && r.projectId && !ids.has(r.projectId)) { r.projectId = ''; changed = true; }
+        if (r && r.projectId && !ids.has(r.projectId)) {
+          if (!r.projectInfo) r.projectInfo = 'projectId:' + r.projectId;  // keep the only surviving context
+          r.projectId = '';
+          changed = true;
+        }
       });
     });
     return changed;
@@ -247,7 +273,7 @@ var STRUCTURED_DB = (() => {
       if (a[key] !== b[key]) throw new Error('structured-count:' + key);
     }
     const projectIds = new Set((loaded.projects || []).map(x => x.id));
-    for (const key of ['services', 'invoices', 'contracts', 'checklists', 'measurements', 'reminders', 'photos', 'diagSessions', 'issues', 'calcSaves', 'safetyLogs']) {
+    for (const key of PROJECT_OWNED) {   // same list repairProjectRefs normalizes — they cannot drift
       for (const row of (loaded[key] || [])) {
         if (row.projectId && !projectIds.has(row.projectId)) throw new Error('structured-relation:' + key + ':' + row.id);
       }
