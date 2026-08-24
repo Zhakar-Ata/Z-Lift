@@ -1305,6 +1305,341 @@ async function T(name, cond, info) {
     })()`);
     await T('P2A HISTORY: detached-and-stamped records keep their elevator context through export → import → verified re-read', p2aHistoryBackup && p2aHistoryBackup.ok, JSON.stringify(p2aHistoryBackup));
 
+    /* ================= PHASE 2B.0 — BLOCKER REMEDIATION =================
+       BUG-1 checklist logical identity, BUG-2 nested parts.history project
+       references. BUG-3 (writeAggregate transaction behaviour + performance)
+       runs in the dedicated qa/perf.js runner, so its large synthetic
+       aggregates and deliberate transaction failures cannot perturb this
+       suite. No Multi-Elevator model is introduced anywhere below: the
+       elevator dimension exists only as an optional identity component. */
+
+    /* ---- BUG-1: the canonical identity helpers (pure, no storage) ---- */
+    await T('P2B0 BUG-1: checklist identity resolves the elevator dimension with a 1:1 fallback to projectId', () => ev(`(function(){
+      /* no elevator dimension → identity is the project, exactly as before */
+      if (checklistKeyOf({ projectId: 'P1', templateId: 'T1' }) !== checklistKey('P1', 'P1', 'T1')) return false;
+      /* explicit elevator dimension → identity is the elevator, inside its project */
+      if (checklistKeyOf({ projectId: 'P1', elevatorId: 'E1', templateId: 'T1' }) !== checklistKey('P1', 'E1', 'T1')) return false;
+      /* the project stays in the key: the same elevator label in another
+         project is a different instance, never a match */
+      if (checklistKeyOf({ projectId: 'P1', elevatorId: 'E1', templateId: 'T1' })
+       === checklistKeyOf({ projectId: 'P2', elevatorId: 'E1', templateId: 'T1' })) return false;
+      /* detached (project deleted) → empty elevator dimension, never "any" */
+      if (checklistElevatorId({ projectId: '', templateId: 'T1' }) !== '') return false;
+      /* the two contexts are different keys */
+      return checklistKeyOf({ projectId: 'P1', elevatorId: 'E1', templateId: 'T1' })
+          !== checklistKeyOf({ projectId: 'P1', elevatorId: 'E2', templateId: 'T1' });
+    })()`));
+
+    await T('P2B0 BUG-1: a legacy record and a legacy request still match each other (no migration needed)', () => ev(`(function(){
+      const legacy = { id: 'c1', projectId: 'P1', templateId: 'T1', checked: { a: 'pass' } };
+      const future = { id: 'c2', projectId: 'P1', elevatorId: 'E1', templateId: 'T1', checked: {} };
+      /* legacy ↔ legacy still resolves, so existing data stays readable */
+      if (findChecklistInstance([legacy], 'P1', 'T1') !== legacy) return false;
+      if (findChecklistInstance([legacy], 'P1', 'T1', 'P1') !== legacy) return false;
+      /* and a record carrying the future dimension is never matched by a
+         request that omits it — in either direction */
+      if (findChecklistInstance([future], 'P1', 'T1') !== null) return false;
+      return findChecklistInstance([future], 'P1', 'T1', 'E1') === future;
+    })()`));
+
+    await T('P2B0 BUG-1: a malformed inbound elevatorId cannot poison the identity', () => ev(`(function(){
+      return normalizeChecklistElevatorId(undefined) === '' && normalizeChecklistElevatorId(null) === ''
+        && normalizeChecklistElevatorId(42) === '' && normalizeChecklistElevatorId({}) === ''
+        && normalizeChecklistElevatorId('   ') === '' && normalizeChecklistElevatorId(' E1 ') === 'E1'
+        && normalizeChecklistElevatorId('x'.repeat(500)) === '';
+    })()`));
+
+    /* ---- BUG-1 CASE A: the existing single-elevator behaviour is unchanged ---- */
+    const p2b0CaseA = await ev(`(async()=>{
+      const p = (await api('/projects', { method: 'POST', body: { name: 'P2B0-CaseA', elevatorType: 'traction' } })).project;
+      const first = (await api('/checklists', { method: 'POST', body: { projectId: p.id, templateId: 'traction-install', checked: { a1: 'pass' } } })).checklist;
+      const second = (await api('/checklists', { method: 'POST', body: { projectId: p.id, templateId: 'traction-install', checked: { a1: 'fail', a2: 'na' } } })).checklist;
+      const stored = (await api('/checklists')).checklists.filter(c => c.projectId === p.id);
+      const fresh = await STRUCTURED_DB.verifyAggregate(JSON.parse(JSON.stringify(_lsDB)));
+      const reread = fresh.checklists.filter(c => c.projectId === p.id);
+      return {
+        /* upsert, not duplicate: one record, same id, latest answers */
+        ok: stored.length === 1 && reread.length === 1 && first.id === second.id
+          && first.id !== 'tmp' && second.checked.a1 === 'fail' && second.checked.a2 === 'na'
+          /* no elevator field is introduced for a caller that did not ask for one */
+          && !('elevatorId' in first) && !('elevatorId' in reread[0])
+          && second.updatedAt >= first.updatedAt,
+        ids: [first.id, second.id], keys: Object.keys(reread[0]).sort()
+      };
+    })()`);
+    await T('P2B0 BUG-1 CASE A: single existing elevator context behaves exactly as before (upsert, same id, no new field)', p2b0CaseA && p2b0CaseA.ok, JSON.stringify(p2b0CaseA));
+
+    /* ---- BUG-1 CASE B: two logical elevator contexts, one project, one template ---- */
+    const p2b0CaseB = await ev(`(async()=>{
+      const p = (await api('/projects', { method: 'POST', body: { name: 'P2B0-CaseB', elevatorType: 'traction' } })).project;
+      /* the future elevator dimension, modelled at the data layer only — there
+         is deliberately no elevator collection, picker, route or UI for it */
+      const a1 = (await api('/checklists', { method: 'POST', body: { projectId: p.id, elevatorId: 'ELEV-A', templateId: 'traction-install', checked: { a1: 'pass' } } })).checklist;
+      const b1 = (await api('/checklists', { method: 'POST', body: { projectId: p.id, elevatorId: 'ELEV-B', templateId: 'traction-install', checked: { a1: 'fail' } } })).checklist;
+      /* repeated saves must stay idempotent: same two rows, no duplicates */
+      const a2 = (await api('/checklists', { method: 'POST', body: { projectId: p.id, elevatorId: 'ELEV-A', templateId: 'traction-install', checked: { a1: 'pass', a5: 'na' } } })).checklist;
+      const b2 = (await api('/checklists', { method: 'POST', body: { projectId: p.id, elevatorId: 'ELEV-B', templateId: 'traction-install', checked: { a1: 'fail', a7: 'pass' } } })).checklist;
+      const stored = (await api('/checklists')).checklists.filter(c => c.projectId === p.id);
+      const fresh = await STRUCTURED_DB.verifyAggregate(JSON.parse(JSON.stringify(_lsDB)));
+      const reread = fresh.checklists.filter(c => c.projectId === p.id);
+      const A = reread.find(c => c.elevatorId === 'ELEV-A'), B = reread.find(c => c.elevatorId === 'ELEV-B');
+      return {
+        /* isolation: neither context can overwrite the other's answers */
+        ok: stored.length === 2 && reread.length === 2 && a1.id !== b1.id && a1.id === a2.id && b1.id === b2.id
+          && !!A && !!B && A.id !== B.id
+          && A.checked.a1 === 'pass' && A.checked.a5 === 'na' && A.checked.a7 === undefined
+          && B.checked.a1 === 'fail' && B.checked.a7 === 'pass' && B.checked.a5 === undefined
+          && new Set(reread.map(c => c.id)).size === 2,
+        project: p.id, ids: [a1.id, b1.id], counts: { stored: stored.length, reread: reread.length }
+      };
+    })()`);
+    await T('P2B0 BUG-1 CASE B: two elevator contexts in one project with one template cannot overwrite each other (save/update/load/repeat)', p2b0CaseB && p2b0CaseB.ok, JSON.stringify(p2b0CaseB));
+
+    /* ---- BUG-1: the same elevator label in two different projects must stay
+       two separate instances. The identity keeps the project in the key
+       precisely for this: nothing in the current model guarantees that
+       elevator identifiers are globally unique. ---- */
+    const p2b0CrossProject = await ev(`(async()=>{
+      const p1 = (await api('/projects', { method: 'POST', body: { name: 'P2B0-XP-1', elevatorType: 'traction' } })).project;
+      const p2 = (await api('/projects', { method: 'POST', body: { name: 'P2B0-XP-2', elevatorType: 'traction' } })).project;
+      const a = (await api('/checklists', { method: 'POST', body: { projectId: p1.id, elevatorId: 'CAR-1', templateId: 'traction-install', checked: { a1: 'pass' } } })).checklist;
+      const b = (await api('/checklists', { method: 'POST', body: { projectId: p2.id, elevatorId: 'CAR-1', templateId: 'traction-install', checked: { a1: 'fail' } } })).checklist;
+      /* snapshot as plain values: api() hands back live references into the
+         in-memory aggregate, which the delete below mutates in place */
+      const aProject = a.projectId, bProject = b.projectId;
+      const fresh = await STRUCTURED_DB.verifyAggregate(JSON.parse(JSON.stringify(_lsDB)));
+      const ra = fresh.checklists.find(c => c.id === a.id), rb = fresh.checklists.find(c => c.id === b.id);
+      /* deleting one project must not touch the other project's instance */
+      await api('/projects/' + p1.id, { method: 'DELETE' });
+      const after = await STRUCTURED_DB.verifyAggregate(JSON.parse(JSON.stringify(_lsDB)));
+      const da = after.checklists.find(c => c.id === a.id), db = after.checklists.find(c => c.id === b.id);
+      return {
+        ok: a.id !== b.id && aProject === p1.id && bProject === p2.id
+          && !!ra && !!rb && ra.checked.a1 === 'pass' && rb.checked.a1 === 'fail'
+          && !!da && !!db && da.projectId === '' && db.projectId === p2.id
+          && String(da.projectInfo || '').includes('P2B0-XP-1') && db.projectInfo === undefined
+          && db.checked.a1 === 'fail',
+        ids: [a.id, b.id]
+      };
+    })()`);
+    await T('P2B0 BUG-1: the same elevator label in two different projects stays two isolated instances (project is part of the key)', p2b0CrossProject && p2b0CrossProject.ok, JSON.stringify(p2b0CrossProject));
+
+    /* ---- BUG-1: the two contexts survive backup → restore, and a project
+       delete detaches both instead of merging or dropping them ---- */
+    const p2b0Backup = await ev(`(async()=>{
+      const p = (await api('/projects', { method: 'POST', body: { name: 'P2B0-Bkp', customer: 'BkpCo', location: 'Yazd', elevatorType: 'traction' } })).project;
+      const A = (await api('/checklists', { method: 'POST', body: { projectId: p.id, elevatorId: 'ELEV-A', templateId: 'traction-install', checked: { a1: 'pass' } } })).checklist;
+      const B = (await api('/checklists', { method: 'POST', body: { projectId: p.id, elevatorId: 'ELEV-B', templateId: 'traction-install', checked: { a1: 'fail' } } })).checklist;
+      const exported = (await api('/backup')).backup;
+      const v = validateBackup(exported);
+      if (!v.ok) return { ok: false, step: 'export:' + v.why };
+      await api('/backup', { method: 'PUT', body: { backup: exported } });
+      const fresh = await STRUCTURED_DB.verifyAggregate(JSON.parse(JSON.stringify(_lsDB)));
+      const ra = fresh.checklists.find(c => c.id === A.id), rb = fresh.checklists.find(c => c.id === B.id);
+      const roundTrip = !!ra && !!rb && ra.checked.a1 === 'pass' && rb.checked.a1 === 'fail'
+        && ra.elevatorId === 'ELEV-A' && rb.elevatorId === 'ELEV-B';
+      /* now delete the project: both contexts survive, detached and stamped */
+      await api('/projects/' + p.id, { method: 'DELETE' });
+      const after = await STRUCTURED_DB.verifyAggregate(JSON.parse(JSON.stringify(_lsDB)));
+      const da = after.checklists.find(c => c.id === A.id), db2 = after.checklists.find(c => c.id === B.id);
+      const detached = !!da && !!db2 && da.projectId === '' && db2.projectId === ''
+        && String(da.projectInfo || '').includes('P2B0-Bkp') && String(db2.projectInfo || '').includes('P2B0-Bkp')
+        && da.checked.a1 === 'pass' && db2.checked.a1 === 'fail'
+        /* the dead identifier must not linger as the elevator dimension */
+        && da.elevatorId !== p.id && db2.elevatorId !== p.id;
+      return { ok: roundTrip && detached, roundTrip, detached };
+    })()`);
+    await T('P2B0 BUG-1: both elevator contexts survive backup → restore and a project delete (answers preserved, never merged)', p2b0Backup && p2b0Backup.ok, JSON.stringify(p2b0Backup));
+
+    /* ---- BUG-1: ambiguous duplicate identity is reported, never resolved by
+       deleting or merging real technician answers ---- */
+    await T('P2B0 BUG-1: duplicate logical identity is reported, never merged or deleted', () => ev(`(function(){
+      const dup = [
+        { id: 'k1', projectId: 'P1', templateId: 'T1', checked: { a: 'pass' } },
+        { id: 'k2', projectId: 'P1', elevatorId: 'P1', templateId: 'T1', checked: { a: 'fail' } }
+      ];
+      const conflicts = checklistIdentityConflicts(dup);
+      const bk = { app: 'zlift', formatVersion: BACKUP_FORMAT_VERSION, projects: [{ id: 'P1', name: 'x' }], checklists: dup };
+      const audit = auditBackupData(bk, {});
+      /* lookup stays deterministic (first match wins) and both rows survive */
+      const found = findChecklistInstance(dup, 'P1', 'T1');
+      return conflicts.length === 1 && conflicts[0].ids.join(',') === 'k1,k2'
+        && found === dup[0] && dup.length === 2
+        && audit.ok === true && audit.warnings.some(w => w.indexOf('checklists:duplicate-identity') === 0);
+    })()`));
+
+    /* ---- BUG-2: nested parts.history[].projectId is now a managed reference ---- */
+    const p2b0Nested = await ev(`(async()=>{
+      const A = (await api('/projects', { method: 'POST', body: { name: 'P2B0-Nest-A', customer: 'CA', location: 'LA' } })).project;
+      const B = (await api('/projects', { method: 'POST', body: { name: 'P2B0-Nest-B', customer: 'CB', location: 'LB' } })).project;
+      const part = (await api('/parts', { method: 'POST', body: { name: 'P2B0 nested part', qty: 20, price: 100 } })).part;
+      await api('/parts-consume', { method: 'POST', body: { partId: part.id, qty: 2, projectId: A.id, note: 'for A' } });
+      await api('/parts-consume', { method: 'POST', body: { partId: part.id, qty: 3, projectId: B.id, note: 'for B' } });
+      const read = () => _lsLoad().parts.find(x => x.id === part.id);
+      const before = JSON.parse(JSON.stringify(read().history));
+      /* 1. a valid nested reference is left completely alone by the repair pass */
+      const repairOnValid = STRUCTURED_DB.repairProjectRefs(_lsDB);
+      const validIntact = repairOnValid === false
+        && read().history.some(h => h.projectId === A.id) && read().history.some(h => h.projectId === B.id);
+      /* 2/3/4. deleting project A detaches + stamps its nested ref and preserves
+                the historical entry verbatim; no entry is deleted */
+      await api('/projects/' + A.id, { method: 'DELETE' });
+      const after = JSON.parse(JSON.stringify(read().history));
+      const entryA = after.find(h => h.note === 'for A');
+      const entryB = after.find(h => h.note === 'for B');
+      const origA = before.find(h => h.note === 'for A');
+      const preserved = !!entryA && entryA.projectId === ''
+        && String(entryA.projectInfo || '').includes('P2B0-Nest-A')
+        /* nothing but the dead link changed */
+        && entryA.id === origA.id && entryA.qty === origA.qty && entryA.date === origA.date
+        && entryA.prevQty === origA.prevQty && entryA.newQty === origA.newQty
+        && after.length === before.length;
+      /* 10. project isolation: the entry that referenced project B is untouched */
+      const isolated = !!entryB && entryB.projectId === B.id && entryB.projectInfo === undefined;
+      /* 8. repeated repair is idempotent: no change, no re-stamp, no churn */
+      const second = STRUCTURED_DB.repairProjectRefs(_lsDB);
+      const third = STRUCTURED_DB.repairProjectRefs(_lsDB);
+      const idempotent = second === false && third === false
+        && JSON.stringify(read().history) === JSON.stringify(after);
+      const fresh = await STRUCTURED_DB.verifyAggregate(JSON.parse(JSON.stringify(_lsDB)));
+      return {
+        ok: validIntact && preserved && isolated && idempotent
+          && fresh.parts.find(x => x.id === part.id).history.length === before.length,
+        validIntact, preserved, isolated, idempotent,
+        entryA: entryA && { projectId: entryA.projectId, projectInfo: entryA.projectInfo, qty: entryA.qty },
+        entryB: entryB && { projectId: entryB.projectId }
+      };
+    })()`);
+    await T('P2B0 BUG-2: project delete detaches-and-stamps the nested parts.history ref, preserves the entry, isolates other projects, and repeats idempotently', p2b0Nested && p2b0Nested.ok, JSON.stringify(p2b0Nested));
+
+    /* ---- BUG-2: strict verification and canonical repair cover the nested
+       level too, through one shared definition (the P2A BUG-4 drift failure) ---- */
+    const p2b0VerifyNested = await ev(`(async()=>{
+      const part = (_lsDB.parts || [])[0];
+      if (!part) return { ok: false, step: 'no-part' };
+      const keep = part.history;
+      part.history = [{ id: 'n1', qty: -1, date: 1, projectId: 'ghost-project-p2b0', note: 'injected', prevQty: 5, newQty: 4 }];
+      await _lsSave();                                        /* real persistence path */
+      let threw = '';
+      try { await STRUCTURED_DB.verifyAggregate(JSON.parse(JSON.stringify(_lsDB))); }
+      catch (e) { threw = String(e && e.message || ''); }
+      const detected = threw.indexOf('structured-relation:parts.history') === 0;
+      const changed = STRUCTURED_DB.repairProjectRefs(_lsDB);   /* canonical repair */
+      await _lsSave();
+      let okAfter = false;
+      try { await STRUCTURED_DB.verifyAggregate(JSON.parse(JSON.stringify(_lsDB))); okAfter = true; } catch (e) {}
+      const entry = part.history[0];
+      const preserved = part.history.length === 1 && entry.qty === -1 && entry.note === 'injected'
+        && entry.prevQty === 5 && entry.newQty === 4
+        && entry.projectId === '' && String(entry.projectInfo || '').indexOf('projectId:ghost-project-p2b0') === 0;
+      const idempotent = STRUCTURED_DB.repairProjectRefs(_lsDB) === false;
+      part.history = keep; await _lsSave();                    /* leave later tests alone */
+      return { ok: detected && changed === true && okAfter && preserved && idempotent, threw, changed, okAfter, preserved, idempotent };
+    })()`);
+    await T('P2B0 BUG-2: verifyAggregate detects a dangling nested history ref and the canonical repair restores integrity (no drift, nothing deleted)', p2b0VerifyNested && p2b0VerifyNested.ok, JSON.stringify(p2b0VerifyNested));
+
+    /* ---- BUG-2: the creation seam never writes a dangling nested ref ---- */
+    await T('P2B0 BUG-2: an unknown projectId is never written into parts.history (consume + invoice)', () => ev(`(async()=>{
+      const part = (await api('/parts', { method: 'POST', body: { name: 'P2B0 seam part', qty: 10, price: 100 } })).part;
+      await api('/parts-consume', { method: 'POST', body: { partId: part.id, qty: 1, projectId: 'no-such-project', note: 'bogus' } });
+      const live = (await api('/projects', { method: 'POST', body: { name: 'P2B0 seam proj' } })).project;
+      await api('/parts-consume', { method: 'POST', body: { partId: part.id, qty: 1, projectId: live.id, note: 'real' } });
+      await api('/invoices', { method: 'POST', body: { customer: 'P2B0 seam', projectId: 'no-such-project', items: [{ desc: 'seam', qty: 1, price: 100, partId: part.id }] } });
+      const h = _lsLoad().parts.find(x => x.id === part.id).history;
+      const bogus = h.filter(x => x.note === 'bogus' || x.note === 'invoice consumption');
+      return {
+        ok: h.length === 3
+          && bogus.length === 2 && bogus.every(x => x.projectId === '')
+          && h.some(x => x.projectId === live.id)
+          /* nothing was invented and nothing was reassigned to another project */
+          && !h.some(x => x.projectId && x.projectId !== live.id),
+        refs: h.map(x => x.projectId)
+      };
+    })()`));
+
+    /* ---- BUG-2: malformed nested history is flagged and preserved, and legacy
+       backups carrying dangling/malformed history still import ---- */
+    await T('P2B0 BUG-2: malformed nested history is reported as warnings, never as blocking errors, and never deleted', () => ev(`(function(){
+      const bk = {
+        app: 'zlift', formatVersion: BACKUP_FORMAT_VERSION,
+        projects: [{ id: 'live-p', name: 'Live', createdAt: 1, updatedAt: 1 }],
+        parts: [
+          { id: 'p-ok', name: 'ok', qty: 1, history: [{ id: 'h1', qty: -1, date: 1, projectId: 'live-p' }] },
+          { id: 'p-dead', name: 'dead', qty: 1, history: [{ id: 'h2', qty: -2, date: 2, projectId: 'ghost-p' }] },
+          { id: 'p-badarr', name: 'badarr', qty: 1, history: 'not-an-array' },
+          { id: 'p-badrow', name: 'badrow', qty: 1, history: [null, { id: 'h3', qty: -3, projectId: 42 }] },
+          { id: 'p-none', name: 'none', qty: 1 }
+        ]
+      };
+      const audit = auditBackupData(bk, {});
+      const w = audit.warnings.join('|');
+      return audit.ok === true && audit.errors.length === 0
+        && w.indexOf('parts:history-project-relation:p-dead:h2') >= 0
+        && w.indexOf('parts:history-not-array:p-badarr') >= 0
+        && w.indexOf('parts:history-record:p-badrow:0') >= 0
+        && w.indexOf('parts:history-project-type:p-badrow:h3') >= 0
+        && w.indexOf('p-ok') === -1 && w.indexOf('p-none') === -1;
+    })()`));
+
+    await T('P2B0 BUG-2: legacy backup with dangling + malformed history imports, keeps every entry and repairs the dead ref', () => ev(`(async()=>{
+      const now = Date.now();
+      const legacy = enrichBackupMetadata({
+        app: 'zlift', projects: [{ id: 'leg-p', name: 'Legacy Tower', customer: 'LegacyCo', location: 'Rasht', elevatorType: 'traction', createdAt: now, updatedAt: now }],
+        parts: [{ id: 'leg-part', name: 'Legacy part', category: 'x', unit: 'pcs', qty: 7, minQty: 0, price: 100, createdAt: now, updatedAt: now,
+          history: [
+            { id: 'leg-h1', qty: -2, date: now - 3000, projectId: 'deleted-long-ago', note: 'old consume', prevQty: 9, newQty: 7 },
+            { id: 'leg-h2', qty: -1, date: now - 2000, projectId: 'leg-p', note: 'live consume', prevQty: 8, newQty: 7 },
+            null,
+            { id: 'leg-h4', qty: -5, date: now - 1000, projectId: 99, note: 'malformed ref' }
+          ] }],
+        services: [], measurements: [], invoices: [], notes: [], issues: [], contracts: [],
+        reminders: [], photos: [], diagSessions: [], calcSaves: [], tools: [], checklists: [], safetyLogs: [], settings: {}
+      });
+      const v = validateBackup(legacy);
+      if (!v.ok) return { ok: false, step: 'validate:' + v.why };
+      await api('/backup', { method: 'PUT', body: { backup: legacy } });
+      const fresh = await STRUCTURED_DB.verifyAggregate(JSON.parse(JSON.stringify(_lsDB)));
+      const part = fresh.parts.find(x => x.id === 'leg-part');
+      const h = part && part.history;
+      const dead = h && h.find(x => x && x.id === 'leg-h1');
+      const live = h && h.find(x => x && x.id === 'leg-h2');
+      const malformed = h && h.find(x => x && x.id === 'leg-h4');
+      return {
+        /* every entry survived, including the malformed ones — nothing dropped */
+        ok: !!h && h.length === 4
+          && !!dead && dead.projectId === '' && String(dead.projectInfo || '').indexOf('projectId:deleted-long-ago') === 0
+          && dead.qty === -2 && dead.note === 'old consume' && dead.prevQty === 9 && dead.newQty === 7
+          && !!live && live.projectId === 'leg-p'
+          && h[2] === null
+          /* the non-string ref is preserved as-is, not guessed at */
+          && !!malformed && malformed.projectId === 99,
+        len: h && h.length, dead: dead && { projectId: dead.projectId, projectInfo: dead.projectInfo }
+      };
+    })()`));
+
+    /* 9. an export produced by THIS build still round-trips (BACKUP_FORMAT_VERSION
+       unchanged at 8), and the aggregate is left in a verified state */
+    const p2b0LegacyCompat = await ev(`(async()=>{
+      const exported = (await api('/backup')).backup;
+      const audit = auditBackupData(exported, { requireTimestamps: true });
+      if (!audit.ok) return { ok: false, step: 'audit:' + audit.errors.join(',') };
+      const stripped = JSON.parse(JSON.stringify(exported));
+      delete stripped.integrity; delete stripped.metadata; delete stripped.recordCounts; delete stripped.relationships;
+      const v = validateBackup(stripped);
+      if (!v.ok) return { ok: false, step: 'revalidate:' + v.why };
+      await api('/backup', { method: 'PUT', body: { backup: stripped } });
+      const fresh = await STRUCTURED_DB.verifyAggregate(JSON.parse(JSON.stringify(_lsDB)));
+      const before = backupCountMap(exported), after = backupCountMap((await api('/backup')).backup);
+      const keys = ['projects', 'parts', 'checklists', 'services', 'measurements', 'invoices', 'notes', 'issues'];
+      return {
+        ok: keys.every(k => before[k] === after[k]) && fresh.parts.length === before.parts
+          && BACKUP_FORMAT_VERSION === 8 && DB_SCHEMA_VERSION === 3 && STRUCTURED_DB.migrationVersion === 1,
+        parts: [before.parts, after.parts]
+      };
+    })()`);
+    await T('P2B0 BACKUP: export → delete/repair → restore round-trips with BACKUP_FORMAT_VERSION still 8 and every count intact', p2b0LegacyCompat && p2b0LegacyCompat.ok, JSON.stringify(p2b0LegacyCompat));
+    await ev(`(async()=>{ state.projects = null; state.services = null; state.checklists = null; state.parts = null; state.measurements = null; state.invoices = null; state.notes = null; state.issues = null; state.diagSessions = null; state.calcSaves = null; state.safetyLogs = null; state.photos = null; state.contracts = null; state.reminders = null; state.tools = null; await loadAll(true); return true; })()`);
+
     /* ---- PH20: version identifiers stay consistent across files ---- */
     const swSrc = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
     const pkgJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));

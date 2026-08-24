@@ -376,3 +376,114 @@ var CHECKLIST_TEMPLATES = [
     ]
   }
 ];
+
+/* ============ CHECKLIST LOGICAL IDENTITY (Phase 2B.0 — BUG-1) ============
+   A checklist *instance* is not identified by its storage `id` (a random
+   surrogate created on first save) but by a LOGICAL key. Every code path that
+   creates, finds, updates or de-duplicates a checklist instance MUST go
+   through the helpers below — that is the single seam where the identity is
+   defined, so the data layer and the UI can never drift apart again.
+
+   WHY: the previous identity was `projectId + templateId`. That is exactly one
+   dimension short of the domain: a project can host more than one elevator, and
+   two elevators in the same project legitimately run the SAME template. Under
+   the old key the second elevator silently overwrote the first one's answers —
+   the record was found by (project, template) and its `checked` map replaced.
+
+   THE FIX, WITHOUT IMPLEMENTING MULTI-ELEVATOR: the identity now carries the
+   elevator dimension explicitly. In today's 1:1 model a project *is* its
+   elevator — `STRUCTURED_DB` already projects that (see the `elevators` store:
+   `{ projectId: p.id, elevatorId: p.id }`) — so when a record has no explicit
+   `elevatorId` the identity falls back to `projectId`. That fallback is the
+   entire backward-compatibility story:
+
+     • existing records have no `elevatorId` field  → identity is unchanged
+     • no current UI/API caller passes `elevatorId` → no new field is written
+     • therefore no migration, no id regeneration, no schema/version change
+
+   The dimension is nevertheless *representable and enforced today*: a caller
+   that does supply `elevatorId` gets an isolated instance, and a record that
+   carries one is never matched by a request that omits it (in either
+   direction). That is what the Phase 2B.0 regression tests pin down, so the
+   later Project 1:N migration is a UI/data-entry change rather than a
+   re-architecture of checklist identity. */
+var CHECKLIST_ID_SEP = '\u0000';
+
+/* The elevator dimension of a checklist instance. Empty string means
+   "detached / no elevator context", never "any elevator". */
+function checklistElevatorId(rec) {
+  if (!rec || typeof rec !== 'object') return '';
+  if (typeof rec.elevatorId === 'string' && rec.elevatorId) return rec.elevatorId;
+  return typeof rec.projectId === 'string' ? rec.projectId : '';
+}
+
+/* Canonical logical key: (project, elevator, template). Never persisted — it
+   exists only for lookup and de-duplication.
+
+   The project stays part of the key on purpose. The elevator dimension alone
+   would be enough IF elevator ids were guaranteed globally unique, and nothing
+   in this build can guarantee that: the elevator collection does not exist yet.
+   Keeping the project in the key makes isolation strictly stronger — two
+   instances can only ever collide when the project AND the elevator AND the
+   template all agree — so a caller can never reach across into another
+   project's checklist, whatever the future ids look like. */
+function checklistKey(projectId, elevatorId, templateId) {
+  const s = v => String(v == null ? '' : v);
+  return s(projectId) + CHECKLIST_ID_SEP + s(elevatorId) + CHECKLIST_ID_SEP + s(templateId);
+}
+function checklistKeyOf(rec) {
+  if (!rec || typeof rec !== 'object') return checklistKey('', '', '');
+  const projectId = typeof rec.projectId === 'string' ? rec.projectId : '';
+  return checklistKey(projectId, checklistElevatorId(rec), rec.templateId);
+}
+
+/* The one lookup every create/update/load path must use. An omitted elevator
+   dimension resolves to the project id — the current 1:1 projection — which is
+   why existing records and existing callers keep matching each other. */
+function findChecklistInstance(list, projectId, templateId, elevatorId) {
+  const p = projectId == null ? '' : String(projectId);
+  const e = (elevatorId === undefined || elevatorId === null || elevatorId === '') ? p : String(elevatorId);
+  const want = checklistKey(p, e, templateId);
+  const arr = Array.isArray(list) ? list : [];
+  for (let i = 0; i < arr.length; i++) {
+    const rec = arr[i];
+    if (rec && typeof rec === 'object' && checklistKeyOf(rec) === want) return rec;
+  }
+  return null;
+}
+
+/* Normalize an inbound `elevatorId`. Returns '' for anything unusable so a
+   malformed caller can never poison the identity with a non-string key. */
+function normalizeChecklistElevatorId(raw) {
+  if (typeof raw !== 'string') return '';
+  const v = raw.trim();
+  return v.length && v.length <= 120 ? v : '';
+}
+
+/* Duplicate logical identities are DATA AMBIGUITY, not corruption: two rows
+   claiming the same (elevator, template). They are reported, never merged and
+   never deleted — the app may not guess which technician's answers win. */
+function checklistIdentityConflicts(list) {
+  const seen = new Map(), conflicts = [];
+  (Array.isArray(list) ? list : []).forEach(rec => {
+    if (!rec || typeof rec !== 'object') return;
+    const key = checklistKeyOf(rec);
+    if (seen.has(key)) conflicts.push({ key, ids: [seen.get(key), rec.id] });
+    else seen.set(key, rec.id);
+  });
+  return conflicts;
+}
+
+/* Project deletion detaches a checklist from its project. Under the current
+   1:1 model the elevator dimension of the identity *is* that same project, so
+   a detached checklist must not keep an `elevatorId` pointing at the dead
+   identifier — that would be a dangling elevator reference of exactly the kind
+   Phase 2A removed for `projectId`. No-op on every record this build writes
+   (none carry `elevatorId`), so today's behaviour is bit-for-bit unchanged. */
+function detachChecklistElevatorRef(rec, deadProjectId) {
+  if (!rec || typeof rec !== 'object') return false;
+  if (typeof rec.elevatorId !== 'string' || !rec.elevatorId) return false;
+  if (!deadProjectId || rec.elevatorId !== deadProjectId) return false;
+  rec.elevatorId = '';
+  return true;
+}

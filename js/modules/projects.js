@@ -246,6 +246,13 @@ async function _doDeleteProject(id) {
     stampAll(state.services); stampAll(state.measurements); stampAll(state.photos); stampAll(state.invoices);
     stampAll(state.diagSessions); stampAll(state.issues); stampAll(state.contracts); stampAll(state.reminders); stampAll(state.checklists);
     stampAll(state.calcSaves); stampAll(state.safetyLogs);
+    /* mirror the nested inventory-history detach too (Phase 2B.0 BUG-2), so the
+       on-screen state matches what the API just persisted. Same canonical
+       iterator, same policy — the history entry itself is never removed. */
+    if (STRUCTURED_DB.eachNestedProjectRef) {
+      STRUCTURED_DB.eachNestedProjectRef({ parts: state.parts }, entry => { if (entry.projectId === id) { if (pInfo && !entry.projectInfo) entry.projectInfo = pInfo; entry.projectId = ''; } });
+    }
+    (state.checklists || []).forEach(c => detachChecklistElevatorRef(c, id));
     toast(t('deleted'));
   } catch (e) {
     rb.restore();

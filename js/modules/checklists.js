@@ -96,7 +96,12 @@ function renderChecklistDetail(idWithQuery) {
   if (selectedProject && !eligible.find(p => p.id === selectedProject)) selectedProject = '';
 
   function getInst() {
-    return selectedProject ? state.checklists.find(x => x.projectId === selectedProject && x.templateId === tid) : null;
+    /* Canonical identity lookup (js/data/checklist-data.js). The UI resolves an
+       instance exactly the way the data layer upserts it, so the row the user
+       edits and the row that gets saved can never disagree. No elevator
+       dimension is passed here on purpose: the current 1:1 UI has no elevator
+       picker, and the helper resolves the missing dimension to the project id. */
+    return selectedProject ? findChecklistInstance(state.checklists, selectedProject, tid) : null;
   }
 
   /* 4-state items: undefined/false=blank, true|'pass'=pass, 'fail'=fail, 'na'=N/A */
