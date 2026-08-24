@@ -246,6 +246,19 @@ async function _doDeleteProject(id) {
     stampAll(state.services); stampAll(state.measurements); stampAll(state.photos); stampAll(state.invoices);
     stampAll(state.diagSessions); stampAll(state.issues); stampAll(state.contracts); stampAll(state.reminders); stampAll(state.checklists);
     stampAll(state.calcSaves); stampAll(state.safetyLogs);
+    /* Phase 2B.1 — mirror elevator cleanup in local state:
+       remove elevator records for the deleted project and clear elevatorId
+       on detached elevator-owned records. */
+    if (Array.isArray(state.elevators)) {
+      state.elevators = state.elevators.filter(e => !e || e.projectId !== id);
+    }
+    if (typeof ELEVATOR_OWNED_COLLECTIONS !== 'undefined' && Array.isArray(ELEVATOR_OWNED_COLLECTIONS)) {
+      ELEVATOR_OWNED_COLLECTIONS.forEach(k => {
+        (Array.isArray(state[k]) ? state[k] : []).forEach(r => {
+          if (r && r.elevatorId === id) r.elevatorId = '';
+        });
+      });
+    }
     /* mirror the nested inventory-history detach too (Phase 2B.0 BUG-2), so the
        on-screen state matches what the API just persisted. Same canonical
        iterator, same policy — the history entry itself is never removed. */

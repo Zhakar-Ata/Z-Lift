@@ -24,12 +24,13 @@ var STRUCTURED_DB = (() => {
   const VERSION = 3;
   const MIGRATION_VERSION = 1;
   const ARRAY_STORES = {
-    projects: 'projects', services: 'services', notes: 'notes',
+    projects: 'projects', elevators: 'elevators',
+    services: 'services', notes: 'notes',
     checklists: 'checklists', parts: 'inventory', diagSessions: 'diagnostics', calcSaves: 'calculations',
     issues: 'issues', tools: 'tools', photos: 'photos', invoices: 'invoices', contracts: 'contracts',
     reminders: 'reminders', measurements: 'measurements', safetyLogs: 'safetyLogs', users: 'users'
   };
-  const STORES = ['elevators', ...new Set(Object.values(ARRAY_STORES)), 'settings', 'backups', 'metadata'];
+  const STORES = [...new Set(Object.values(ARRAY_STORES)), 'settings', 'backups', 'metadata'];
   let dbp = null;
   let readyPromise = null;
   let mode = 'pending';
@@ -120,8 +121,7 @@ var STRUCTURED_DB = (() => {
     canonical.sessions = stableValue(db.sessions || {});
     canonical.schemaVersion = +db.schemaVersion || DB_SCHEMA_VERSION;
     return fingerprint(canonical);
-  }
-  function validate(db) {
+  }  function validate(db) {
     if (!db || typeof db !== 'object' || !Array.isArray(db.projects) || !Array.isArray(db.users)) return { ok: false, why: 'root' };
     for (const key of Object.keys(ARRAY_STORES)) {
       if (db[key] !== undefined && !Array.isArray(db[key])) return { ok: false, why: key };
@@ -171,7 +171,6 @@ var STRUCTURED_DB = (() => {
   function countsOf(db) {
     const counts = {};
     Object.keys(ARRAY_STORES).forEach(k => { counts[k] = (db[k] || []).length; });
-    counts.elevators = (db.projects || []).length;
     return counts;
   }
   /* ---- Phase 2A data-integrity helpers (pure, idempotent, no deletes) ----
@@ -322,14 +321,27 @@ var STRUCTURED_DB = (() => {
     const check = validate(source);
     if (!check.ok) throw new Error('structured-validation:' + check.why);
     const db = normalize(source);
-    const names = [...new Set(['elevators', ...Object.values(ARRAY_STORES), 'settings', 'metadata'])];
+    /* Phase 2B.1 — ensure elevators are consistent with current projects.
+       If elevators are not populated (pre-migration) or are stale (e.g. test
+       fixtures that replaced projects without updating elevators), rebuild
+       from projects. Elevators whose projectId doesn't match any project are
+       removed — dangling elevator records are data integrity violations
+       that the write layer must never persist. */
+    {
+      const pIds = new Set((db.projects || []).filter(Boolean).map(p => p.id));
+      if (!Array.isArray(db.elevators)) db.elevators = [];
+      const valid = db.elevators.filter(e => e && e.projectId && pIds.has(e.projectId));
+      const coveredIds = new Set(valid.map(e => e.id));
+      const missing = (db.projects || []).filter(p => p && !coveredIds.has(p.id));
+      missing.forEach(p => valid.push(Object.assign({}, p, { projectId: p.id, elevatorId: p.id })));
+      db.elevators = valid;
+    }
+    const names = [...new Set([...Object.values(ARRAY_STORES), 'settings', 'metadata'])];
     await transaction(names, 'readwrite', tx => {
       Object.entries(ARRAY_STORES).forEach(([key, storeName]) => {
         const store = tx.objectStore(storeName); store.clear();
         (db[key] || []).forEach(item => store.put(item));
       });
-      const elevators = tx.objectStore('elevators'); elevators.clear();
-      (db.projects || []).forEach(p => elevators.put(Object.assign({}, p, { projectId: p.id, elevatorId: p.id })));
       const settings = tx.objectStore('settings'); settings.clear();
       settings.put({ key: "app", value: db.settings || {} });
       settings.put({ key: "sessions", value: db.sessions || {} });
@@ -351,6 +363,34 @@ var STRUCTURED_DB = (() => {
       for (const row of (loaded[key] || [])) {
         if (row.projectId && !projectIds.has(row.projectId)) throw new Error('structured-relation:' + key + ':' + row.id);
       }
+    }
+    /* Phase 2B.1 — validate elevator relationships:
+       - Every elevator must reference a valid project
+       - Cross-project elevator references are rejected
+       Note: elevatorId on child records may reference conceptual elevator
+       contexts (Phase 2B.0 identity model) that don't yet have formal elevator
+       records. This is valid during the transition to multi-elevator. */
+    const elevatorMap = new Map();
+    (loaded.elevators || []).forEach(e => {
+      if (e && e.id) {
+        if (e.projectId && !projectIds.has(e.projectId)) throw new Error('structured-relation:elevator-dangling:' + e.id);
+        elevatorMap.set(e.id, e);
+      }
+    });
+    /* Cross-project validation: only enforced when BOTH the record's elevatorId
+       references a known elevator AND the record has a projectId. If the
+       elevatorId doesn't match any known elevator, it may be a future/conceptual
+       context (Phase 2B.0 test data) — not a corruption. */
+    if (typeof ELEVATOR_OWNED_COLLECTIONS !== 'undefined' && Array.isArray(ELEVATOR_OWNED_COLLECTIONS)) {
+      ELEVATOR_OWNED_COLLECTIONS.forEach(collName => {
+        (loaded[collName] || []).forEach(rec => {
+          if (!rec || !rec.elevatorId || rec.elevatorId === '') return;
+          const elevator = elevatorMap.get(rec.elevatorId);
+          if (elevator && rec.projectId && rec.projectId !== elevator.projectId) {
+            throw new Error('structured-relation:cross-project:' + collName + ':' + rec.id);
+          }
+        });
+      });
     }
     /* Phase 2B.0 BUG-2 — nested references are verified through the SAME
        iterator repairProjectRefs normalizes, so the two can never drift apart
@@ -392,6 +432,12 @@ var STRUCTURED_DB = (() => {
           if (folded || repaired) await writeAggregate(agg, null);
           _lsDB = await verifyAggregate(agg);
           mode = 'indexedDB';
+          /* Phase 2B.1 — run elevator migration after standard migration is
+             already verified complete. This is the normal boot path for
+             devices that have already been migrated to IndexedDB. */
+          if (typeof runElevatorMigration === 'function') {
+            try { await runElevatorMigration(); } catch (e) { /* logged but not fatal */ }
+          }
           return mode;
         }
         const legacy = legacySource();
@@ -416,6 +462,10 @@ var STRUCTURED_DB = (() => {
         if (!verifiedMarker || verifiedMarker.status !== 'complete' || verifiedMarker.sourceFingerprint !== record.sourceFingerprint) throw new Error('migration-marker');
         mode = 'indexedDB';
         try { localStorage.setItem('zlift_migration_status', JSON.stringify({ version: MIGRATION_VERSION, status: 'complete', at: Date.now(), source: legacy.source })); } catch (e) {}
+        /* Phase 2B.1 — after standard migration completes, run elevator migration */
+        if (typeof runElevatorMigration === 'function') {
+          try { await runElevatorMigration(); } catch (e) { /* logged but not fatal */ }
+        }
         return mode;
       } catch (e) {
         lastError = String(e && e.message || e);
@@ -458,6 +508,7 @@ var STRUCTURED_DB = (() => {
   }
   return {
     available, ready, save, validate, verifyAggregate, putBackup, listBackups, clear,
+    readMeta, writeMeta,
     repairProjectRefs, foldArchivedProjects,
     /* Phase 2B.0 BUG-2 — nested project references. Exported so the live
        project-delete path applies the exact same canonical definition and

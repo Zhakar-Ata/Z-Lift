@@ -14,7 +14,7 @@ function _lsLoad() {
   if (!_lsDB || !_lsDB.users) { _lsDB = _lsSeed(); _lsSave(); }
   if (!_lsDB.parts) _lsDB.parts = _lsSeed().parts;
   if (!_lsDB.settings) _lsDB.settings = { company: 'Z Lift', phone: '', address: '' };
-  ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders', 'measurements', 'safetyLogs'].forEach(k => { if (!Array.isArray(_lsDB[k])) _lsDB[k] = []; });
+  ['elevators', 'diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders', 'measurements', 'safetyLogs'].forEach(k => { if (!Array.isArray(_lsDB[k])) _lsDB[k] = []; });
   let _schemaChanged = false;
   if (!_lsDB.schemaVersion) { _lsDB.schemaVersion = 1; _schemaChanged = true; }
   if (+_lsDB.schemaVersion < DB_SCHEMA_VERSION) {
@@ -343,6 +343,27 @@ async function _apiLocal(path, opts = {}) {
       ['measurements', 'photos', 'invoices', 'diagSessions', 'issues', 'contracts', 'reminders', 'checklists', 'calcSaves', 'safetyLogs'].forEach(k => {
         if (Array.isArray(db[k])) db[k].forEach(r => { if (r && r.projectId === p.id) stamp(r); });
       });
+      /* Phase 2B.1 — remove elevator records belonging to this project.
+         Deleting Project A must never affect Project B's elevators. */
+      if (Array.isArray(db.elevators)) {
+        db.elevators = db.elevators.filter(e => !e || e.projectId !== p.id);
+      }
+      /* Phase 2B.1 — clear elevatorId on elevator-owned records that were
+         detached from this project (they already had projectId stamped to ''
+         above). This prevents dangling elevatorId references. */
+      if (typeof ELEVATOR_OWNED_COLLECTIONS !== 'undefined' && Array.isArray(ELEVATOR_OWNED_COLLECTIONS)) {
+        const projectElevatorIds = new Set();
+        /* Collect all elevator IDs that belonged to this project before deletion.
+           Under 1:1 legacy model, the only elevator id is the project id itself. */
+        projectElevatorIds.add(p.id);
+        ELEVATOR_OWNED_COLLECTIONS.forEach(k => {
+          (Array.isArray(db[k]) ? db[k] : []).forEach(r => {
+            if (r && r.elevatorId && projectElevatorIds.has(r.elevatorId)) {
+              r.elevatorId = '';
+            }
+          });
+        });
+      }
       /* Phase 2B.0 BUG-2 — nested inventory history references are detached and
          stamped through the SAME canonical iterator the recovery repair uses,
          so the two paths cannot drift. The history entry itself is preserved
@@ -780,6 +801,12 @@ async function _apiLocal(path, opts = {}) {
       candidate[k] = Array.isArray(bk[k]) ? JSON.parse(JSON.stringify(bk[k])) : [];
     });
     candidate.schemaVersion = DB_SCHEMA_VERSION;
+
+    /* Phase 2B.1 — reset elevators so writeAggregate re-derives them from the
+       restored projects. The backup does not carry elevators (they are derived
+       data), but the live aggregate may have stale elevator records that don't
+       match the restored project set. Clearing them ensures consistency. */
+    candidate.elevators = [];
 
     /* Phase 2A restore normalization (same policies as live operation, applied
        BEFORE the verified atomic commit): fold legacy archivedProjects entries
