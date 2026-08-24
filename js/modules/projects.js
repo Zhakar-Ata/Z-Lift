@@ -162,6 +162,14 @@ function projectImpactCount(pid) {
 function archiveProject(id) {
   const p = state.projects.find(x => x.id === id);
   if (!p) return;
+  /* NOTE: callers must NOT do closeModal() before opening this confirm dialog.
+     closeModal() queues history.back() and bumps a compensating _ignorePop
+     counter; opening the next modal immediately resets that counter
+     (pushUiLayer) and pushes a new history entry, so the pending back()
+     popstate then arrives UNCOMPENSATED and instantly closes the fresh
+     dialog — the "Archive button does nothing" bug. openModal() already
+     replaces an open modal in place with no history churn, which is why
+     every other confirmDialog caller opens it directly. */
   confirmDialog(
     LANG === 'fa' ? 'بایگانی پروژه' : 'Archive project',
     (LANG === 'fa'
@@ -222,7 +230,7 @@ function deleteProject(id) {
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button>
-      ${anyLinked ? `<button class="btn" onclick="closeModal();archiveProject('${id}')">📦 ${LANG === 'fa' ? 'بایگانی پروژه' : 'Archive'}</button>` : ''}
+      ${anyLinked ? `<button class="btn" onclick="archiveProject('${id}')">📦 ${LANG === 'fa' ? 'بایگانی پروژه' : 'Archive'}</button>` : ''}
       <button class="btn btn-soft-danger" id="pdYes">${IC.trash} ${LANG === 'fa' ? 'حذف دائمی' : 'Delete permanently'}</button>
     </div>
   `, { size: 'sm' });

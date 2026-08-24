@@ -13,7 +13,7 @@ function checkBackupNag() {
         <div class="modal-body"><div class="note-block">⚠️ ${txt}</div></div>
         <div class="modal-foot">
           <button class="btn btn-ghost" onclick="localStorage.setItem('zlift_backup_snooze', String(Date.now() + 3 * 86400000));closeModal()">${t('backupNagLater')}</button>
-          <button class="btn btn-primary" onclick="closeModal();openBackupModal()">💾 ${t('backupNagBtn')}</button>
+          <button class="btn btn-primary" onclick="openBackupModal()">💾 ${t('backupNagBtn')}</button>
         </div>`, { size: 'sm' });
     }, 1200);
   } catch (e) {}
