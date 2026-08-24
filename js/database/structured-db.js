@@ -71,7 +71,26 @@ var STRUCTURED_DB = (() => {
     return open().then(db => new Promise((resolve, reject) => {
       let tx, result;
       try { tx = db.transaction(storeNames, modeName); result = work(tx); }
-      catch (e) { reject(e); return; }
+      catch (e) {
+        /* Phase 2B.0 BUG-3 — abort explicitly, do not just reject.
+
+           writeAggregate queues a clear() on every store before it queues the
+           puts. IndexedDB commits a transaction as soon as control returns to
+           the event loop with no request still pending, so a synchronous throw
+           out of work() — e.g. a value that cannot be structured-cloned, or
+           any other error raised while queueing — left those clears queued and
+           let them COMMIT. The save did not merely fail: it emptied the whole
+           aggregate. Measured before the fix, a poisoned record turned a
+           rejected write into a wiped database.
+
+           Aborting hands the transaction to IndexedDB's rollback, so a failed
+           write now leaves the previously committed state byte-identical. That
+           is the guarantee the rest of the data layer (and every "atomic
+           commit" comment in it) already assumed. */
+        try { if (tx) tx.abort(); } catch (e2) { /* already finished — nothing to undo */ }
+        reject(e);
+        return;
+      }
       tx.oncomplete = () => resolve(result);
       tx.onerror = () => reject(tx.error || new Error('idb-transaction-failed'));
       tx.onabort = () => reject(tx.error || new Error('idb-transaction-aborted'));
@@ -171,6 +190,40 @@ var STRUCTURED_DB = (() => {
   const PROJECT_OWNED = ['services', 'invoices', 'contracts', 'checklists', 'measurements',
     'reminders', 'photos', 'diagSessions', 'issues', 'calcSaves', 'safetyLogs'];
 
+  /* Phase 2B.0 BUG-2 — the SAME canonical model, one level deeper. A handful of
+     references are nested inside a parent record instead of sitting on it, and
+     they used to be invisible to every relationship mechanism: project delete
+     left them pointing at a deleted project, repairProjectRefs skipped them,
+     verifyAggregate accepted them and the backup audit did not even look at
+     them. `parts.history[]` is the only such reference in the live model: an
+     inventory movement row records which project/elevator consumed the stock.
+
+     Declaring them here (rather than hard-coding `parts.history` in four
+     places) keeps repair, verification, project deletion and the backup audit
+     driven from one definition — the drift that caused P2A BUG-4.
+
+     POLICY: nested references follow the parent model's documented
+     detach-and-stamp policy. The historical entry is NEVER removed and its
+     measured facts (qty, date, note, prevQty/newQty, id) are never touched —
+     only the dead link is replaced by the surviving context stamp. */
+  const PROJECT_NESTED_REFS = [{ collection: 'parts', field: 'history' }];
+
+  /* Single iterator over every declared nested reference. Shared by the
+     recovery repair and the live project-delete path so both apply one policy.
+     Malformed containers/entries are skipped, never deleted. */
+  function eachNestedProjectRef(db, fn) {
+    PROJECT_NESTED_REFS.forEach(({ collection, field }) => {
+      (Array.isArray(db[collection]) ? db[collection] : []).forEach(parent => {
+        if (!parent || typeof parent !== 'object' || !Array.isArray(parent[field])) return;
+        parent[field].forEach(entry => {
+          if (!entry || typeof entry !== 'object') return;
+          if (typeof entry.projectId !== 'string' || !entry.projectId) return;
+          fn(entry, parent, collection, field);
+        });
+      });
+    });
+  }
+
   function repairProjectRefs(db) {
     /* Older builds could leave a dangling projectId behind after a project was
        deleted (calcSaves/safetyLogs were missing from the detach list, and an
@@ -193,11 +246,32 @@ var STRUCTURED_DB = (() => {
     PROJECT_OWNED.forEach(k => {
       (Array.isArray(db[k]) ? db[k] : []).forEach(r => {
         if (r && r.projectId && !ids.has(r.projectId)) {
-          if (!r.projectInfo) r.projectInfo = 'projectId:' + r.projectId;  // keep the only surviving context
+          const deadId = r.projectId;
+          if (!r.projectInfo) r.projectInfo = 'projectId:' + deadId;  // keep the only surviving context
           r.projectId = '';
+          /* The checklist elevator dimension is part of its logical identity and
+             equals the project id under the current 1:1 model, so it must not
+             survive as a reference to the same dead identifier. Guarded by
+             typeof: this module is also evaluated where the checklist module is
+             not loaded. No-op on every record this build writes. */
+          if (k === 'checklists' && typeof detachChecklistElevatorRef === 'function') {
+            detachChecklistElevatorRef(r, deadId);
+          }
           changed = true;
         }
       });
+    });
+    /* Phase 2B.0 BUG-2 — nested references are normalized with the identical
+       policy and the identical stamp convention. The historical entry itself
+       (quantity, date, note, running totals, id) is preserved verbatim; only
+       the dead project link is replaced by the surviving context. Idempotent:
+       once projectId is '' the entry is no longer visited, so a second pass
+       reports no change, re-stamps nothing and never rewrites a timestamp. */
+    eachNestedProjectRef(db, entry => {
+      if (ids.has(entry.projectId)) return;
+      if (!entry.projectInfo) entry.projectInfo = 'projectId:' + entry.projectId;
+      entry.projectId = '';
+      changed = true;
     });
     return changed;
   }
@@ -278,6 +352,16 @@ var STRUCTURED_DB = (() => {
         if (row.projectId && !projectIds.has(row.projectId)) throw new Error('structured-relation:' + key + ':' + row.id);
       }
     }
+    /* Phase 2B.0 BUG-2 — nested references are verified through the SAME
+       iterator repairProjectRefs normalizes, so the two can never drift apart
+       (the drift that made P2A BUG-4 an unrecoverable boot loop). */
+    let nestedDangling = '';
+    eachNestedProjectRef(loaded, (entry, parent, collection, field) => {
+      if (!nestedDangling && !projectIds.has(entry.projectId)) {
+        nestedDangling = 'structured-relation:' + collection + '.' + field + ':' + (parent && parent.id) + ':' + (entry.id || '');
+      }
+    });
+    if (nestedDangling) throw new Error(nestedDangling);
     if (aggregateFingerprint(expected) !== aggregateFingerprint(loaded)) throw new Error('structured-content-mismatch');
     return loaded;
   }
@@ -375,6 +459,10 @@ var STRUCTURED_DB = (() => {
   return {
     available, ready, save, validate, verifyAggregate, putBackup, listBackups, clear,
     repairProjectRefs, foldArchivedProjects,
+    /* Phase 2B.0 BUG-2 — nested project references. Exported so the live
+       project-delete path applies the exact same canonical definition and
+       policy as the recovery repair instead of growing a second system. */
+    eachNestedProjectRef, nestedProjectRefs: PROJECT_NESTED_REFS, projectOwned: PROJECT_OWNED,
     schemaVersion: VERSION, migrationVersion: MIGRATION_VERSION,
     status() { return { mode, error: lastError, migrationVersion: MIGRATION_VERSION }; }
   };

@@ -144,6 +144,18 @@ function normSvcParts(arr) {
   })).filter(p => p.name);
 }
 function _lsErr(code, status) { const e = new Error(code); e.code = code; e.status = status || 400; return e; }
+/* Phase 2B.0 BUG-2 — resolve a project reference destined for a NESTED
+   historical row (parts.history[]). A reference written into history cannot be
+   re-pointed later, so it is resolved once, at the seam where the row is
+   created: an id that is not a live project becomes '' — the documented
+   "no project context" value — instead of a string that merely looks like a
+   project id and would dangle forever. Nothing is invented and nothing is
+   reassigned to a different project. */
+function resolveProjectRef(db, projectId) {
+  const id = projectId == null ? '' : String(projectId);
+  if (!id) return '';
+  return (db.projects || []).some(p => p && p.id === id) ? id : '';
+}
 function invoicePartQuantities(items) {
   const totals = {};
   (Array.isArray(items) ? items : []).forEach(row => {
@@ -222,7 +234,7 @@ function applyInvoiceInventory(db, beforeItems, afterItems, invoiceId, projectId
     part.updatedAt = Date.now();
     if (!Array.isArray(part.history)) part.history = [];
     part.history.unshift({
-      id: _lsUid(), qty: -delta, date: Date.now(), projectId: String(projectId || ''), serviceId: '',
+      id: _lsUid(), qty: -delta, date: Date.now(), projectId: resolveProjectRef(db, projectId), serviceId: '',
       invoiceId: String(invoiceId), effectKey: 'invoice:' + invoiceId + ':v' + effectVersion,
       note: delta > 0 ? 'invoice consumption' : 'invoice return', prevQty, newQty: part.qty
     });
@@ -331,6 +343,18 @@ async function _apiLocal(path, opts = {}) {
       ['measurements', 'photos', 'invoices', 'diagSessions', 'issues', 'contracts', 'reminders', 'checklists', 'calcSaves', 'safetyLogs'].forEach(k => {
         if (Array.isArray(db[k])) db[k].forEach(r => { if (r && r.projectId === p.id) stamp(r); });
       });
+      /* Phase 2B.0 BUG-2 — nested inventory history references are detached and
+         stamped through the SAME canonical iterator the recovery repair uses,
+         so the two paths cannot drift. The history entry itself is preserved
+         (quantity, date, note, running totals, id untouched); only the link to
+         the project that no longer exists is replaced by the context stamp. */
+      if (typeof STRUCTURED_DB !== 'undefined' && STRUCTURED_DB.eachNestedProjectRef) {
+        STRUCTURED_DB.eachNestedProjectRef(db, entry => { if (entry.projectId === p.id) stamp(entry); });
+      }
+      /* Phase 2B.0 BUG-1 — a checklist's elevator dimension is the project id
+         under the current 1:1 model, so it must not survive as a reference to
+         the deleted identifier. No-op on every record this build writes. */
+      (Array.isArray(db.checklists) ? db.checklists : []).forEach(c => detachChecklistElevatorRef(c, p.id));
       db.projects = db.projects.filter(x => x.id !== p.id);
       await _lsSave();
       return { ok: true };
@@ -410,8 +434,26 @@ async function _apiLocal(path, opts = {}) {
   if (path === '/checklists' && method === 'GET') return { checklists: db.checklists };
   if (path === '/checklists' && method === 'POST') {
     if (!b.projectId || !b.templateId) throw _lsErr('bad_request');
-    let c = db.checklists.find(x => x.projectId === b.projectId && x.templateId === b.templateId);
-    if (!c) { c = { id: _lsUid(), projectId: b.projectId, templateId: String(b.templateId), checked: {}, updatedAt: Date.now() }; db.checklists.push(c); }
+    /* Phase 2B.0 BUG-1 — this is an UPSERT against the checklist's LOGICAL
+       identity, not against its storage id, and the identity is owned by
+       findChecklistInstance() (js/data/checklist-data.js). Looking the record
+       up by (projectId, templateId) here was the collision: a second elevator
+       in the same project running the same template matched the first
+       elevator's row and replaced its answers.
+
+       `elevatorId` is optional and is ONLY persisted when a caller supplies
+       it. The current 1:1 UI never does, so records written by this build are
+       byte-identical to before — no field is added, no id is regenerated, no
+       migration runs. When it is supplied it becomes part of the identity, so
+       two elevator contexts in one project can no longer overwrite each
+       other. Omitting it resolves to the project id (today's elevator). */
+    const elevatorId = normalizeChecklistElevatorId(b.elevatorId);
+    let c = findChecklistInstance(db.checklists, b.projectId, String(b.templateId), elevatorId);
+    if (!c) {
+      c = { id: _lsUid(), projectId: b.projectId, templateId: String(b.templateId), checked: {}, updatedAt: Date.now() };
+      if (elevatorId) c.elevatorId = elevatorId;
+      db.checklists.push(c);
+    }
     if (b.checked && typeof b.checked === 'object') c.checked = b.checked;
     c.updatedAt = Date.now(); await _lsSave();
     return { checklist: c };
@@ -644,7 +686,7 @@ async function _apiLocal(path, opts = {}) {
     part.qty = Math.max(0, prevQ - qty);
     part.updatedAt = Date.now();
     if (!Array.isArray(part.history)) part.history = [];
-    part.history.unshift({ id: _lsUid(), qty: -qty, shortQty: shortQty || undefined, date: Date.now(), projectId: String(b.projectId || ''), serviceId: String(b.serviceId || ''), note: String(b.note || ''), prevQty: prevQ, newQty: part.qty });
+    part.history.unshift({ id: _lsUid(), qty: -qty, shortQty: shortQty || undefined, date: Date.now(), projectId: resolveProjectRef(db, b.projectId), serviceId: String(b.serviceId || ''), note: String(b.note || ''), prevQty: prevQ, newQty: part.qty });
     if (part.history.length > 100) part.history.length = 100;
     await _lsSave();
     return { part, shortQty: shortQty || 0, stock: part.qty };

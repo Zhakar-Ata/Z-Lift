@@ -84,6 +84,37 @@ function auditBackupData(bk, opts) {
   ['calcSaves', 'safetyLogs'].forEach(k => {
     (Array.isArray(bk[k]) ? bk[k] : []).forEach(row => { if (row.projectId && !projectIds.has(row.projectId)) warnings.push(k + ':project-relation:' + row.id + ':will-be-detached-on-restore'); });
   });
+  /* Phase 2B.0 BUG-2 — nested inventory history references
+     (parts.history[].projectId). These are historical context, not live
+     ownership, so they are reported as WARNINGS and never as blocking errors:
+     the restore path detaches-and-stamps them with the same canonical policy
+     used live, so a legacy backup that predates this handling stays restorable
+     and no history entry is ever dropped. Malformed containers/entries are
+     also warnings — the app may not silently discard a technician's stock
+     history, it flags it and keeps the bytes. */
+  (Array.isArray(bk.parts) ? bk.parts : []).forEach(part => {
+    if (!isObj(part) || part.history === undefined || part.history === null) return;
+    if (!Array.isArray(part.history)) { warnings.push('parts:history-not-array:' + part.id); return; }
+    part.history.forEach((h, idx) => {
+      if (!isObj(h)) { warnings.push('parts:history-record:' + part.id + ':' + idx); return; }
+      if (h.projectId !== undefined && h.projectId !== null && h.projectId !== '' && typeof h.projectId !== 'string') {
+        warnings.push('parts:history-project-type:' + part.id + ':' + (h.id || idx));
+        return;
+      }
+      if (h.projectId && !projectIds.has(h.projectId)) {
+        warnings.push('parts:history-project-relation:' + part.id + ':' + (h.id || idx) + ':will-be-detached-on-restore');
+      }
+    });
+  });
+  /* Phase 2B.0 BUG-1 — two checklist rows claiming the same logical identity
+     ((elevator, template)) is genuine ambiguity about whose answers these are.
+     Surfaced, never merged and never deleted: guessing would overwrite real
+     technician work. */
+  if (typeof checklistIdentityConflicts === 'function') {
+    checklistIdentityConflicts(bk.checklists).forEach(c => {
+      warnings.push('checklists:duplicate-identity:' + c.ids.join('+') + ':' + c.key.split('\u0000')[1]);
+    });
+  }
   const serviceIds = idsByCollection.services || new Set();
   const photoIds = idsByCollection.photos || new Set();
   const partIds = idsByCollection.parts || new Set();
