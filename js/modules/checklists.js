@@ -96,11 +96,11 @@ function renderChecklistDetail(idWithQuery) {
   if (selectedProject && !eligible.find(p => p.id === selectedProject)) selectedProject = '';
 
   function getInst() {
-    /* Canonical identity lookup (js/data/checklist-data.js). The UI resolves an
-       instance exactly the way the data layer upserts it, so the row the user
-       edits and the row that gets saved can never disagree. No elevator
-       dimension is passed here on purpose: the current 1:1 UI has no elevator
-       picker, and the helper resolves the missing dimension to the project id. */
+    /* Canonical identity lookup (js/data/checklist-data.js). No elevator
+       dimension is passed because this phase intentionally adds no picker: the
+       legacy project-id projection can expose only the existing exact-1:1 row.
+       Custom multi-elevator identities therefore remain inaccessible here
+       rather than being selected implicitly; their API operations stay exact. */
     return selectedProject ? findChecklistInstance(state.checklists, selectedProject, tid) : null;
   }
 
@@ -184,7 +184,9 @@ function renderChecklistDetail(idWithQuery) {
     const save = debounce(async () => {
       const inst2 = getInst();
       if (!inst2) return;
-      try { await api('/checklists', { method: 'POST', body: { projectId: selectedProject, templateId: tid, checked: inst2.checked } }); }
+      try { await api('/checklists', { method: 'POST', body: {
+        projectId: selectedProject, elevatorId: String(inst2.elevatorId || ''), templateId: tid, checked: inst2.checked
+      } }); }
       catch (e) { toast(errMsg(e), 'err'); }
     }, 500);
 

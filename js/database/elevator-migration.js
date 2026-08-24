@@ -364,28 +364,19 @@ async function runElevatorMigration() {
 
 /* ---- RELATIONSHIP HELPERS ---- */
 
-/* Resolve an elevatorId for a given project. For legacy data, elevatorId = projectId.
-   For future multi-elevator, this would look up the appropriate elevator. */
+/* Resolve an elevatorId for a given project. Explicit pairs are validated;
+   project-only compatibility succeeds only for one real elevator. */
 function resolveElevatorId(db, projectId, elevatorId) {
+  const project = (db && Array.isArray(db.projects) ? db.projects : []).find(p => p && p.id === projectId);
+  if (!project) return '';
   if (elevatorId && typeof elevatorId === 'string' && elevatorId !== '') {
-    /* Explicit elevatorId provided — validate it belongs to the project */
-    if (Array.isArray(db.elevators)) {
-      const elevator = db.elevators.find(e => e && e.id === elevatorId);
-      if (elevator && elevator.projectId === projectId) return elevatorId;
-    }
-    /* Invalid: elevator doesn't exist or belongs to different project */
-    return '';
+    const elevator = getElevator(db, elevatorId);
+    return elevator && elevator.projectId === projectId ? elevatorId : '';
   }
-  /* No explicit elevatorId — for legacy data, use projectId as elevatorId */
-  if (projectId && typeof projectId === 'string' && projectId !== '') {
-    if (Array.isArray(db.elevators)) {
-      const elevator = db.elevators.find(e => e && e.id === projectId && e.projectId === projectId);
-      if (elevator) return projectId;
-    }
-    /* No elevator record yet — still return projectId for 1:1 compatibility */
-    return projectId;
-  }
-  return '';
+  /* Phase 2B.2: never fabricate projectId as an elevator id and never select
+     by array order. Zero or multiple elevators are both unresolved. */
+  const elevators = getProjectElevators(db, projectId);
+  return elevators.length === 1 ? elevators[0].id : '';
 }
 
 /* Get all elevators for a project */

@@ -190,8 +190,11 @@ function openMeasForm(id) {
   syncField();
   if (m) $('#m_del').onclick = () => confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteMsg'), async () => {
     state.measurements = state.measurements.filter(x => x.id !== m.id);
+    const context = m.projectId && m.elevatorId
+      ? '?projectId=' + encodeURIComponent(m.projectId) + '&elevatorId=' + encodeURIComponent(m.elevatorId)
+      : '';
     closeModal(); renderMeasurements();
-    try { await api('/measurements/' + m.id, { method: 'DELETE' }); toast(t('deleted')); } catch (e) { toast(errMsg(e), 'err'); }
+    try { await api('/measurements/' + m.id + context, { method: 'DELETE' }); toast(t('deleted')); } catch (e) { toast(errMsg(e), 'err'); }
   });
   $('#m_save').onclick = guard('#m_save', async () => {
     const f = MEASURE_FIELDS_BY_ID[$('#m_type').value];
@@ -221,6 +224,9 @@ function openMeasForm(id) {
       ts: jdateVal('m_date') || Date.now(), timestamp: jdateVal('m_date') || Date.now(),
       technician: (state.user && state.user.name) || '', status: 'unknown'
     };
+    /* Preserve the loaded row's exact owner across edits. A new record remains
+       project-only and therefore succeeds only through the exact-1:1 wrapper. */
+    if (m) rec.elevatorId = String(m.elevatorId || '');
     const res = evalMeasurement(rec);
     rec.status = res.status;
     rec.reason = res.reason || null;

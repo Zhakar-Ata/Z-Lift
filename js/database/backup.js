@@ -1,5 +1,7 @@
 /* ================= BACKUP / RESTORE ================= */
 var BACKUP_COLLECTIONS = ['projects', 'archivedProjects', 'services', 'invoices', 'contracts', 'parts', 'notes', 'checklists', 'measurements', 'safetyLogs', 'reminders', 'photos', 'diagSessions', 'calcSaves', 'issues', 'tools'];
+var BACKUP_ELEVATOR_OWNED = ['services', 'measurements', 'diagSessions', 'checklists', 'issues', 'safetyLogs'];
+var BACKUP_PROJECT_OWNED = ['invoices', 'contracts', 'reminders', 'photos', 'calcSaves', 'notes', 'tools'];
 var BACKUP_ALLOWED_TOP_LEVEL = ['app', 'version', 'formatVersion', 'appVersion', 'dbSchemaVersion', 'schemaVersion', 'storage', 'exportedAt', 'createdAt', 'creationTimestamp', 'backupId', 'language', 'metadata', 'recordCounts', 'integrity', 'relationships', 'settings'].concat(BACKUP_COLLECTIONS);
 var EXTERNAL_BACKUP_LAST_KEY = 'zlift_last_external_backup';
 var LOCAL_BACKUP_LAST_KEY = 'zlift_last_local_backup';
@@ -7,7 +9,13 @@ var LOCAL_BACKUP_LAST_KEY = 'zlift_last_local_backup';
 function backupCountMap(bk) {
   const counts = {};
   BACKUP_COLLECTIONS.forEach(k => { counts[k] = Array.isArray(bk && bk[k]) ? bk[k].length : 0; });
-  counts.elevators = counts.projects; // current model is deliberately Project → Elevator 1:1
+  /* v8 omits the derived elevator collection. Count canonical contexts from
+     projects plus explicit child pairs, without inventing ownership. */
+  const contexts = new Set((bk && Array.isArray(bk.projects) ? bk.projects : []).filter(Boolean).map(p => p.id + '\u0000' + p.id));
+  BACKUP_ELEVATOR_OWNED.forEach(k => (bk && Array.isArray(bk[k]) ? bk[k] : []).forEach(r => {
+    if (r && r.projectId) contexts.add(r.projectId + '\u0000' + (r.elevatorId || r.projectId));
+  }));
+  counts.elevators = contexts.size;
   counts.diagnostics = counts.diagSessions;
   counts.invoiceItems = (bk && Array.isArray(bk.invoices) ? bk.invoices : []).reduce((n, inv) => n + (Array.isArray(inv.items) ? inv.items.length : 0), 0);
   counts.inventory = counts.parts;
@@ -84,6 +92,37 @@ function auditBackupData(bk, opts) {
   ['calcSaves', 'safetyLogs'].forEach(k => {
     (Array.isArray(bk[k]) ? bk[k] : []).forEach(row => { if (row.projectId && !projectIds.has(row.projectId)) warnings.push(k + ':project-relation:' + row.id + ':will-be-detached-on-restore'); });
   });
+
+  /* Phase 2B.2: backup v8 intentionally has no elevator collection. Canonical
+     contexts are reconstructed only from an explicit child pair, or from the
+     deterministic legacy project→same-id relation when elevatorId is absent.
+     A reused elevator id across projects is ambiguous and blocks activation. */
+  const elevatorOwners = new Map();
+  projectIds.forEach(projectId => elevatorOwners.set(projectId, projectId));
+  BACKUP_ELEVATOR_OWNED.forEach(k => {
+    (Array.isArray(bk[k]) ? bk[k] : []).forEach(row => {
+      const projectId = typeof row.projectId === 'string' ? row.projectId : '';
+      const elevatorId = typeof row.elevatorId === 'string' ? row.elevatorId : '';
+      if (!projectId && elevatorId) {
+        errors.push(k + ':elevator-without-project:' + row.id);
+        return;
+      }
+      if (!projectId || !projectIds.has(projectId)) return; // standalone or already reported above
+      if (!elevatorId) {
+        warnings.push(k + ':missing-elevator:' + row.id + ':will-use-exact-legacy-context');
+        return;
+      }
+      const owner = elevatorOwners.get(elevatorId);
+      if (owner && owner !== projectId) errors.push(k + ':elevator-project-ambiguity:' + row.id);
+      else elevatorOwners.set(elevatorId, projectId);
+    });
+  });
+  BACKUP_PROJECT_OWNED.forEach(k => {
+    (Array.isArray(bk[k]) ? bk[k] : []).forEach(row => {
+      if (row && row.elevatorId) warnings.push(k + ':unexpected-elevator:' + row.id + ':will-be-removed-on-restore');
+    });
+  });
+
   /* Phase 2B.0 BUG-2 — nested inventory history references
      (parts.history[].projectId). These are historical context, not live
      ownership, so they are reported as WARNINGS and never as blocking errors:
@@ -117,14 +156,52 @@ function auditBackupData(bk, opts) {
   }
   const serviceIds = idsByCollection.services || new Set();
   const photoIds = idsByCollection.photos || new Set();
+  const diagIds = idsByCollection.diagSessions || new Set();
   const partIds = idsByCollection.parts || new Set();
+  const servicesById = new Map((Array.isArray(bk.services) ? bk.services : []).map(row => [row.id, row]));
+  const diagnosticsById = new Map((Array.isArray(bk.diagSessions) ? bk.diagSessions : []).map(row => [row.id, row]));
+  const photosById = new Map((Array.isArray(bk.photos) ? bk.photos : []).map(row => [row.id, row]));
+  const pairOf = row => ({ projectId: String(row && row.projectId || ''), elevatorId: String(row && (row.elevatorId || row.projectId) || '') });
+  (Array.isArray(bk.parts) ? bk.parts : []).forEach(part => {
+    (Array.isArray(part && part.history) ? part.history : []).forEach(entry => {
+      if (!entry || !entry.serviceId) return;
+      if (!serviceIds.has(entry.serviceId)) {
+        /* Inventory history is immutable evidence; service deletion may leave a
+           historical id, so surface it without dropping or blocking the row. */
+        warnings.push('parts:history-service-missing:' + part.id + ':' + (entry.id || entry.serviceId));
+        return;
+      }
+      const service = servicesById.get(entry.serviceId);
+      if (String(entry.projectId || '') !== String(service && service.projectId || '')) {
+        errors.push('parts:history-service-project-mismatch:' + part.id + ':' + (entry.id || entry.serviceId));
+      }
+    });
+  });
   (Array.isArray(bk.invoices) ? bk.invoices : []).forEach(inv => {
     if (inv.serviceId && !serviceIds.has(inv.serviceId)) errors.push('invoices:service-relation:' + inv.id);
+    if (inv.serviceId && servicesById.has(inv.serviceId)) {
+      const service = servicesById.get(inv.serviceId);
+      if (String(inv.projectId || '') !== String(service.projectId || '')) errors.push('invoices:service-project-mismatch:' + inv.id);
+    }
     (Array.isArray(inv.items) ? inv.items : []).forEach(row => { if (row && row.partId && !partIds.has(row.partId)) errors.push('invoices:part-relation:' + inv.id); });
   });
   (Array.isArray(bk.measurements) ? bk.measurements : []).forEach(m => {
+    const measurementPair = pairOf(m);
     if (m.serviceId && !serviceIds.has(m.serviceId)) errors.push('measurements:service-relation:' + m.id);
+    if (m.serviceId && servicesById.has(m.serviceId)) {
+      const servicePair = pairOf(servicesById.get(m.serviceId));
+      if (measurementPair.projectId !== servicePair.projectId || measurementPair.elevatorId !== servicePair.elevatorId) errors.push('measurements:service-context-mismatch:' + m.id);
+    }
+    if (m.diagSessionId && !diagIds.has(m.diagSessionId)) errors.push('measurements:diagnostic-relation:' + m.id);
+    if (m.diagSessionId && diagnosticsById.has(m.diagSessionId)) {
+      const diagnosticPair = pairOf(diagnosticsById.get(m.diagSessionId));
+      if (measurementPair.projectId !== diagnosticPair.projectId || measurementPair.elevatorId !== diagnosticPair.elevatorId) errors.push('measurements:diagnostic-context-mismatch:' + m.id);
+    }
     if (m.photoId && !photoIds.has(m.photoId)) errors.push('measurements:photo-relation:' + m.id);
+    if (m.photoId && photosById.has(m.photoId)) {
+      const photo = photosById.get(m.photoId);
+      if (String(photo.projectId || '') !== measurementPair.projectId) errors.push('measurements:photo-project-mismatch:' + m.id);
+    }
   });
   (Array.isArray(bk.services) ? bk.services : []).forEach(s => (Array.isArray(s.partsUsed) ? s.partsUsed : []).forEach(row => { if (row && row.partId && !partIds.has(row.partId)) warnings.push('services:part-history-missing:' + s.id); }));
 
@@ -181,7 +258,7 @@ function enrichBackupMetadata(bk) {
   out.creationTimestamp = new Date(out.exportedAt).toISOString();
   out.backupId = out.backupId || ('zlift-' + out.exportedAt + '-' + _lsUid());
   out.recordCounts = backupCountMap(out);
-  out.relationships = Object.assign({ projectElevatorModel: '1:1', projectKey: 'projectId', serviceHistoryPolicy: 'detach-and-stamp-on-project-delete' }, out.relationships || {});
+  out.relationships = Object.assign({ projectElevatorModel: 'projectId+elevatorId', projectKey: 'projectId', elevatorKey: 'elevatorId', elevatorRestorePolicy: 'derive-from-explicit-child-pairs-or-exact-legacy-project', serviceHistoryPolicy: 'detach-and-stamp-on-project-delete' }, out.relationships || {});
   out.metadata = {
     application: 'Z Lift', appVersion: out.appVersion, dbSchemaVersion: out.dbSchemaVersion,
     backupFormatVersion: out.formatVersion, createdAt: out.creationTimestamp,

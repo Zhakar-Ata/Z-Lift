@@ -188,6 +188,7 @@ var STRUCTURED_DB = (() => {
      fallback with no way back. */
   const PROJECT_OWNED = ['services', 'invoices', 'contracts', 'checklists', 'measurements',
     'reminders', 'photos', 'diagSessions', 'issues', 'calcSaves', 'safetyLogs'];
+  const ELEVATOR_CONTEXT_OWNED = new Set(['services', 'measurements', 'diagSessions', 'checklists', 'issues', 'safetyLogs']);
 
   /* Phase 2B.0 BUG-2 — the SAME canonical model, one level deeper. A handful of
      references are nested inside a parent record instead of sitting on it, and
@@ -248,14 +249,19 @@ var STRUCTURED_DB = (() => {
           const deadId = r.projectId;
           if (!r.projectInfo) r.projectInfo = 'projectId:' + deadId;  // keep the only surviving context
           r.projectId = '';
-          /* The checklist elevator dimension is part of its logical identity and
-             equals the project id under the current 1:1 model, so it must not
-             survive as a reference to the same dead identifier. Guarded by
-             typeof: this module is also evaluated where the checklist module is
-             not loaded. No-op on every record this build writes. */
-          if (k === 'checklists' && typeof detachChecklistElevatorRef === 'function') {
-            detachChecklistElevatorRef(r, deadId);
+          /* Elevator-owned history is detached as a pair. Retain the old
+             identifier as display/audit context, but never leave half an owner
+             such as {projectId:'', elevatorId:'E1'}. */
+          if (ELEVATOR_CONTEXT_OWNED.has(k) && r.elevatorId) {
+            if (!r.elevatorInfo) r.elevatorInfo = 'elevatorId:' + r.elevatorId;
+            r.elevatorId = '';
           }
+          if (k === 'checklists' && typeof detachChecklistElevatorRef === 'function') detachChecklistElevatorRef(r, deadId);
+          changed = true;
+        } else if (r && ELEVATOR_CONTEXT_OWNED.has(k) && !r.projectId && r.elevatorId) {
+          /* Normalize half-detached rows left by older delete/repair builds. */
+          if (!r.elevatorInfo) r.elevatorInfo = 'elevatorId:' + r.elevatorId;
+          r.elevatorId = '';
           changed = true;
         }
       });

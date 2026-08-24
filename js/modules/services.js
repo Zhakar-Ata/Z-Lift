@@ -453,6 +453,10 @@ function openServiceForm(id, presetProject) {
       recommendations: $('#s_recommend').value, followUpDate: jdateVal('s_followup'),
       signTech: readSignature('sig_tech'), signCustomer: readSignature('sig_cust')
     };
+    /* Existing rows always carry their exact authorization context through the
+       application seam. New rows deliberately remain project-only so only the
+       documented exact-1:1 wrapper can resolve them without an elevator UI. */
+    if (s) body.elevatorId = String(s.elevatorId || '');
     const btn = $('#svcSave'); btn.disabled = true;
     try {
       let saved;
@@ -532,8 +536,12 @@ function deleteService(id) {
   confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteSvcMsg'), async () => {
     const rb = optimisticRemove(state.services, id);
     if (!rb) { closeModal(); return; }
+    const owner = rb.removed || {};
+    const context = owner.projectId && owner.elevatorId
+      ? '?projectId=' + encodeURIComponent(owner.projectId) + '&elevatorId=' + encodeURIComponent(owner.elevatorId)
+      : '';
     closeModal(); render();
-    try { await api('/services/' + id, { method: 'DELETE' }); toast(t('deleted')); }
+    try { await api('/services/' + id + context, { method: 'DELETE' }); toast(t('deleted')); }
     catch (e) { rb.restore(); toast(errMsg(e), 'err'); render(); }
   });
 }

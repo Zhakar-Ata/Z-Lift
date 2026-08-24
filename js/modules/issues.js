@@ -51,7 +51,9 @@ function openIssueForm(id, presetProject) {
     </div>`);
   if (i) $('#isToggle').onclick = async () => {
     try {
-      const d = await api('/issues/' + i.id, { method: 'PUT', body: { closed: !i.closed } });
+      const d = await api('/issues/' + i.id, { method: 'PUT', body: {
+        projectId: String(i.projectId || ''), elevatorId: String(i.elevatorId || ''), closed: !i.closed
+      } });
       Object.assign(i, d.item);
       closeModal(); toast(t('saved')); render();
     } catch (e) { toast(errMsg(e), 'err'); }
@@ -60,6 +62,7 @@ function openIssueForm(id, presetProject) {
     const title = $('#is_title').value.trim();
     if (!title) { fieldError('#is_title', 'requiredTitle'); return; }
     const body = { title, kind: $('#is_kind').value, projectId: $('#is_project').value, note: $('#is_note').value, closed: i ? i.closed : false };
+    if (i) body.elevatorId = String(i.elevatorId || '');
     try {
       if (i) { const d = await api('/issues/' + i.id, { method: 'PUT', body }); Object.assign(i, d.item); }
       else { const d = await api('/issues', { method: 'POST', body }); state.issues.unshift(d.item); }
@@ -71,8 +74,12 @@ function deleteIssue(id) {
   confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteIssueMsg'), async () => {
     const rb = optimisticRemove(state.issues, id);
     if (!rb) { closeModal(); return; }
+    const owner = rb.removed || {};
+    const context = owner.projectId && owner.elevatorId
+      ? '?projectId=' + encodeURIComponent(owner.projectId) + '&elevatorId=' + encodeURIComponent(owner.elevatorId)
+      : '';
     closeModal(); render();
-    try { await api('/issues/' + id, { method: 'DELETE' }); toast(t('deleted')); }
+    try { await api('/issues/' + id + context, { method: 'DELETE' }); toast(t('deleted')); }
     catch (e) { rb.restore(); toast(errMsg(e), 'err'); render(); }
   });
 }
