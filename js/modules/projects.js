@@ -244,28 +244,37 @@ async function _doDeleteProject(id) {
   if (!rb) return;
   const p = rb.removed; // the removed project (for context stamping)
   const pInfo = p ? [p.name, p.customer, p.location].filter(Boolean).join(' — ') : '';
-  const stampAll = (list) => { (list || []).forEach(r => { if (r && r.projectId === id) { if (pInfo && !r.projectInfo) r.projectInfo = pInfo; r.projectId = ''; } }); };
+  const stampProjectRecords = (list) => { (list || []).forEach(r => {
+    if (r && r.projectId === id) {
+      if (pInfo && !r.projectInfo) r.projectInfo = pInfo;
+      r.projectId = '';
+    }
+  }); };
+  const stampElevatorRecords = (list) => { (list || []).forEach(r => {
+    if (!r || r.projectId !== id) return;
+    const oldElevatorId = String(r.elevatorId || '');
+    if (pInfo && !r.projectInfo) r.projectInfo = pInfo;
+    if (!r.elevatorInfo) r.elevatorInfo = oldElevatorId ? 'elevatorId:' + oldElevatorId : pInfo;
+    /* Mirror the API invariant exactly: a historical elevator-owned row is
+       detached as a complete pair, never left with one live owner id. */
+    r.projectId = '';
+    r.elevatorId = '';
+    if (r.templateId && typeof detachChecklistElevatorRef === 'function') detachChecklistElevatorRef(r, oldElevatorId);
+  }); };
   navigate('/projects');
   try {
     await api('/projects/' + id, { method: 'DELETE' });
     // mirror the server-side detach-and-stamp in local state (records survive,
     // keeping the elevator context; checklists are detached, not destroyed)
     state.services.forEach(s => { if (s.projectId === id) { if (p && !s.customer) s.customer = p.customer || p.name || ''; if (p && !s.elevatorInfo) s.elevatorInfo = [p.name, p.location].filter(Boolean).join(' — '); } });
-    stampAll(state.services); stampAll(state.measurements); stampAll(state.photos); stampAll(state.invoices);
-    stampAll(state.diagSessions); stampAll(state.issues); stampAll(state.contracts); stampAll(state.reminders); stampAll(state.checklists);
-    stampAll(state.calcSaves); stampAll(state.safetyLogs);
-    /* Phase 2B.1 — mirror elevator cleanup in local state:
-       remove elevator records for the deleted project and clear elevatorId
-       on detached elevator-owned records. */
+    ['services', 'measurements', 'diagSessions', 'checklists', 'issues', 'safetyLogs']
+      .forEach(k => stampElevatorRecords(state[k]));
+    ['photos', 'invoices', 'contracts', 'reminders', 'calcSaves', 'tools', 'notes']
+      .forEach(k => stampProjectRecords(state[k]));
+    /* Mirror the canonical elevator-row cleanup too when a caller has elected
+       to cache the derived rows in application state. */
     if (Array.isArray(state.elevators)) {
       state.elevators = state.elevators.filter(e => !e || e.projectId !== id);
-    }
-    if (typeof ELEVATOR_OWNED_COLLECTIONS !== 'undefined' && Array.isArray(ELEVATOR_OWNED_COLLECTIONS)) {
-      ELEVATOR_OWNED_COLLECTIONS.forEach(k => {
-        (Array.isArray(state[k]) ? state[k] : []).forEach(r => {
-          if (r && r.elevatorId === id) r.elevatorId = '';
-        });
-      });
     }
     /* mirror the nested inventory-history detach too (Phase 2B.0 BUG-2), so the
        on-screen state matches what the API just persisted. Same canonical

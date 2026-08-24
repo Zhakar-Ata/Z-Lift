@@ -752,7 +752,7 @@ async function T(name, cond, info) {
     });
 
     /* ================= PHASE 1: safety confirmation ================= */
-    await ev(`sessionStorage.removeItem('zlift_safety_ack_en81-safety-audit'); navigate('/checklists/en81-safety-audit');`); await waitLoaded();
+    await ev(`sessionStorage.removeItem('zlift_safety_ack_en81-safety-audit'); navigate('/checklists/en81-safety-audit?project=' + state.projects[0].id);`); await waitLoaded();
     await T('critical checklist shows safety gate before items', () => ev(`!!document.querySelector('#safetyAck') && document.querySelector('#content .check-item')===null`));
     await T('continue button disabled until acknowledged', () => ev(`document.querySelector('#safetyContinue').disabled===true`));
     await ev(`(function(){var c=document.querySelector('#safetyAck');c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}));})()`);
@@ -1361,28 +1361,31 @@ async function T(name, cond, info) {
         /* upsert, not duplicate: one record, same id, latest answers */
         ok: stored.length === 1 && reread.length === 1 && first.id === second.id
           && first.id !== 'tmp' && second.checked.a1 === 'fail' && second.checked.a2 === 'na'
-          /* no elevator field is introduced for a caller that did not ask for one */
-          && !('elevatorId' in first) && !('elevatorId' in reread[0])
+          /* Phase 2B.2 stamps the exact single legacy elevator context. */
+          && first.elevatorId === p.id && reread[0].elevatorId === p.id
           && second.updatedAt >= first.updatedAt,
         ids: [first.id, second.id], keys: Object.keys(reread[0]).sort()
       };
     })()`);
-    await T('P2B0 BUG-1 CASE A: single existing elevator context behaves exactly as before (upsert, same id, no new field)', p2b0CaseA && p2b0CaseA.ok, JSON.stringify(p2b0CaseA));
+    await T('P2B0 BUG-1 CASE A: single existing elevator context upserts under the canonical project/elevator pair', p2b0CaseA && p2b0CaseA.ok, JSON.stringify(p2b0CaseA));
 
     /* ---- BUG-1 CASE B: two logical elevator contexts, one project, one template ---- */
     const p2b0CaseB = await ev(`(async()=>{
       const p = (await api('/projects', { method: 'POST', body: { name: 'P2B0-CaseB', elevatorType: 'traction' } })).project;
-      /* the future elevator dimension, modelled at the data layer only — there
-         is deliberately no elevator collection, picker, route or UI for it */
-      const a1 = (await api('/checklists', { method: 'POST', body: { projectId: p.id, elevatorId: 'ELEV-A', templateId: 'traction-install', checked: { a1: 'pass' } } })).checklist;
-      const b1 = (await api('/checklists', { method: 'POST', body: { projectId: p.id, elevatorId: 'ELEV-B', templateId: 'traction-install', checked: { a1: 'fail' } } })).checklist;
+      /* Add real, globally unique Phase 2B.1 elevator rows at the data layer;
+         there is deliberately no picker, route, or creation UI in this phase. */
+      const eidA = p.id + '-ELEV-A', eidB = p.id + '-ELEV-B';
+      _lsDB.elevators.push(_apiBuildElevator(p, eidA, false), _apiBuildElevator(p, eidB, false));
+      await _lsSave();
+      const a1 = (await api('/checklists', { method: 'POST', body: { projectId: p.id, elevatorId: eidA, templateId: 'traction-install', checked: { a1: 'pass' } } })).checklist;
+      const b1 = (await api('/checklists', { method: 'POST', body: { projectId: p.id, elevatorId: eidB, templateId: 'traction-install', checked: { a1: 'fail' } } })).checklist;
       /* repeated saves must stay idempotent: same two rows, no duplicates */
-      const a2 = (await api('/checklists', { method: 'POST', body: { projectId: p.id, elevatorId: 'ELEV-A', templateId: 'traction-install', checked: { a1: 'pass', a5: 'na' } } })).checklist;
-      const b2 = (await api('/checklists', { method: 'POST', body: { projectId: p.id, elevatorId: 'ELEV-B', templateId: 'traction-install', checked: { a1: 'fail', a7: 'pass' } } })).checklist;
+      const a2 = (await api('/checklists', { method: 'POST', body: { projectId: p.id, elevatorId: eidA, templateId: 'traction-install', checked: { a1: 'pass', a5: 'na' } } })).checklist;
+      const b2 = (await api('/checklists', { method: 'POST', body: { projectId: p.id, elevatorId: eidB, templateId: 'traction-install', checked: { a1: 'fail', a7: 'pass' } } })).checklist;
       const stored = (await api('/checklists')).checklists.filter(c => c.projectId === p.id);
       const fresh = await STRUCTURED_DB.verifyAggregate(JSON.parse(JSON.stringify(_lsDB)));
       const reread = fresh.checklists.filter(c => c.projectId === p.id);
-      const A = reread.find(c => c.elevatorId === 'ELEV-A'), B = reread.find(c => c.elevatorId === 'ELEV-B');
+      const A = reread.find(c => c.elevatorId === eidA), B = reread.find(c => c.elevatorId === eidB);
       return {
         /* isolation: neither context can overwrite the other's answers */
         ok: stored.length === 2 && reread.length === 2 && a1.id !== b1.id && a1.id === a2.id && b1.id === b2.id
@@ -1395,15 +1398,16 @@ async function T(name, cond, info) {
     })()`);
     await T('P2B0 BUG-1 CASE B: two elevator contexts in one project with one template cannot overwrite each other (save/update/load/repeat)', p2b0CaseB && p2b0CaseB.ok, JSON.stringify(p2b0CaseB));
 
-    /* ---- BUG-1: the same elevator label in two different projects must stay
-       two separate instances. The identity keeps the project in the key
-       precisely for this: nothing in the current model guarantees that
-       elevator identifiers are globally unique. ---- */
+    /* ---- BUG-1: the same human-facing elevator label in two projects stays
+       isolated while canonical elevator ids remain globally unique. ---- */
     const p2b0CrossProject = await ev(`(async()=>{
       const p1 = (await api('/projects', { method: 'POST', body: { name: 'P2B0-XP-1', elevatorType: 'traction' } })).project;
       const p2 = (await api('/projects', { method: 'POST', body: { name: 'P2B0-XP-2', elevatorType: 'traction' } })).project;
-      const a = (await api('/checklists', { method: 'POST', body: { projectId: p1.id, elevatorId: 'CAR-1', templateId: 'traction-install', checked: { a1: 'pass' } } })).checklist;
-      const b = (await api('/checklists', { method: 'POST', body: { projectId: p2.id, elevatorId: 'CAR-1', templateId: 'traction-install', checked: { a1: 'fail' } } })).checklist;
+      const eid1 = p1.id + '-CAR-1', eid2 = p2.id + '-CAR-1';
+      _lsDB.elevators.push(Object.assign(_apiBuildElevator(p1, eid1, false), { number: 'CAR-1' }), Object.assign(_apiBuildElevator(p2, eid2, false), { number: 'CAR-1' }));
+      await _lsSave();
+      const a = (await api('/checklists', { method: 'POST', body: { projectId: p1.id, elevatorId: eid1, templateId: 'traction-install', checked: { a1: 'pass' } } })).checklist;
+      const b = (await api('/checklists', { method: 'POST', body: { projectId: p2.id, elevatorId: eid2, templateId: 'traction-install', checked: { a1: 'fail' } } })).checklist;
       /* snapshot as plain values: api() hands back live references into the
          in-memory aggregate, which the delete below mutates in place */
       const aProject = a.projectId, bProject = b.projectId;
@@ -1428,8 +1432,11 @@ async function T(name, cond, info) {
        delete detaches both instead of merging or dropping them ---- */
     const p2b0Backup = await ev(`(async()=>{
       const p = (await api('/projects', { method: 'POST', body: { name: 'P2B0-Bkp', customer: 'BkpCo', location: 'Yazd', elevatorType: 'traction' } })).project;
-      const A = (await api('/checklists', { method: 'POST', body: { projectId: p.id, elevatorId: 'ELEV-A', templateId: 'traction-install', checked: { a1: 'pass' } } })).checklist;
-      const B = (await api('/checklists', { method: 'POST', body: { projectId: p.id, elevatorId: 'ELEV-B', templateId: 'traction-install', checked: { a1: 'fail' } } })).checklist;
+      const eidA = p.id + '-ELEV-A', eidB = p.id + '-ELEV-B';
+      _lsDB.elevators.push(_apiBuildElevator(p, eidA, false), _apiBuildElevator(p, eidB, false));
+      await _lsSave();
+      const A = (await api('/checklists', { method: 'POST', body: { projectId: p.id, elevatorId: eidA, templateId: 'traction-install', checked: { a1: 'pass' } } })).checklist;
+      const B = (await api('/checklists', { method: 'POST', body: { projectId: p.id, elevatorId: eidB, templateId: 'traction-install', checked: { a1: 'fail' } } })).checklist;
       const exported = (await api('/backup')).backup;
       const v = validateBackup(exported);
       if (!v.ok) return { ok: false, step: 'export:' + v.why };
@@ -1437,7 +1444,7 @@ async function T(name, cond, info) {
       const fresh = await STRUCTURED_DB.verifyAggregate(JSON.parse(JSON.stringify(_lsDB)));
       const ra = fresh.checklists.find(c => c.id === A.id), rb = fresh.checklists.find(c => c.id === B.id);
       const roundTrip = !!ra && !!rb && ra.checked.a1 === 'pass' && rb.checked.a1 === 'fail'
-        && ra.elevatorId === 'ELEV-A' && rb.elevatorId === 'ELEV-B';
+        && ra.elevatorId === eidA && rb.elevatorId === eidB;
       /* now delete the project: both contexts survive, detached and stamped */
       await api('/projects/' + p.id, { method: 'DELETE' });
       const after = await STRUCTURED_DB.verifyAggregate(JSON.parse(JSON.stringify(_lsDB)));
