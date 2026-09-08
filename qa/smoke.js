@@ -93,7 +93,8 @@ async function T(name, cond, info) {
     const routes = [
       '/dashboard', '/projects', '/services', '/parts', '/checklists', '/calculations',
       '/diagnostics', '/vvvf', '/knowledge', '/tools', '/notes', '/calendar', '/invoices',
-      '/contracts', '/report', '/analytics', '/settings', '/standards'
+      '/contracts', '/report', '/analytics', '/settings',
+      '/finance', '/workshop', '/measurements', '/standards'
     ];
     for (const route of routes) {
       await ev(`navigate('${route}')`);
@@ -102,6 +103,27 @@ async function T(name, cond, info) {
       await T('route renders without error: ' + route, errs === 0, 'window errors: ' + errs);
     }
     await T('page title for /standards', () => ev(`document.querySelector('#pageTitle').textContent === 'استانداردها'`), await ev(`document.querySelector('#pageTitle').textContent`));
+
+    /* ---------- technician-first IA surface (v29.2.0) ---------- */
+    await ev(`navigate('/dashboard')`); await waitLoaded();
+    await T('dashboard is today: attention + recent, no tiles/charts/stat grids', () => ev(`(() => {
+      const html = document.querySelector('#content').innerHTML;
+      return html.includes('نیاز به توجه') && !html.includes('دسترسی سریع') && !document.querySelector('.chart-bars') && !document.querySelector('.grid-4') && !document.querySelector('.tiles');
+    })()`));
+    await T('permanent nav is six destinations', () => ev(`document.querySelectorAll('#mainNav .nav-item').length === 6`));
+    await T('permanent nav is today/elevators/services/finance/workshop/settings', () => ev(`(() => {
+      const routes = [...document.querySelectorAll('#mainNav .nav-item')].map(b => b.dataset.route);
+      return routes.join(',') === '/dashboard,/projects,/services,/finance,/workshop,/settings';
+    })()`));
+    await ev(`navigate('/finance')`); await waitLoaded();
+    await T('finance hub is a distinct money home', () => ev(`document.querySelector('#pageTitle').textContent === 'مالی' && document.querySelector('#content').innerHTML.includes('فاکتور')`));
+    await ev(`navigate('/workshop')`); await waitLoaded();
+    await T('workshop hub groups field tools', () => ev(`document.querySelector('#pageTitle').textContent === 'ابزار فنی' && document.querySelector('#content').innerHTML.includes('عیب‌یابی')`));
+    await ev(`navigate('/invoices')`); await waitLoaded();
+    await T('invoices deep-link still renders and marks مالی in nav', () => ev(`(() => {
+      const btn = [...document.querySelectorAll('#mainNav .nav-item')].find(b => b.dataset.route === '/finance');
+      return document.querySelector('#pageTitle').textContent === 'فاکتورها' && btn && btn.classList.contains('active') && btn.getAttribute('aria-current') === 'page';
+    })()`));
 
     /* ---------- standards module interactions ---------- */
     await ev(`navigate('/standards')`); await waitLoaded();
@@ -602,10 +624,15 @@ async function T(name, cond, info) {
     })()`));
 
     /* -- navigation menu keeps its handlers and marks the current page -- */
-    await ev(`navigate('/parts')`); await waitLoaded();
+    await ev(`navigate('/services')`); await waitLoaded();
     await T('nav marks the active route for assistive tech', () => ev(`(() => {
-      const btn = [...document.querySelectorAll('#mainNav .nav-item')].find(b => b.dataset.route === '/parts');
+      const btn = [...document.querySelectorAll('#mainNav .nav-item')].find(b => b.dataset.route === '/services');
       return btn.classList.contains('active') && btn.getAttribute('aria-current') === 'page' && typeof btn.onclick === 'function';
+    })()`));
+    await ev(`navigate('/parts')`); await waitLoaded();
+    await T('workshop group marks nav while on parts', () => ev(`(() => {
+      const btn = [...document.querySelectorAll('#mainNav .nav-item')].find(b => b.dataset.route === '/workshop');
+      return btn.classList.contains('active') && btn.getAttribute('aria-current') === 'page';
     })()`));
 
     /* -- toasts never pile up -- */
@@ -716,9 +743,11 @@ async function T(name, cond, info) {
     await T('signature pad degrades gracefully without a canvas', () => ev(`wireSignaturePad('sig_tech', null) === null && readSignature('sig_tech') === ''`));
     await ev(`closeModal()`);
 
-    /* -- dashboard shows financial KPIs -- */
+    /* -- money KPIs live on the finance hub, not the dashboard -- */
+    await ev(`navigate('/finance')`); await waitLoaded();
+    await T('finance hub shows money KPIs (income, balance, collected)', () => ev(`document.querySelector('#content').innerHTML.includes('درآمد این ماه') && document.querySelector('#content').innerHTML.includes('مانده وصول‌نشده') && document.querySelector('#content').innerHTML.includes('وصول‌شده')`));
     await ev(`navigate('/dashboard')`); await waitLoaded();
-    await T('dashboard shows financial KPIs (income, balance, stock value)', () => ev(`document.querySelector('#content').innerHTML.includes('درآمد این ماه') && document.querySelector('#content').innerHTML.includes('مانده وصول‌نشده') && document.querySelector('#content').innerHTML.includes('ارزش انبار')`));
+    await T('dashboard no longer carries financial KPIs', () => ev(`!document.querySelector('#content').innerHTML.includes('درآمد این ماه') && !document.querySelector('#content').innerHTML.includes('ارزش انبار')`));
 
     /* ================= PHASE 1: structured measurements ================= */
     await T('parseNum reads Persian/Arabic numerals', () => ev(

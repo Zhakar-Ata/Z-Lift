@@ -36,28 +36,25 @@ function enterApp() {
 }
 var NAV = [
   { section: 'navMain' },
-  { route: '/dashboard', key: 'dashboard', icon: 'dash' },
-  { route: '/projects', key: 'projects', icon: 'proj' },
+  { route: '/dashboard', key: 'today', icon: 'dash' },
+  { route: '/projects', key: 'navElevators', icon: 'proj' },
   { route: '/services', key: 'services', icon: 'svc' },
-  { route: '/issues', key: 'issues', icon: 'alert' },
-  { route: '/invoices', key: 'invoices', icon: 'bill' },
-  { route: '/contracts', key: 'contracts', icon: 'doc' },
-  { route: '/report', key: 'monthlyReport', icon: 'chart' },
-  { route: '/analytics', key: 'analytics', icon: 'stats' },
-  { route: '/parts', key: 'parts', icon: 'box' },
+  { route: '/finance', key: 'finance', icon: 'bill' },
   { section: 'navTools' },
-  { route: '/checklists', key: 'checklists', icon: 'check' },
-  { route: '/calculations', key: 'calculations', icon: 'calc' },
-  { route: '/diagnostics', key: 'diagnostics', icon: 'diag' },
-  { route: '/vvvf', key: 'vvvf', icon: 'chip' },
-  { route: '/standards', key: 'standards', icon: 'std' },
-  { section: 'navKnowledge' },
-  { route: '/knowledge', key: 'knowledge', icon: 'kb' },
-  { route: '/measurements', key: 'measures', icon: 'ruler' },
-  { route: '/tools', key: 'tools', icon: 'wrench' },
-  { route: '/notes', key: 'notes', icon: 'note' },
+  { route: '/workshop', key: 'workshop', icon: 'wrench' },
   { route: '/settings', key: 'settings', icon: 'gear' }
 ];
+var NAV_GROUPS = {
+  '/finance': ['/invoices', '/contracts', '/report', '/analytics'],
+  '/workshop': ['/checklists', '/calculations', '/diagnostics', '/vvvf', '/standards', '/knowledge', '/measurements', '/parts', '/tools', '/notes', '/issues'],
+  '/services': ['/calendar']
+};
+function navItemActive(itemRoute, current) {
+  if (!current) return false;
+  if (current === itemRoute || current.startsWith(itemRoute + '/')) return true;
+  const kids = NAV_GROUPS[itemRoute] || [];
+  return kids.some(k => current === k || current.startsWith(k + '/'));
+}
 var _navLang = null;
 function renderNav() {
   const nav = $('#mainNav');
@@ -72,7 +69,7 @@ function renderNav() {
   }
   nav.querySelectorAll('.nav-item').forEach(b => {
     const r = b.dataset.route;
-    const active = state.route === r || state.route.startsWith(r + '/');
+    const active = navItemActive(r, state.route);
     b.classList.toggle('active', active);
     b.setAttribute('aria-current', active ? 'page' : 'false');
   });
@@ -128,10 +125,11 @@ async function render() {
   const c = $('#content');
   const r = state.route;
   const titles = {
-    '/dashboard': 'dashboard', '/projects': 'projects', '/services': 'services',
+    '/dashboard': 'today', '/projects': 'navElevators', '/services': 'services',
     '/parts': 'parts', '/checklists': 'checklists', '/calculations': 'calculations',
     '/diagnostics': 'diagnostics', '/knowledge': 'knowledge', '/notes': 'notes',
-    '/vvvf': 'vvvf', '/issues': 'issues', '/tools': 'tools', '/invoices': 'invoices', '/contracts': 'contracts', '/report': 'monthlyReport', '/standards': 'standards', '/calendar': 'calendar', '/analytics': 'analytics', '/measurements': 'measures', '/settings': 'settings'
+    '/vvvf': 'vvvf', '/issues': 'issues', '/tools': 'tools', '/invoices': 'invoices', '/contracts': 'contracts', '/report': 'monthlyReport', '/standards': 'standards', '/calendar': 'calendar', '/analytics': 'analytics', '/measurements': 'measures', '/settings': 'settings',
+    '/finance': 'finance', '/workshop': 'workshop'
   };
   const baseRoute = '/' + r.split('/')[1];
   $('#pageTitle').textContent = t(titles[baseRoute] || 'dashboard');
@@ -153,6 +151,8 @@ async function render() {
     else if (r === '/diagnostics') renderDiagnostics();
     else if (r === '/vvvf') renderVVVF();
     else if (r === '/issues') renderIssues();
+    else if (r === '/finance') renderFinance();
+    else if (r === '/workshop') renderWorkshop();
     else if (r === '/invoices') renderInvoices();
     else if (r === '/contracts') renderContracts();
     else if (r === '/report') renderMonthlyReport();
