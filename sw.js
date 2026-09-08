@@ -7,7 +7,7 @@
      (defensive only: Z Lift has no backend today — all data is local; this branch
      exists so a future optional sync endpoint keeps working offline)
    Bump CACHE on every release so old shells are evicted. */
-const CACHE = 'zlift-pwa-v36';
+const CACHE = 'zlift-pwa-v37';
 const CORE = [
   './',
   './index.html',
@@ -32,8 +32,11 @@ const CORE = [
   './js/database/photo-store.js',
   './js/database/offline-layer.js',
   './js/database/api-local.js',
+  './js/database/elevator-migration.js',
   './js/database/backup.js',
   './js/modules/dashboard.js',
+  './js/modules/finance.js',
+  './js/modules/workshop.js',
   './js/modules/projects.js',
   './js/modules/services.js',
   './js/modules/calendar.js',

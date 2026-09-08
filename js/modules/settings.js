@@ -76,6 +76,14 @@ function renderSettings() {
         <button class="btn btn-soft-danger" onclick="clearAllData()">${IC.trash} ${t('setClearAll')}</button>
       </div>
     </div>
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">${t('setShortcuts')}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ghost" onclick="navigate('/notes')">${IC.note} ${t('notes')}</button>
+        <button class="btn btn-ghost" onclick="navigate('/tools')">${IC.wrench} ${t('tools')}</button>
+        <button class="btn btn-ghost" onclick="navigate('/issues')">${IC.alert} ${t('issues')}</button>
+      </div>
+    </div>
     <div class="card" style="margin-top:16px;text-align:center">
       <div style="font-size:32px;margin-bottom:4px">🛗</div>
       <strong style="font-size:17px">Z Lift</strong>
