@@ -2,6 +2,7 @@
 var REMINDER_META = {
   periodic: { key: 'reminderPeriodic', icon: '🔧', cls: 'b-teal' },
   followup: { key: 'reminderFollowup', icon: '🔎', cls: 'b-blue' },
+  cert:     { key: 'certDue', icon: '📜', cls: 'b-amber' },
   custom:   { key: 'reminderCustom', icon: '📌', cls: 'b-gray' }
 };
 var calState = { jy: 0, jm: 0 }; // initialized to current Jalali month on first render
@@ -14,15 +15,24 @@ var calSelDay = 0;                 // day highlighted in the grid (0 = none)
 function buildReminders() {
   const out = [];
   const DAY = 86400000;
+  const archivedIds = new Set((state.projects || []).filter(p => p.archived).map(p => p.id));
   (state.projects || []).forEach(p => {
-    if (!p.serviceIntervalDays) return;
-    const info = dueInfo(p);
-    if (!info) return;
-    out.push({ id: 'per-' + p.id, kind: 'periodic', projectId: p.id, title: p.name,
-      due: info.next, days: info.days, overdue: info.overdue, soon: info.soon, last: info.last, intervalDays: p.serviceIntervalDays });
+    if (p.archived) return; // a handed-over building must stop nagging forever
+    if (p.serviceIntervalDays) {
+      const info = dueInfo(p);
+      if (info) out.push({ id: 'per-' + p.id, kind: 'periodic', projectId: p.id, title: p.name,
+        due: info.next, days: info.days, overdue: info.overdue, soon: info.soon, last: info.last, intervalDays: p.serviceIntervalDays });
+    }
+    if (p.certDue) {
+      const days = Math.round((p.certDue - Date.now()) / DAY);
+      if (days <= 45) out.push({ id: 'cert-' + p.id, kind: 'cert', projectId: p.id, title: p.name,
+        due: p.certDue, days, overdue: days < 0, soon: days >= 0 && days <= 45 });
+    }
   });
   (state.services || []).forEach(s => {
     if (!s.followUpDate) return;
+    if (s.finalStatus === 'ok') return; // finished work is finished — leftover follow-up dates must not nag daily
+    if (s.projectId && archivedIds.has(s.projectId)) return;
     const days = Math.round((s.followUpDate - Date.now()) / DAY);
     out.push({ id: 'fu-' + s.id, kind: 'followup', serviceId: s.id, projectId: s.projectId,
       title: svcTarget(s), due: s.followUpDate, days, overdue: days < 0, soon: days >= 0 && days <= 7 });
@@ -120,7 +130,7 @@ function drawCalendar() {
       <button class="icon-btn" onclick="calShift(1)" aria-label="${t('nextMonth')}" title="${t('nextMonth')}">${navArrows().next}</button>
       <button class="btn btn-ghost btn-sm" onclick="calToday()">${t('today')}</button>
     </div>
-    <div class="cal-week">${['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'].map(w => `<span>${w}</span>`).join('')}</div>
+    <div class="cal-week">${t('weekDays').split(' ').map(w => `<span>${esc(w)}</span>`).join('')}</div>
     <div id="calGrid" class="cal-grid">${cells}</div>
     <div class="cal-legend">
       <span class="lg"><span class="dot"></span>${t('calLegendEvents')}</span>
@@ -153,9 +163,16 @@ function drawReminderList(reminders) {
     const m = remMeta(r.kind);
     const label = r.overdue ? t('calOverdue') : (r.soon ? t('calDueSoon') : t('calUpcoming'));
     const cls = r.overdue ? 'b-red' : (r.soon ? 'b-amber' : 'b-gray');
-    /* only manual reminders own a record: they can be edited / completed / deleted */
+    /* only manual reminders own a record: they can be edited / completed / deleted.
+       Derived ones now also have a real-world completion action instead of
+       nagging forever: a follow-up is cleared on its service, a due periodic
+       service opens the new-service form for that building. */
     const editable = !!r.reminderId;
-    const done = editable ? `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();markReminderDone('${r.reminderId}')">${t('reminderMarkDone')}</button>` : '';
+    const done = editable ? `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();markReminderDone('${r.reminderId}')">${t('reminderMarkDone')}</button>`
+      : r.kind === 'followup' && r.serviceId ? `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();markFollowUpDone('${r.serviceId}')">${t('reminderMarkDone')}</button>`
+      : r.kind === 'periodic' && r.projectId ? `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openServiceForm(null,'${r.projectId}')">${IC.plus} ${t('newServiceRec')}</button>`
+      : r.kind === 'cert' && r.projectId ? `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();navigate('/projects/${r.projectId}')">${t('profile') || ''}</button>`
+      : '';
     return `<div class="row-item" style="justify-content:space-between${editable ? ';cursor:pointer' : ''}" ${editable ? `onclick="openReminderForm('${r.reminderId}')"` : ''}>
       <div class="row-body"><strong>${m.icon} ${esc(r.title)}</strong><span class="sub">${r.projectId ? esc(projName(r.projectId)) : ''}</span></div>
       <div class="row-side"><span class="badge ${cls}">${label} · ${fmtJalali(r.due)}</span>${done}</div>
@@ -173,10 +190,7 @@ function openReminderForm(id) {
       <div class="field"><label>${t('svcType')}</label><select id="rm_kind">
         ${Object.keys(REMINDER_META).map(k => `<option value="${k}" ${v.kind === k ? 'selected' : ''}>${t(REMINDER_META[k].key)}</option>`).join('')}
       </select></div>
-      <div class="field span2"><label>${t('reminderProject')}</label><select id="rm_project">
-        <option value="">—</option>
-        ${(state.projects || []).map(p => `<option value="${p.id}" ${v.projectId === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}
-      </select></div>
+      <div class="field span2"><label>${t('reminderProject')}</label><select id="rm_project">${projectOptsHTML(v.projectId, true)}</select></div>
     </form></div>
     <div class="modal-foot">
       ${r ? `<button class="btn btn-soft-danger" onclick="deleteReminder('${r.id}')">${IC.trash}</button>` : ''}
@@ -219,4 +233,16 @@ async function markReminderDone(id) {
     render();
     toast(t('saved'));
   } catch (e) { reportError(e, 'markReminderDone'); }
+}
+
+/* completing a follow-up reminder clears the date on its service report */
+async function markFollowUpDone(serviceId) {
+  const s = (state.services || []).find(x => x.id === serviceId);
+  if (!s) return;
+  try {
+    const d = await api('/services/' + serviceId, { method: 'PUT', body: { followUpDate: 0, projectId: String(s.projectId || ''), elevatorId: String(s.elevatorId || '') } });
+    if (d && d.service) Object.assign(s, d.service); else s.followUpDate = 0;
+    toast(t('saved'));
+    render();
+  } catch (e) { toast(errMsg(e), 'err'); }
 }

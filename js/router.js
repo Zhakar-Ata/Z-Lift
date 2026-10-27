@@ -66,8 +66,18 @@ function renderNav() {
       return `<button class="nav-item" data-route="${item.route}" aria-current="false">${IC[item.icon]}<span>${t(item.key)}</span></button>`;
     }).join('');
     nav.querySelectorAll('.nav-item').forEach(b => b.onclick = () => { navigate(b.dataset.route); closeSidebar(); });
+    /* mobile thumb bar: the five daily routes, always under the thumb */
+    const bn = $('#bottomNav');
+    if (bn) {
+      const QUICK = ['/dashboard', '/projects', '/services', '/calendar', '/finance'];
+      bn.innerHTML = QUICK.map(r => {
+        const it = NAV.find(x => x.route === r) || (r === '/calendar' ? { key: 'calendar', icon: 'cal' } : null);
+        return it ? `<button class="nav-item" data-route="${r}" aria-current="false">${IC[it.icon] || ''}<span>${t(it.key)}</span></button>` : '';
+      }).join('');
+      bn.querySelectorAll('.nav-item').forEach(b => b.onclick = () => navigate(b.dataset.route));
+    }
   }
-  nav.querySelectorAll('.nav-item').forEach(b => {
+  document.querySelectorAll('#mainNav .nav-item, #bottomNav .nav-item').forEach(b => {
     const r = b.dataset.route;
     const active = navItemActive(r, state.route);
     b.classList.toggle('active', active);
@@ -164,7 +174,15 @@ async function render() {
     else if (r === '/notes') renderNotes();
     else if (r === '/calendar') renderCalendar();
     else if (r === '/measurements') renderMeasurements();
-    else renderDashboard();
+    else {
+      /* unknown hash (typo / stale bookmark / shared deep link): fix the
+         address instead of painting the dashboard under a wrong URL */
+      state.route = '/dashboard';
+      try { history.replaceState(null, '', '#/dashboard'); } catch (e2) { location.hash = '/dashboard'; }
+      $('#pageTitle').textContent = t(titles['/dashboard']);
+      renderDashboard();
+    }
+    try { enhanceClickableRows(c); } catch (e2) {}
     const y = _pendingScroll; _pendingScroll = 0;
     if (typeof window.scrollTo === 'function') { try { window.scrollTo(0, y); } catch (e2) {} }
   } catch (e) {

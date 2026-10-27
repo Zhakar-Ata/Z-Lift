@@ -392,6 +392,16 @@ function openBackupModal() {
         <button class="btn btn-ghost" id="bkImport">⬆️ ${t('backupImport')} · EXTERNAL BACKUP</button>
         <input type="file" id="bkFile" accept=".json,application/json" class="hidden" />
       </div>
+      <div class="section-title" style="margin:0 0 8px"><h3 style="font-size:14px">🕓 ${t('autoSnapshots')}</h3></div>
+      ${(() => {
+        const snaps = listAutoBackups();
+        if (!snaps.length) return `<p style="font-size:12px;color:var(--text-3);margin-bottom:16px">${t('autoSnapshotsEmpty')}</p>`;
+        return `<div style="margin-bottom:16px">${snaps.map((sn, i) => `
+          <div class="row-item" style="cursor:default">
+            <div class="row-body"><strong>${faNum(fmtDateTime(sn.createdAt || 0))}</strong><span class="sub">v${esc(sn.appVersion || '?')}</span></div>
+            <div class="row-side"><button class="btn btn-ghost btn-sm" data-snap-restore="${i}">${t('restoreSnapshot')}</button></div>
+          </div>`).join('')}</div>`;
+      })()}
       <div class="section-title" style="margin:0 0 8px"><h3 style="font-size:14px">🏢 ${t('companySettings')}</h3></div>
       <p style="font-size:11.8px;color:var(--text-3);margin-bottom:9px">${t('settingsSub')}</p>
       <div class="field"><label>${t('setCompany')}</label><input id="set_company" value="${esc((state.settings || {}).company || '')}" /></div>
@@ -402,6 +412,25 @@ function openBackupModal() {
       <button class="btn btn-ghost btn-sm" id="setSave">💾 ${t('save')}</button>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">${t('close')}</button></div>`, { size: 'sm' });
+
+  document.querySelectorAll('[data-snap-restore]').forEach(btn => {
+    btn.onclick = () => {
+      const idx = +btn.getAttribute('data-snap-restore');
+      const target = listAutoBackups()[idx];
+      if (!target) return;
+      confirmDialog(t('restoreSnapshot'), t('restoreSnapshotMsg'), async () => {
+        try {
+          await runAutoBackup(); // safety net: current state stays recoverable
+          /* the fresh snapshot shifted indexes — re-locate the target by id */
+          const freshIdx = listAutoBackups().findIndex(x => x.id === target.id);
+          if (freshIdx < 0) throw new Error('bad_backup');
+          await restoreAutoBackup(freshIdx);
+          closeModal(); toast(t('saved'));
+          render();
+        } catch (e) { toast(errMsg(e), 'err'); }
+      });
+    };
+  });
 
   $('#setSave').onclick = guard('#setSave', async () => {
     try {

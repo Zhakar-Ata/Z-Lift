@@ -24,7 +24,9 @@ function renderMonthlyReport() {
   });
   // parts consumed
   const partsUsed = [];
-  state.parts.forEach(p => (p.history || []).forEach(h => { if (inMonth(h.date)) partsUsed.push({ name: p.name, qty: h.qty, unit: p.unit }); }));
+  /* mirror analytics: only consumption rows (negative stock movements,
+     shown as positive amounts) — adjustments/returns are not consumption */
+  state.parts.forEach(p => (p.history || []).forEach(h => { if (inMonth(h.date) && h.qty < 0) partsUsed.push({ name: p.name, qty: -h.qty, unit: p.unit }); }));
   const newProjects = state.projects.filter(p => inMonth(p.createdAt)).length;
   const openIss = state.issues.filter(i => !i.closed).length;
   const hasData = svcs.length || invIncome || ctIncome || partsUsed.length || newProjects;
@@ -99,7 +101,7 @@ function printMonthlyReport() {
   const mk = jy + '-' + jm;
   state.contracts.forEach(ct => { if (ct.paid && ct.paid[mk]) ctIncome += +ct.amount || 0; });
   const partsUsed = [];
-  state.parts.forEach(p => (p.history || []).forEach(h => { if (inMonth(h.date)) partsUsed.push({ name: p.name, qty: h.qty }); }));
+  state.parts.forEach(p => (p.history || []).forEach(h => { if (inMonth(h.date) && h.qty < 0) partsUsed.push({ name: p.name, qty: -h.qty }); }));
   printDoc(`
     ${printHeader(t('mrTitle') + ' — ' + jalMonth(jm) + ' ' + faNum(jy))}
     <table>

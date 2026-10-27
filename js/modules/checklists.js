@@ -30,23 +30,30 @@ function renderSafetyGate(tp, selectedProject, ackKey) {
     cb.addEventListener('change', sync); sync();
     btn.onclick = async () => {
       if (!cb.checked) return;
-      try {
-        const entry = {
-          id: _lsUid(), checklistId: tp.id, projectId: selectedProject || '',
-          ts: Date.now(), technician: (state.user && state.user.name) || '',
-          appVersion: APP_VERSION
-        };
-        const saved = await api('/safetyLogs', { method: 'POST', body: entry });
-        if (!Array.isArray(state.safetyLogs)) state.safetyLogs = [];
-        state.safetyLogs.unshift(saved && saved.item ? saved.item : entry);
-      } catch (e) {
-        // The acknowledgement still governs continuation, but logging failure
-        // must not be silent or be mistaken for a persisted audit record.
-        console.warn('[ZLift] safety acknowledgement log failed', e);
-        toast(t('safetyLogFailed'), 'err');
+      const sp = (document.getElementById('safetyProject') || {}).value || selectedProject || '';
+      if (sp) {
+        try {
+          const entry = {
+            id: _lsUid(), checklistId: tp.id, projectId: sp,
+            ts: Date.now(), technician: (state.user && state.user.name) || '',
+            appVersion: APP_VERSION
+          };
+          const saved = await api('/safetyLogs', { method: 'POST', body: entry });
+          if (!Array.isArray(state.safetyLogs)) state.safetyLogs = [];
+          state.safetyLogs.unshift(saved && saved.item ? saved.item : entry);
+        } catch (e) {
+          // The acknowledgement still governs continuation, but logging failure
+          // must not be silent or be mistaken for a persisted audit record.
+          console.warn('[ZLift] safety acknowledgement log failed', e);
+          toast(t('safetyLogFailed'), 'err');
+        }
+      } else {
+        /* view-only acknowledgement: say plainly that nothing was logged,
+           instead of a scary (and wrong) "storage failed" message */
+        toast(t('safetyAckNoProject'), 'err');
       }
       try { sessionStorage.setItem(ackKey, '1'); } catch (e) {}
-      navigate('/checklists/' + tp.id + (selectedProject ? '?project=' + selectedProject : ''));
+      navigate('/checklists/' + tp.id + (sp ? '?project=' + sp : ''));
     };
   }, 0);
   return `
@@ -62,6 +69,11 @@ function renderSafetyGate(tp, selectedProject, ackKey) {
         <li>${LANG === 'fa' ? 'هیچ مدار ایمنی یا وسیلهٔ حفاظتی را پل، بای‌پس یا از کار نیندازید. تجهیز ناایمن باید خارج از سرویس بماند.' : 'Never bridge, bypass or defeat a safety circuit or protective device. Unsafe equipment must remain out of service.'}</li>
         <li>${LANG === 'fa' ? 'از دستورالعمل سازنده و مقررات محلی پیروی کنید؛ این اپ جای قضاوت تخصصی شما نیست.' : 'Follow manufacturer instructions and local regulations; this app does not replace professional judgment.'}</li>
       </ul>
+      <div class="field" style="margin-bottom:14px"><label>${t('chSelectProject')}</label>
+        <select id="safetyProject">
+          <option value="">${t('chNoProject')}</option>
+          ${state.projects.filter(p => !p.archived && (p.elevatorType === tp.type || tp.type === 'both')).map(p => `<option value="${p.id}" ${selectedProject === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}
+        </select></div>
       <label style="display:flex;gap:10px;align-items:flex-start;font-size:13.5px;cursor:pointer;margin-bottom:14px">
         <input type="checkbox" id="safetyAck" style="width:20px;height:20px;margin-top:2px" />
         <span>${t('safetyAck')}</span>
@@ -92,7 +104,7 @@ function renderChecklistDetail(idWithQuery) {
       return;
     }
   }
-  const eligible = state.projects.filter(p => p.elevatorType === tp.type || tp.type === 'both');
+  const eligible = state.projects.filter(p => (!p.archived || p.id === selectedProject) && (p.elevatorType === tp.type || tp.type === 'both'));
   if (selectedProject && !eligible.find(p => p.id === selectedProject)) selectedProject = '';
 
   function getInst() {
@@ -135,6 +147,7 @@ function renderChecklistDetail(idWithQuery) {
           <h2 style="font-size:19px">${tp.kind === 'install' ? '🏗️' : '🔧'} ${esc(tp.title[LANG] || tp.title.fa)}</h2>
           <div class="sub">${typeBadge(tp.type)} ${inst ? `<span class="badge b-gray">${t('chLastUpdate')}: ${fmtDateTime(inst.updatedAt)}</span>` : ''}</div>
         </div>
+        ${inst ? `<div class="actions"><button class="btn btn-ghost btn-sm" onclick="chResetRun()">🔄 ${t('chReset')}</button></div>` : ''}
       </div>
       <div class="card" style="margin-bottom:16px">
         <div class="field" style="margin-bottom:0">
@@ -212,7 +225,10 @@ function renderChecklistDetail(idWithQuery) {
         store = inst2.checked;
         inst2.updatedAt = Date.now();
       } else {
-        store = viewChecked;
+        /* view-only mode used to accept taps and then silently throw the
+           whole filled-in checklist away — refuse the tap with a reason */
+        toast(t('chNeedProject'), 'err');
+        return;
       }
       const cur = stateOf(store[itemId]);
       const nxt = nextState[cur];
@@ -268,4 +284,24 @@ async function chFailedToIssue(tid) {
     state.issues.unshift(d.item);
     toast(t('created'));
   } catch (e) { reportError(e, 'chFailedToIssue'); }
+}
+
+/* start a fresh run of the same template for the same elevator
+   (until now last month's answers were silently overwritten in place) */
+function chResetRun() {
+  const ctx = window._chCtx;
+  if (!ctx) return;
+  const inst = ctx.getInst();
+  if (!inst) return;
+  confirmDialog(t('chReset'),
+    LANG === 'fa' ? 'همهٔ پاسخ‌های فعلی این چک‌لیست پاک شود تا دورهٔ جدید شروع شود؟' : 'Clear all current answers of this checklist to start a new run?',
+    async () => {
+      try {
+        const d = await api('/checklists', { method: 'POST', body: { projectId: ctx.selectedProject, elevatorId: String(inst.elevatorId || ''), templateId: ctx.tid, checked: {} } });
+        if (d && d.checklist) Object.assign(inst, d.checklist);
+        inst.checked = {};
+        closeModal(); toast(t('saved'));
+        navigate('/checklists/' + ctx.tid + (ctx.selectedProject ? '?project=' + ctx.selectedProject : ''));
+      } catch (e) { toast(errMsg(e), 'err'); }
+    });
 }

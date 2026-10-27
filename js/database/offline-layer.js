@@ -5,13 +5,36 @@
 
 function _lsUid() { return Math.random().toString(16).slice(2, 10) + Math.random().toString(16).slice(2, 10); }
 function _lsHash(s) { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return 'h' + h.toString(16); }
+/* v29.3 password storage: salted + iterated (the legacy bare djb2 above is kept
+   ONLY to verify pre-upgrade records, which are silently re-hashed on login).
+   Local-only app, so this is defence-in-depth; the real lock is the device. */
+function _lsHashV2(pw, salt) {
+  salt = salt || _lsUid();
+  const s = salt + '|' + String(pw);
+  let h1 = 0xdeadbeef ^ s.length, h2 = 0x41c6ce57 ^ s.length;
+  for (let round = 0; round < 1000; round++) {
+    for (let i = 0; i < s.length; i++) {
+      const ch = s.charCodeAt(i);
+      h1 = Math.imul(h1 ^ ch, 2654435761);
+      h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  }
+  return 'v2$' + salt + '$' + (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0');
+}
+function _lsVerify(pw, stored) {
+  if (typeof stored !== 'string') return false;
+  if (stored.startsWith('v2$')) { const salt = stored.split('$')[1]; return !!salt && _lsHashV2(pw, salt) === stored; }
+  return stored === _lsHash(String(pw));
+}
 
 function _lsSeed() {
   const now = Date.now(), day = 86400000;
   const p1 = _lsUid(), p2 = _lsUid(), p3 = _lsUid(), p4 = _lsUid();
   const mkPart = (name, category, unit, qty, minQty, price, loc, note) =>
     ({ id: _lsUid(), name, category, unit, qty, minQty, price, location: loc || '', note: note || '', updatedAt: now });
-  return {
+  const seed = {
     users: [{ id: _lsUid(), username: 'tech', password: _lsHash('123456'), name: 'رضا محمدی', role: 'technician', createdAt: now - 90 * day }],
     sessions: {},
     projects: [
@@ -97,6 +120,11 @@ function _lsSeed() {
     reminders: [],
     settings: { company: 'خدمات فنی آسانسور زد لیفت', phone: '021-88000000', address: 'تهران' }
   };
+  /* demo content belongs to the demo account only (per-user workspaces):
+     a freshly registered technician starts with an EMPTY app, not these. */
+  ['projects', 'services', 'notes', 'parts'].forEach(k => (seed[k] || []).forEach(r => { r._owner = seed.users[0].id; }));
+  seed._ownerSince = now;
+  return seed;
 }
 
 var _lsDB = null;

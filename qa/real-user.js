@@ -298,8 +298,10 @@ function contrast(hex1, hex2) {
       history.back = ob;
       return { backs, painted: !!document.querySelector('#svcSave'), ignorePop: _ignorePop, stack: uiStack.length };
     })()`);
-    // now let the queued traversal land, exactly like a real browser task would
-    await ev(`window.dispatchEvent(new PopStateEvent('popstate'))`);
+    // only a queued traversal can land: if the click queued no history.back(),
+    // a real browser fires no popstate here at all (dispatching one anyway
+    // would simulate a hardware-back press, which SHOULD close the form)
+    if (race.backs > 0) await ev(`window.dispatchEvent(new PopStateEvent('popstate'))`);
     await wait(250);
     const survives = !!$('#svcSave');
     if (modalOpen()) { await ev(`closeModal()`); await wait(200); }
@@ -594,7 +596,7 @@ function contrast(hex1, hex2) {
   console.log('\n== Q) بررسی‌های ایستا (قابلیت‌هایی که در UI نیستند) ==');
 
   const statics = [
-    ['Q1', 'دکمه تماس (tel:) برای شماره مشتری/کارفرما وجود دارد', () => /href="tel:|location\.href\s*=\s*'tel:/.test(readSrc('js/modules/projects.js') + readSrc('js/modules/dashboard.js') + readSrc('js/modules/services.js')), 'شماره تلفن همه‌جا فقط متن است؛ تکنسین در راه باید شماره را حفظ/کپی کند — هیچ tel: یا لینک مسیریابی (نقشه) برای آدرس ساختمان نیست'],
+    ['Q1', 'دکمه تماس (tel:) برای شماره مشتری/کارفرما وجود دارد', () => /href="tel:|telHref\(|location\.href\s*=\s*'tel:/.test(readSrc('js/modules/projects.js') + readSrc('js/modules/dashboard.js') + readSrc('js/modules/services.js') + readSrc('js/core/app-core.js')), 'شماره تلفن همه‌جا فقط متن است؛ تکنسین در راه باید شماره را حفظ/کپی کند — هیچ tel: یا لینک مسیریابی (نقشه) برای آدرس ساختمان نیست'],
     ['Q2', 'بازیابی از اسنپ‌شات خودکار در UI قابل انجام است', () => /restoreAutoBackup\(/.test(readSrc('js/database/backup.js').split('function openBackupModal')[1] || ''), 'هر روز اسنپ‌شات خودکار ساخته می‌شود (runAutoBackup) ولی هیچ دکمه‌ای برای دیدن/بازیابی آن‌ها نیست — restoreAutoBackup فقط تعریف شده و هیچ‌جا صدا زده نمی‌شود؛ بعد از حذف اشتباهی، کاربر راهی به آن‌ها ندارد'],
     ['Q3', 'تغییر رمز عبور از داخل اپ ممکن است', () => /تغییر رمز|changePassword|رمز فعلی/.test(readSrc('js/modules/settings.js') + readSrc('index.html')), 'نه تغییر رمز هست نه بازیابی رمز فراموش‌شده؛ تنها راه غیررسمی ساختن حساب جدید است (که به‌خاطر Q/P1 به همه داده‌ها می‌رسد)'],
     ['Q4', 'به گزارش سرویس می‌شود مستقیم عکس پیوست کرد', () => readSrc('js/modules/services.js').includes('type="file"'), 'فرم سرویس ورودی عکس ندارد؛ عکس خرابی باید جداگانه از پروفایل پروژه اضافه شود و به آن گزارش سرویس وصل نیست — روی گزارش چاپی هم عکسی نمی‌آید'],
@@ -611,8 +613,11 @@ function contrast(hex1, hex2) {
   }
 
   await T('Q12', 'a11y', 'کنتراست متن کم‌رنگ (text-3) روی کارت سفید حداقل 4.5:1 است', async () => {
-    const r = contrast('#94a3b8', '#ffffff');
-    const rd = contrast('#8598b4', '#131c2e');
+    const css = readSrc('css/app.css');
+    const light = (css.match(/html\[data-theme="light"\][^}]*--text-3:\s*(#[0-9a-fA-F]{6})/) || [])[1] || '#94a3b8';
+    const dark = (css.match(/html\[data-theme="dark"\][^}]*--text-3:\s*(#[0-9a-fA-F]{6})/) || [])[1] || '#8598b4';
+    const r = contrast(light, '#ffffff');
+    const rd = contrast(dark, '#131c2e');
     return r >= 4.5 ? OK(r.toFixed(2) + ':1') : BAD(`حالت روشن ${r.toFixed(2)}:1 (حداقل WCAG برای متن ریز 4.5:1) — تاریخ‌ها، راهنماها و زیرواژه‌های ۱۱–۱۲ پیکسلی زیر نور آفتابِ موتورخانه/پشت‌بام خوانا نیستند؛ حالت تیره ${rd.toFixed(2)}:1 است`);
   });
 

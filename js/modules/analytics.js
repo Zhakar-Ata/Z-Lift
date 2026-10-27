@@ -36,7 +36,7 @@ function anStatusBars(rows, def) {
   const max = Math.max(1, ...rows.map(r => +r.value || 0));
   return `<div class="status-bars">${rows.map(r => {
     const v = +r.value || 0; if (!v) return '';
-    return `<div class="sb-row"><span class="sb-lbl">${r.label}</span>
+    return `<div class="sb-row"><span class="sb-lbl">${esc(r.label)}</span>
       <div class="sb-track"><div class="sb-fill" style="width:${Math.round(v / max * 100)}%;background:${r.color || def || 'var(--accent)'}"></div></div>
       <span class="sb-val">${faNum(v)}</span></div>`;
   }).join('')}</div>`;
