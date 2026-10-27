@@ -9,7 +9,8 @@
     "test:perf": "node qa/perf.js",
     "test:migration": "node qa/migration.js",
     "test:archive": "node qa/archive.js",
-    "test:phase2b2": "node qa/phase2b2.js"
+    "test:phase2b2": "node qa/phase2b2.js",
+    "test:real-user": "node qa/real-user.js"
   },
   "devDependencies": {
     "fake-indexeddb": "^6.2.5",
