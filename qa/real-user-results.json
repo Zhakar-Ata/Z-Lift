@@ -1,0 +1,373 @@
+[
+  {
+    "id": "A1",
+    "area": "auth",
+    "name": "رمز اشتباه پیام خطای واضح می‌دهد و وارد اپ نمی‌شود",
+    "ok": true,
+    "evidence": "error shown: نام کاربری یا رمز عبور اشتباه است"
+  },
+  {
+    "id": "A2",
+    "area": "auth",
+    "name": "ثبت‌نام با رمز کوتاه رد می‌شود",
+    "ok": true,
+    "evidence": "رمز عبور باید حداقل ۶ کاراکتر باشد"
+  },
+  {
+    "id": "A3",
+    "area": "auth",
+    "name": "ثبت‌نام کاربر جدید وارد اپ می‌شود",
+    "ok": true,
+    "evidence": "entered as کاربر تست"
+  },
+  {
+    "id": "A4",
+    "area": "first-run",
+    "name": "کاربر تازه‌ثبت‌نام‌شده باید اپ خالی ببیند، نه داده دمو",
+    "ok": true,
+    "evidence": "clean start"
+  },
+  {
+    "id": "B1",
+    "area": "router",
+    "name": "آدرس اشتباه (#/blah) کاربر را گمراه نمی‌کند",
+    "ok": true,
+    "evidence": "normalized to #/dashboard"
+  },
+  {
+    "id": "B2",
+    "area": "router",
+    "name": "پروژهٔ ناموجود راه بازگشت دارد",
+    "ok": true,
+    "evidence": "has action"
+  },
+  {
+    "id": "C1",
+    "area": "projects",
+    "name": "ساخت پروژه با فرم و نمایش در لیست",
+    "ok": true,
+    "evidence": "created 3cae0b20bf9128ac"
+  },
+  {
+    "id": "C2",
+    "area": "projects",
+    "name": "نام خالی: فرم باز می‌ماند و فیلد علامت می‌خورد",
+    "ok": true,
+    "evidence": "blocked + field marked"
+  },
+  {
+    "id": "C3",
+    "area": "projects",
+    "name": "اعداد منفی برای طبقات/ظرفیت/نفرات/سرعت پذیرفته نمی‌شوند",
+    "ok": true,
+    "evidence": "clamped/rejected"
+  },
+  {
+    "id": "C4",
+    "area": "xss",
+    "name": "نام/مشتری حاوی HTML تزریق نمی‌شود (XSS)",
+    "ok": true,
+    "evidence": "escaped correctly"
+  },
+  {
+    "id": "D1",
+    "area": "parts",
+    "name": "ساخت قطعه با فرم",
+    "ok": true,
+    "evidence": "created"
+  },
+  {
+    "id": "D2",
+    "area": "parts",
+    "name": "موجودی/قیمت منفی قطعه پذیرفته نمی‌شود",
+    "ok": true,
+    "evidence": "clamped on create"
+  },
+  {
+    "id": "E1",
+    "area": "services",
+    "name": "سرویس مستقل بدون مشتری و بدون پروژه رد می‌شود",
+    "ok": true,
+    "evidence": "blocked with field error"
+  },
+  {
+    "id": "E2",
+    "area": "services",
+    "name": "جستجوی قطعه در فرم سرویس با «کد فنی» هم پیدا می‌کند",
+    "ok": true,
+    "evidence": "found by code"
+  },
+  {
+    "id": "E3",
+    "area": "services",
+    "name": "کادر «تعداد قطعه مصرفی» عدد را درست نشان می‌دهد و هنگام تایپ فوکوس نمی‌پرد",
+    "ok": true,
+    "evidence": "qty input sane"
+  },
+  {
+    "id": "E4",
+    "area": "services",
+    "name": "ثبت سرویس کامل برای پروژه از طریق فرم",
+    "ok": true,
+    "evidence": "saved 1f2c2226472165a4"
+  },
+  {
+    "id": "E5",
+    "area": "services",
+    "name": "ویرایش سرویس، امضای ذخیره‌شده را پاک نمی‌کند",
+    "ok": true,
+    "evidence": "signature preserved"
+  },
+  {
+    "id": "E6",
+    "area": "modal-race",
+    "name": "دکمه «کپی سرویس» فرم جدید را باز نگه می‌دارد",
+    "ok": true,
+    "evidence": "duplicate form stayed open"
+  },
+  {
+    "id": "E7",
+    "area": "modal-race",
+    "name": "کلیک «کپی سرویس» history.back صف نمی‌کند (ترتیب رویداد مرورگر واقعی)",
+    "ok": true,
+    "evidence": "no queued back"
+  },
+  {
+    "id": "F1",
+    "area": "issues",
+    "name": "ثبت خرابی بدون انتخاب پروژه یا ذخیره می‌شود یا خطای روشن می‌دهد",
+    "ok": true,
+    "evidence": "created or clear message"
+  },
+  {
+    "id": "F2",
+    "area": "checklists",
+    "name": "تأیید ایمنی چک‌لیست بحرانی بدون خطای گمراه‌کننده ثبت می‌شود",
+    "ok": true,
+    "evidence": "ack logged cleanly"
+  },
+  {
+    "id": "F3",
+    "area": "checklists",
+    "name": "حالت «بدون پروژه» یا ذخیره می‌کند یا اصلاً قابل تیک‌زدن نیست",
+    "ok": true,
+    "evidence": "persisted or read-only"
+  },
+  {
+    "id": "G1",
+    "area": "invoices",
+    "name": "نرخ مالیات پیش‌فرض تنظیمات در فاکتور جدید واقعاً اعمال می‌شود",
+    "ok": true,
+    "evidence": "10% tax applied"
+  },
+  {
+    "id": "G2",
+    "area": "settings",
+    "name": "ذخیره تنظیمات، نرخ مالیات را بی‌صدا صفر نمی‌کند",
+    "ok": true,
+    "evidence": "tax preserved"
+  },
+  {
+    "id": "G3",
+    "area": "invoices",
+    "name": "فاکتور کاملاً خالی (بدون ردیف و مبلغ) صادر نمی‌شود",
+    "ok": true,
+    "evidence": "empty invoice rejected"
+  },
+  {
+    "id": "G4",
+    "area": "invoices",
+    "name": "انتخاب سرویسِ پروژه دیگر در فاکتور خطای قابل‌فهم می‌دهد",
+    "ok": true,
+    "evidence": "handled clearly"
+  },
+  {
+    "id": "G5",
+    "area": "invoices",
+    "name": "جستجوی فاکتور با شماره فاکتور کار می‌کند",
+    "ok": true,
+    "evidence": "found by number"
+  },
+  {
+    "id": "H1",
+    "area": "measurements",
+    "name": "انتخاب سرویس پروژه دیگر در اندازه‌گیری خطای قابل‌فهم می‌دهد",
+    "ok": true,
+    "evidence": "handled clearly"
+  },
+  {
+    "id": "I-/vvvf",
+    "area": "search-focus",
+    "name": "تایپ در جستجوی «کدهای خطای درایو» فوکوس را نمی‌پراند",
+    "ok": true,
+    "evidence": "focus kept"
+  },
+  {
+    "id": "I-/measurements",
+    "area": "search-focus",
+    "name": "تایپ در جستجوی «اندازه‌گیری‌ها» فوکوس را نمی‌پراند",
+    "ok": true,
+    "evidence": "focus kept"
+  },
+  {
+    "id": "I-/calculations",
+    "area": "search-focus",
+    "name": "تایپ در جستجوی «محاسبات» فوکوس را نمی‌پراند",
+    "ok": true,
+    "evidence": "focus kept"
+  },
+  {
+    "id": "J1",
+    "area": "calculators",
+    "name": "ماشین‌حساب‌ها ورودی فیزیکی ناممکن (منفی) را بی‌هشدار حساب نمی‌کنند",
+    "ok": true,
+    "evidence": "domain validated"
+  },
+  {
+    "id": "K1",
+    "area": "diagnostics",
+    "name": "جلسه عیب‌یابی نیمه‌کاره با جابجایی صفحه از بین نمی‌رود",
+    "ok": true,
+    "evidence": "session preserved"
+  },
+  {
+    "id": "K2",
+    "area": "i18n",
+    "name": "در حالت English محتوای عیب‌یابی انگلیسی است",
+    "ok": true,
+    "evidence": "English content"
+  },
+  {
+    "id": "L1",
+    "area": "reminders",
+    "name": "پروژه بایگانی‌شده دیگر یادآوری سرویس عقب‌افتاده تولید نمی‌کند",
+    "ok": true,
+    "evidence": "archived = silent"
+  },
+  {
+    "id": "L2",
+    "area": "reminders",
+    "name": "پیگیریِ سرویسِ «تمام‌شده (سالم)» برای همیشه عقب‌افتاده نمی‌ماند",
+    "ok": true,
+    "evidence": "ok service not nagging"
+  },
+  {
+    "id": "M1",
+    "area": "xss",
+    "name": "نام تکنسین در صفحه آمار تزریق HTML نمی‌کند",
+    "ok": true,
+    "evidence": "escaped"
+  },
+  {
+    "id": "M2",
+    "area": "reports",
+    "name": "گزارش ماهانه مصرف قطعه را با علامت درست نشان می‌دهد",
+    "ok": true,
+    "evidence": "shows ×2"
+  },
+  {
+    "id": "N1",
+    "area": "contracts",
+    "name": "مبلغ منفی قرارداد پذیرفته نمی‌شود",
+    "ok": true,
+    "evidence": "rejected/clamped"
+  },
+  {
+    "id": "O1",
+    "area": "a11y",
+    "name": "ردیف‌های لیست با صفحه‌کلید هم قابل بازکردن‌اند",
+    "ok": true,
+    "evidence": "keyboard reachable"
+  },
+  {
+    "id": "P1",
+    "area": "auth",
+    "name": "حساب دوم روی همان دستگاه، داده کاربر اول را نمی‌بیند",
+    "ok": true,
+    "evidence": "data isolated per user"
+  },
+  {
+    "id": "Q1",
+    "area": "missing-feature",
+    "name": "دکمه تماس (tel:) برای شماره مشتری/کارفرما وجود دارد",
+    "ok": true,
+    "evidence": "exists"
+  },
+  {
+    "id": "Q2",
+    "area": "missing-feature",
+    "name": "بازیابی از اسنپ‌شات خودکار در UI قابل انجام است",
+    "ok": true,
+    "evidence": "exists"
+  },
+  {
+    "id": "Q3",
+    "area": "missing-feature",
+    "name": "تغییر رمز عبور از داخل اپ ممکن است",
+    "ok": true,
+    "evidence": "exists"
+  },
+  {
+    "id": "Q4",
+    "area": "missing-feature",
+    "name": "به گزارش سرویس می‌شود مستقیم عکس پیوست کرد",
+    "ok": true,
+    "evidence": "exists"
+  },
+  {
+    "id": "Q5",
+    "area": "missing-feature",
+    "name": "چک‌لیست دکمه «شروع مجدد/دوره جدید» دارد",
+    "ok": true,
+    "evidence": "exists"
+  },
+  {
+    "id": "Q6",
+    "area": "missing-feature",
+    "name": "ناوبری پایین صفحه (thumb bar) در موبایل وجود دارد",
+    "ok": true,
+    "evidence": "exists"
+  },
+  {
+    "id": "Q7",
+    "area": "missing-feature",
+    "name": "راهنمای نصب روی آیفون (Add to Home Screen) داخل اپ هست",
+    "ok": true,
+    "evidence": "exists"
+  },
+  {
+    "id": "Q8",
+    "area": "missing-feature",
+    "name": "فونت وزیرمتن جزو فایل‌های آفلاین (Service Worker) هست",
+    "ok": true,
+    "evidence": "exists"
+  },
+  {
+    "id": "Q9",
+    "area": "missing-feature",
+    "name": "برای پروژه فیلد سررسید گواهی/بازرسی استاندارد وجود دارد",
+    "ok": true,
+    "evidence": "exists"
+  },
+  {
+    "id": "Q10",
+    "area": "missing-feature",
+    "name": "نمودار روند اندازه‌گیری هر آسانسور وجود دارد",
+    "ok": true,
+    "evidence": "exists"
+  },
+  {
+    "id": "Q11",
+    "area": "missing-feature",
+    "name": "رابط کاربری چندآسانسوری برای یک ساختمان وجود دارد",
+    "ok": false,
+    "evidence": "لایه داده از فاز ۲B آماده است ولی UI هنوز «هر پروژه = یک آسانسور» است؛ برج ۳ آسانسوره یعنی ۳ پروژه تکراری با مشتری/آدرس تکراری و سوابق پراکنده"
+  },
+  {
+    "id": "Q12",
+    "area": "a11y",
+    "name": "کنتراست متن کم‌رنگ (text-3) روی کارت سفید حداقل 4.5:1 است",
+    "ok": true,
+    "evidence": "5.13:1"
+  }
+]

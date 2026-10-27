@@ -31,7 +31,7 @@ function renderSettings() {
         <div class="card-title">🔧 ${t('setSvcDefaults')}</div>
         <div class="field"><label>${t('setDefaultTech')}</label><input id="st_defaulttech" value="${esc(s.defaultTech || '')}" placeholder="${esc((state.user && state.user.name) || '')}" /></div>
         <p class="hint">${t('setDefaultTechHint')}</p>
-        <div class="field" style="max-width:160px;margin-top:6px"><label>${t('invTaxRate')}</label><input id="st_taxrate" type="number" min="0" max="100" step="1" value="${faNum(s.taxRate != null ? s.taxRate : 0)}" /></div>
+        <div class="field" style="max-width:160px;margin-top:6px"><label>${t('invTaxRate')}</label><input id="st_taxrate" type="number" min="0" max="100" step="1" value="${Math.max(0, Math.min(100, Math.round(+(s.taxRate != null ? s.taxRate : 0) || 0)))}" /></div>
         <button class="btn btn-primary btn-sm" id="stSaveSvc" style="margin-top:8px">💾 ${t('save')}</button>
       </div>
     </div>
@@ -62,6 +62,14 @@ function renderSettings() {
           ${perm === 'default' ? `<button class="btn btn-ghost btn-sm" onclick="enableNotifications()">${t('setNotifyRequest')}</button>` : ''}
         </div>` : `<p class="hint">${t('setNotifyUnsupported')}</p>`}
       </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">🔐 ${t('setSecurity')}</div>
+      <div class="form-grid">
+        <div class="field"><label>${t('curPass')}</label><input id="st_curpass" type="password" autocomplete="current-password" /></div>
+        <div class="field"><label>${t('newPass')}</label><input id="st_newpass" type="password" autocomplete="new-password" /></div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="changePassword()">🔑 ${t('changePass')}</button>
     </div>
     <div class="card" style="margin-top:16px">
       <div class="card-title">💾 ${t('setData')}</div>
@@ -106,4 +114,15 @@ function renderSettings() {
     try { const d = await api('/settings', { method: 'PUT', body: { autoBackup: ab.checked } }); state.settings = d.settings; if (ab.checked) runAutoBackup(); toast(t('saved')); }
     catch (e) { toast(errMsg(e), 'err'); }
   };
+}
+
+async function changePassword() {
+  const cur = $('#st_curpass').value, nw = $('#st_newpass').value;
+  if (!cur) { fieldError('#st_curpass', 'errWeakPass'); return; }
+  if (!nw || nw.length < 6) { fieldError('#st_newpass', 'errWeakPass'); return; }
+  try {
+    await api('/auth/change-password', { method: 'POST', body: { current: cur, next: nw } });
+    $('#st_curpass').value = ''; $('#st_newpass').value = '';
+    toast(t('passChanged'));
+  } catch (e) { toast(errMsg(e), 'err'); }
 }

@@ -1,10 +1,10 @@
 /* ================= VERSION SINGLE SOURCE OF TRUTH ================= */
-var APP_VERSION = '29.2.0';
+var APP_VERSION = '29.3.0';
 var DB_SCHEMA_VERSION = 3;
 var BACKUP_FORMAT_VERSION = 8;
-var CACHE_VERSION = 'zlift-pwa-v37';
+var CACHE_VERSION = 'zlift-pwa-v39';
 /* Display badge shown on Settings / about */
-var APP_BUILD = '2026-09-06';
+var APP_BUILD = '2026-10-27';
 
 /* ================= Z Lift — SPA app ================= */
 'use strict';
@@ -91,11 +91,19 @@ function guard(btnSel, fn) {
 }
 /* turn an API error code into a message the technician can act on */
 var ERR_KEYS = {
-    name_required: 'requiredTitle', customer_required: 'requiredCustomer',
-  invalid_invoice: 'invInvalidRecord', duplicate_invoice_number: 'invDuplicateNumber',
+    name_required: 'requiredTitle', customer_required: 'requiredCustomer', title_required: 'requiredTitle',
+  invalid_invoice: 'invInvalidRecord', duplicate_invoice_number: 'invDuplicateNumber', invoice_empty: 'invEmpty',
   not_found: 'errNotFound', invoice_part_not_found: 'errNotFound', insufficient_stock: 'stockAlert', too_large: 'photoTooLarge', bad_backup: 'restoreBad',
   unauthorized: 'errSessionExpired', invalid_credentials: 'errInvalidCred',
-  username_taken: 'errUserTaken', weak_password: 'errWeakPass', bad_username: 'errBadUser'
+  username_taken: 'errUserTaken', weak_password: 'errWeakPass', bad_username: 'errBadUser',
+  invalid_measurement: 'measInvalid',
+  /* Phase 2B context errors must reach the technician as words, not "something went wrong" */
+  RELATED_RECORD_CONTEXT_MISMATCH: 'errContextMismatch', RECORD_CONTEXT_MISMATCH: 'errContextMismatch',
+  ELEVATOR_PROJECT_MISMATCH: 'errContextMismatch', RECORD_CONTEXT_INVALID: 'errContextMismatch',
+  PROJECT_NOT_FOUND: 'errNotFound', ELEVATOR_NOT_FOUND: 'errNotFound', RELATED_RECORD_NOT_FOUND: 'errNotFound',
+  ELEVATOR_CONTEXT_REQUIRED: 'errProjectRequired', PROJECT_CONTEXT_REQUIRED: 'errProjectRequired',
+  ELEVATOR_CONTEXT_AMBIGUOUS: 'errElevatorAmbiguous', CHECKLIST_IDENTITY_CONFLICT: 'errChecklistExists',
+  RESTORE_PROJECT_RELATION_INVALID: 'restoreBad', RESTORE_ELEVATOR_RELATION_INVALID: 'restoreBad', RESTORE_ELEVATOR_CONTEXT_AMBIGUOUS: 'restoreBad'
 };
 function errMsg(e) {
   if (e && e.code && ERR_KEYS[e.code]) return t(ERR_KEYS[e.code]);
@@ -106,7 +114,8 @@ function errMsg(e) {
 function reportError(e, ctx) {
   try {
     console.error('[ZLift]', ctx || '', e);
-    toast(t('errUnexpected'), 'err');
+    /* a known API error code deserves its real message even on this path */
+    toast(e && e.code && ERR_KEYS[e.code] ? t(ERR_KEYS[e.code]) : t('errUnexpected'), 'err');
   } catch (e2) {}
 }
 window.addEventListener('error', ev => { try { console.error('[ZLift uncaught]', ev.message); } catch (e) {} });
@@ -170,6 +179,25 @@ function norm(s) {
 /* join any number of fields into one normalised haystack */
 function hay(...parts) { return norm(parts.filter(v => v != null && v !== '').join(' ')); }
 
+/* keyboard/screen-reader access for the app's clickable div rows: anything
+   with an inline onclick that is not already an interactive element becomes
+   a focusable button (Enter/Space activates it via the delegated handler) */
+function enhanceClickableRows(root) {
+  (root || document).querySelectorAll('[onclick]').forEach(el => {
+    if (el.dataset.a11yDone) return;
+    if (/^(BUTTON|A|INPUT|SELECT|TEXTAREA|LABEL)$/.test(el.tagName)) return;
+    if (el.hasAttribute('tabindex') || el.getAttribute('role')) return;
+    el.dataset.a11yDone = '1';
+    el.setAttribute('role', 'button');
+    el.setAttribute('tabindex', '0');
+  });
+}
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target && e.target.dataset && e.target.dataset.a11yDone) {
+    e.preventDefault();
+    e.target.click();
+  }
+});
 /* optimistic list removal with rollback — safe when the id is already gone
    (a stale button / double tap must never delete a random last row) */
 function optimisticRemove(list, id) {
@@ -342,6 +370,7 @@ function openModal(html, opts = {}) {
                  box.querySelector('.modal-foot .btn-primary') || box.querySelector('.modal-head .icon-btn');
   if (target) { try { target.focus({ preventScroll: true }); } catch (e) {} }
   if (!hadModal) pushUiLayer('modal', _closeModalDom);
+  try { enhanceClickableRows(box); } catch (e) {}
 }
 function escClose(e) { if (e.key === 'Escape') closeModal(); }
 function closeModal() {
@@ -410,9 +439,11 @@ function paintList(el, items, rowFn, chunk = 60) {
   if (!el) return;
   if (typeof IntersectionObserver !== 'function' || items.length <= chunk) {
     el.innerHTML = items.map(rowFn).join('');
+    enhanceClickableRows(el);
     return;
   }
   el.innerHTML = items.slice(0, chunk).map(rowFn).join('');
+  enhanceClickableRows(el);
   let i = chunk;
   const sentinel = document.createElement('div');
   sentinel.setAttribute('aria-hidden', 'true');
@@ -422,6 +453,7 @@ function paintList(el, items, rowFn, chunk = 60) {
     if (!entries.some(e => e.isIntersecting)) return;
     if (!document.contains(sentinel)) { io.disconnect(); return; }
     sentinel.insertAdjacentHTML('beforebegin', items.slice(i, i + chunk).map(rowFn).join(''));
+    enhanceClickableRows(el);
     i += chunk;
     if (i >= items.length) { io.disconnect(); sentinel.remove(); }
   }, { rootMargin: '600px' });
@@ -481,7 +513,24 @@ function dueInfo(p) {
   return { last, next, days, overdue: days < 0, soon: days >= 0 && days <= 7 };
 }
 function projName(id) { const p = (state.projects || []).find(x => x.id === id); return p ? p.name : '—'; }
+/* <option>s for project selects in FORMS: archived (handed-over) buildings are
+   hidden so new work is not filed against them by mistake — except the record's
+   own project when editing, which stays selectable and is marked 📦. */
+function projectOptsHTML(selectedId, includeEmpty, emptyLabel) {
+  const sel = String(selectedId || '');
+  const list = (state.projects || []).filter(p => !p.archived || p.id === sel);
+  return (includeEmpty ? `<option value="">${emptyLabel != null ? emptyLabel : '—'}</option>` : '') +
+    list.map(p => `<option value="${p.id}" ${sel === p.id ? 'selected' : ''}>${esc(p.name)}${p.archived ? ' 📦' : ''}</option>`).join('');
+}
 /* display target of a service: linked project name, or its own standalone customer/elevator */
+/* tel: href from a free-typed phone (Persian/Arabic digits → Latin) */
+function telHref(phone) {
+  const d = String(phone || '')
+    .replace(/[۰-۹]/g, c => '۰۱۲۳۴۵۶۷۸۹'.indexOf(c))
+    .replace(/[٠-٩]/g, c => '٠١٢٣٤٥٦٧٨٩'.indexOf(c))
+    .replace(/[^0-9+]/g, '');
+  return d ? 'tel:' + d : '';
+}
 function svcTarget(s) {
   if (s.projectId) { const p = (state.projects || []).find(x => x.id === s.projectId); if (p) return p.name; }
   return s.customer || s.elevatorInfo || '—';

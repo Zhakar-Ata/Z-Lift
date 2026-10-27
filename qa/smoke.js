@@ -269,8 +269,12 @@ async function T(name, cond, info) {
 
     const projC = await ev(`api('/projects', { method: 'POST', body: { name: 'برج کالندر QA', elevatorType: 'traction', capacityKg: 630, persons: 8, floors: 8, stops: 8, speed: 1, serviceIntervalDays: 30 } })`);
     await T('calendar test project created', !!projC.project);
+    /* own fixture (NOT the demo seed — seed data belongs to the demo account
+       since per-user workspaces): a maintenance visit 26 days ago makes the
+       30-day interval fall due "soon" */
+    await ev(`api('/services', { method: 'POST', body: { projectId: '${projC.project.id}', serviceType: 'maintenance', date: Date.now() - 26 * 86400000, problem: 'سرویس دوره‌ای QA' } })`);
     await ev(`state.projects = null; state.services = null; loadAll(true);`);
-    await T('periodic reminder derived from service interval', () => ev(`buildReminders().filter(r => r.kind === 'periodic').length >= 2`));
+    await T('periodic reminder derived from service interval', () => ev(`buildReminders().some(r => r.kind === 'periodic' && r.projectId === '${projC.project.id}')`));
     await T('periodic reminder flagged "soon" within 7 days', () => ev(`buildReminders().some(r => r.kind === 'periodic' && r.soon && !r.overdue)`));
 
     await ev(`api('/services', { method: 'POST', body: { projectId: ${JSON.stringify(pidT)}, technician: 'QA', serviceType: 'repair', problem: 'x', diagnosis: 'y', workDone: 'z', partsReplaced: '-', finalStatus: 'followup', followUpDate: Date.now() + 3 * 86400000 } })`);
@@ -695,12 +699,13 @@ async function T(name, cond, info) {
     await T('service form follows the real job flow', () => ev(`(() => {
       // the structured-parts field is its own panel (picker + custom row) and
       // is excluded from the ordered list of core job fields
-      const ids = [...document.querySelectorAll('#modalRoot .form-grid > .field:not([data-svcparts]) input, #modalRoot .form-grid > .field:not([data-svcparts]) select, #modalRoot .form-grid > .field:not([data-svcparts]) textarea')].map(e => e.id);
+      const ids = [...document.querySelectorAll('#modalRoot .form-grid > .field:not([data-svcparts]):not([data-svcphotos]) input, #modalRoot .form-grid > .field:not([data-svcparts]):not([data-svcphotos]) select, #modalRoot .form-grid > .field:not([data-svcparts]):not([data-svcphotos]) textarea')].map(e => e.id);
       const want = ['s_project','s_customer','s_elevator','s_date','s_type','s_tech','s_complaint','s_problem',
                     's_diag','s_meas','s_work','s_recommend','s_final','s_followup'];
       return want.join(',') === ids.join(',') && document.querySelectorAll('#modalRoot .form-sep').length === 3
-        && !!document.querySelector('#svcPartsBox') && !!document.querySelector('#svcPickPanel') && !!document.querySelector('#svcCustomRow');
-    })()`), await ev(`[...document.querySelectorAll('#modalRoot .form-grid > .field:not([data-svcparts]) input, #modalRoot .form-grid > .field:not([data-svcparts]) select, #modalRoot .form-grid > .field:not([data-svcparts]) textarea')].map(e => e.id).join(',')`));
+        && !!document.querySelector('#svcPartsBox') && !!document.querySelector('#svcPickPanel') && !!document.querySelector('#svcCustomRow')
+        && !!document.querySelector('#svc_photos');
+    })()`), await ev(`[...document.querySelectorAll('#modalRoot .form-grid > .field:not([data-svcparts]):not([data-svcphotos]) input, #modalRoot .form-grid > .field:not([data-svcparts]):not([data-svcphotos]) select, #modalRoot .form-grid > .field:not([data-svcparts]):not([data-svcphotos]) textarea')].map(e => e.id).join(',')`));
     await ev(`closeModal()`);
     await ev(`navigate('/projects')`); await waitLoaded();
     await ev(`openProjectForm()`);

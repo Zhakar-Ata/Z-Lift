@@ -59,7 +59,7 @@ function buildInvoiceText(inv) {
   const co = (state.settings || {}).company || 'Z Lift';
   const tt = invTotals(inv);
   const L = [];
-  L.push('🧾 ' + co + ' — ' + t('invoice') + ' #' + inv.id.slice(0, 6).toUpperCase());
+  L.push('🧾 ' + co + ' — ' + t('invoice') + ' #' + (inv.number || inv.id.slice(0, 6).toUpperCase()));
   L.push('👤 ' + inv.customer);
   L.push('📅 ' + fmtJalali(inv.date || inv.createdAt));
   L.push('');

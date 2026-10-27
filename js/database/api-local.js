@@ -12,7 +12,7 @@ function _lsLoad() {
     } catch (e) {}
   }
   if (!_lsDB || !_lsDB.users) { _lsDB = _lsSeed(); _lsSave(); }
-  if (!_lsDB.parts) _lsDB.parts = _lsSeed().parts;
+  if (!_lsDB.parts) _lsDB.parts = _lsSeed().parts.map(p => { const q = Object.assign({}, p); delete q._owner; return q; });
   if (!_lsDB.settings) _lsDB.settings = { company: 'Z Lift', phone: '', address: '' };
   ['elevators', 'diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders', 'measurements', 'safetyLogs'].forEach(k => { if (!Array.isArray(_lsDB[k])) _lsDB[k] = []; });
   let _schemaChanged = false;
@@ -32,6 +32,7 @@ function _lsLoad() {
       typeof STRUCTURED_DB !== 'undefined' && STRUCTURED_DB.foldArchivedProjects(_lsDB)) _schemaChanged = true;
   if (typeof STRUCTURED_DB !== 'undefined' && STRUCTURED_DB.repairProjectRefs(_lsDB)) _schemaChanged = true;
   if (!_lsDB.sessions || typeof _lsDB.sessions !== 'object') _lsDB.sessions = {};
+  if (!_lsDB._ownerSince) { _lsDB._ownerSince = Date.now(); _schemaChanged = true; }
   _lsPruneSessions();
   _lsMigrateServices();
   if (_schemaChanged) _lsSave();
@@ -104,6 +105,7 @@ async function _lsSave(dbOverride) {
   if (STRUCTURED_DB.status().mode === 'indexedDB') {
     await STRUCTURED_DB.save(data);
     window._lsSaveFailed = false;
+    try { localStorage.setItem('zlift_sync', String(Date.now())); } catch (e) {} // other tabs reload (see app.js)
     return true;
   }
 
@@ -111,6 +113,7 @@ async function _lsSave(dbOverride) {
   try {
     localStorage.setItem('zlift_db', raw);
     window._lsSaveFailed = false;
+    try { localStorage.setItem('zlift_sync', String(Date.now())); } catch (e) {} // other tabs reload (see app.js)
     if (++_lsMirrorTick % 10 === 1) {
       try { localStorage.setItem('zlift_db_mirror', raw); } catch (e2) {}
     }
@@ -120,6 +123,7 @@ async function _lsSave(dbOverride) {
       localStorage.removeItem('zlift_db_mirror');
       localStorage.setItem('zlift_db', raw);
       window._lsSaveFailed = false;
+      try { localStorage.setItem('zlift_sync', String(Date.now())); } catch (e) {} // other tabs reload (see app.js)
       return true;
     } catch (e2) {}
     if (!window._lsSaveFailed) {
@@ -522,7 +526,7 @@ function _apiNormalizeRestoreOwnership(candidate) {
 }
 
 
-async function _apiLocal(path, opts = {}) {
+async function _apiLocalCore(path, opts = {}) {
   await STRUCTURED_DB.ready();
   const db = _lsLoad();
   const method = (opts.method || 'GET').toUpperCase();
@@ -535,7 +539,8 @@ async function _apiLocal(path, opts = {}) {
   /* auth */
   if (path === '/auth/login' && method === 'POST') {
     const u = db.users.find(x => x.username === String(b.username || '').trim().toLowerCase());
-    if (!u || u.password !== _lsHash(String(b.password || ''))) throw _lsErr('invalid_credentials', 401);
+    if (!u || !_lsVerify(String(b.password || ''), u.password)) throw _lsErr('invalid_credentials', 401);
+    if (!String(u.password).startsWith('v2$')) u.password = _lsHashV2(String(b.password || '')); // upgrade legacy hash in place
     const token = _lsUid() + _lsUid();
     db.sessions[token] = { userId: u.id, createdAt: Date.now() };
     await _lsSave();
@@ -546,7 +551,7 @@ async function _apiLocal(path, opts = {}) {
     if (!username || username.length < 3) throw _lsErr('bad_username');
     if (String(b.password || '').length < 6) throw _lsErr('weak_password');
     if (db.users.find(x => x.username === username)) throw _lsErr('username_taken', 409);
-    const u = { id: _lsUid(), username, name: String(b.name || '').trim() || username, password: _lsHash(String(b.password)), role: 'technician', createdAt: Date.now() };
+    const u = { id: _lsUid(), username, name: String(b.name || '').trim() || username, password: _lsHashV2(String(b.password)), role: 'technician', createdAt: Date.now() };
     db.users.push(u);
     const token = _lsUid() + _lsUid();
     db.sessions[token] = { userId: u.id, createdAt: Date.now() };
@@ -562,6 +567,14 @@ async function _apiLocal(path, opts = {}) {
   if (path === '/auth/me') {
     if (!me) throw _lsErr('unauthorized', 401);
     return { user: { id: me.id, username: me.username, name: me.name, role: me.role } };
+  }
+  if (path === '/auth/change-password' && method === 'POST') {
+    if (!me) throw _lsErr('unauthorized', 401);
+    if (!_lsVerify(String(b.current || ''), me.password)) throw _lsErr('invalid_credentials', 401);
+    if (String(b.next || '').length < 6) throw _lsErr('weak_password');
+    me.password = _lsHashV2(String(b.next));
+    await _lsSave();
+    return { ok: true };
   }
 
   /* Context-preserving search. Unscoped use is the documented global mode;
@@ -628,14 +641,14 @@ async function _apiLocal(path, opts = {}) {
     const p = {
       id: _lsUid(), name: String(b.name).trim(), customer: String(b.customer || ''), phone: String(b.phone || ''),
       location: String(b.location || ''), elevatorType: b.elevatorType === 'hydraulic' ? 'hydraulic' : 'traction',
-      capacityKg: +b.capacityKg || 0, persons: +b.persons || 0, floors: +b.floors || 0, stops: +b.stops || 0,
-      speed: +b.speed || 0, nominalVoltage: +b.nominalVoltage || 0,
+      capacityKg: Math.max(0, +b.capacityKg || 0), persons: Math.max(0, +b.persons || 0), floors: Math.max(0, +b.floors || 0), stops: Math.max(0, +b.stops || 0),
+      speed: Math.max(0, +b.speed || 0), nominalVoltage: Math.max(0, +b.nominalVoltage || 0), certDue: Math.max(0, +b.certDue || 0),
       voltageTolerance: b.voltageTolerance == null || b.voltageTolerance === '' ? null : Math.max(0, +b.voltageTolerance || 0),
       controller: String(b.controller || ''), motor: String(b.motor || ''),
       drive: String(b.drive || ''), doorOperator: String(b.doorOperator || ''),
       roping: b.roping === '2:1' ? '2:1' : '1:1', encoder: String(b.encoder || ''), brake: String(b.brake || ''),
       status: b.status || 'contract', progress: Math.max(0, Math.min(100, +b.progress || 0)),
-      serviceIntervalDays: +b.serviceIntervalDays || 0, notes: String(b.notes || ''),
+      serviceIntervalDays: Math.max(0, +b.serviceIntervalDays || 0), notes: String(b.notes || ''),
       createdAt: Date.now(), updatedAt: Date.now()
     };
     db.projects.push(p);
@@ -659,7 +672,7 @@ async function _apiLocal(path, opts = {}) {
     }
     if (method === 'PUT') {
       ['name', 'customer', 'phone', 'location', 'elevatorType', 'controller', 'motor', 'drive', 'doorOperator', 'roping', 'encoder', 'brake', 'status', 'notes'].forEach(f => { if (b[f] !== undefined) p[f] = String(b[f]); });
-      ['capacityKg', 'persons', 'floors', 'stops', 'speed', 'serviceIntervalDays', 'nominalVoltage'].forEach(f => { if (b[f] !== undefined) p[f] = +b[f] || 0; });
+      ['capacityKg', 'persons', 'floors', 'stops', 'speed', 'serviceIntervalDays', 'nominalVoltage', 'certDue'].forEach(f => { if (b[f] !== undefined) p[f] = Math.max(0, +b[f] || 0); });
       if (b.voltageTolerance !== undefined) p.voltageTolerance = b.voltageTolerance == null || b.voltageTolerance === '' ? null : Math.max(0, +b.voltageTolerance || 0);
       if (b.progress !== undefined) p.progress = Math.max(0, Math.min(100, +b.progress || 0));
       /* archive flags are persisted explicitly through the API path — the
@@ -842,7 +855,7 @@ async function _apiLocal(path, opts = {}) {
   if (path === '/parts' && method === 'GET') return { parts: [...db.parts].sort((a, c) => a.name.localeCompare(c.name, 'fa')) };
   if (path === '/parts' && method === 'POST') {
     if (!b.name || !String(b.name).trim()) throw _lsErr('name_required');
-    const part = { id: _lsUid(), name: String(b.name).trim(), category: String(b.category || 'عمومی'), unit: String(b.unit || 'عدد'), qty: +b.qty || 0, minQty: +b.minQty || 0, price: +b.price || 0, location: String(b.location || ''), note: String(b.note || ''), supplier: String(b.supplier || ''), code: String(b.code || ''), updatedAt: Date.now() };
+    const part = { id: _lsUid(), name: String(b.name).trim(), category: String(b.category || 'عمومی'), unit: String(b.unit || 'عدد'), qty: Math.max(0, +b.qty || 0), minQty: Math.max(0, +b.minQty || 0), price: Math.max(0, +b.price || 0), location: String(b.location || ''), note: String(b.note || ''), supplier: String(b.supplier || ''), code: String(b.code || ''), updatedAt: Date.now() };
     db.parts.push(part); await _lsSave();
     return { part };
   }
@@ -921,7 +934,7 @@ async function _apiLocal(path, opts = {}) {
       _apiAuthorizeProjectRecord(db, item, query);
       const payload = _apiNormalizeInvoiceOwnership(db, normalizeInvoicePayload(Object.assign({}, item, b)));
       if (!payload.customer) throw _lsErr('customer_required');
-      const before = JSON.parse(JSON.stringify(item));
+        const before = JSON.parse(JSON.stringify(item));
       const partsSnapshot = JSON.parse(JSON.stringify(db.parts));
       const version = Math.max(0, +item.inventoryEffectVersion || 0) + 1;
       try {
@@ -1098,6 +1111,7 @@ async function _apiLocal(path, opts = {}) {
     if (!parts[1] && method === 'POST') {
       if (parts[0] === 'photos' && String(b.data || '').length > 2500000) throw _lsErr('too_large', 413);
       const item = Object.assign({}, b, { id: _lsUid(), createdAt: Date.now(), updatedAt: Date.now() });
+      if (parts[0] === 'contracts') { item.amount = Math.max(0, Math.round(+item.amount || 0)); item.months = Math.max(1, Math.min(120, Math.round(+item.months || 12))); }
       item.projectId = _apiProjectOnlyId(db, b);
       delete item.elevatorId;
       if (parts[0] === 'photos' && typeof item.data === 'string' && item.data) {
@@ -1121,6 +1135,7 @@ async function _apiLocal(path, opts = {}) {
       if (method === 'PUT') {
         const targetProjectId = _apiHasContext(b) ? _apiProjectOnlyId(db, b) : String(item.projectId || '');
         Object.keys(b).forEach(k => { if (!['id', 'createdAt', 'projectId', 'elevatorId'].includes(k)) item[k] = b[k]; });
+        if (parts[0] === 'contracts' && b.amount !== undefined) item.amount = Math.max(0, Math.round(+b.amount || 0));
         item.projectId = targetProjectId; delete item.elevatorId;
         item.updatedAt = Date.now(); await _lsSave();
         return { item };
@@ -1270,6 +1285,12 @@ async function _apiLocal(path, opts = {}) {
     }
     _apiNormalizeRestoreOwnership(candidate);
 
+    /* Restoring a backup on this device makes the restored workspace the
+       restoring user's own (per-user workspaces must not hide it from them). */
+    ['projects', 'services', 'notes', 'checklists', 'parts', 'diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders', 'measurements', 'safetyLogs']
+      .forEach(k => (candidate[k] || []).forEach(r => { if (r) r._owner = me.id; }));
+    if (!candidate._ownerSince) candidate._ownerSince = db._ownerSince || Date.now();
+
     /* Keep restored photo bytes inline in the staged aggregate until the atomic
        structured commit is verified. Writing same-id blobs before that commit
        could corrupt live photos if the structured transaction then failed. */
@@ -1301,4 +1322,73 @@ async function _apiLocal(path, opts = {}) {
   }
 
   throw _lsErr('not_found', 404);
+}
+
+/* ================= PER-USER WORKSPACES (v29.3) =================
+   Every business record carries `_owner` = the user id that created it.
+   List reads only ever return the caller's own records; a second account
+   registered on the same device starts empty and cannot see, edit or
+   delete the first account's data. Records without `_owner` predate this
+   feature: they stay visible to accounts that already existed when it was
+   introduced (`db._ownerSince`) so no installed device loses its data.
+   Settings (company/tax/sequences) intentionally stay device-level. */
+var _OWNER_COLLECTIONS = ['projects', 'services', 'notes', 'checklists', 'parts', 'invoices', 'contracts', 'reminders', 'measurements', 'diagSessions', 'issues', 'safetyLogs', 'calcSaves', 'tools', 'photos'];
+function _apiMe(db) {
+  const sess = state.token && db.sessions && db.sessions[state.token];
+  return sess ? (db.users || []).find(u => u.id === sess.userId) || null : null;
+}
+function _recVisible(db, me, rec) {
+  if (!me || !rec || typeof rec !== 'object') return true;
+  if (rec._owner) return rec._owner === me.id;
+  return (+me.createdAt || 0) <= (+db._ownerSince || Infinity); // legacy account + legacy row
+}
+async function _apiLocal(path, opts = {}) {
+  const method = (opts.method || 'GET').toUpperCase();
+  const cleanPath = String(path || '').split('?')[0];
+  const segs = cleanPath.split('/').filter(Boolean);
+  if (cleanPath.startsWith('/auth/')) return _apiLocalCore(path, opts);
+
+  /* pre-check: never let one account touch another account's record by id */
+  if (segs[1] && _OWNER_COLLECTIONS.includes(segs[0])) {
+    await STRUCTURED_DB.ready();
+    const db = _lsLoad(); const me = _apiMe(db);
+    if (me) {
+      const rec = (db[segs[0]] || []).find(r => r && r.id === segs[1]);
+      if (rec && !_recVisible(db, me, rec)) throw _lsErr('not_found', 404);
+    }
+  }
+  if (cleanPath === '/parts-consume' && opts.body && opts.body.partId) {
+    await STRUCTURED_DB.ready();
+    const db = _lsLoad(); const me = _apiMe(db);
+    if (me) {
+      const part = (db.parts || []).find(r => r && r.id === opts.body.partId);
+      if (part && !_recVisible(db, me, part)) throw _lsErr('not_found', 404);
+    }
+  }
+
+  const result = await _apiLocalCore(path, opts);
+  if (!result || typeof result !== 'object') return result;
+  const db = _lsLoad(); const me = _apiMe(db);
+  if (!me) return result;
+
+  /* stamp the creator on fresh records (handlers return the live object) */
+  if (method === 'POST' && !segs[1] && _OWNER_COLLECTIONS.includes(segs[0])) {
+    const rec = result.project || result.service || result.note || result.checklist || result.part || result.item || result.reminder;
+    if (rec && typeof rec === 'object' && !rec._owner) {
+      rec._owner = me.id;
+      try { await _lsSave(); } catch (e) {}
+    }
+    return result;
+  }
+  /* scope every list-shaped read to the caller (backup export is a nested
+     object, deliberately untouched: a device backup stays complete) */
+  if (method === 'GET') {
+    Object.keys(result).forEach(k => {
+      if (Array.isArray(result[k])) result[k] = result[k].filter(r => _recVisible(db, me, r && r.record ? r.record : r));
+      else if (result[k] && typeof result[k] === 'object' && (k === 'collections' || k === 'shared')) {
+        Object.keys(result[k]).forEach(ck => { if (Array.isArray(result[k][ck])) result[k][ck] = result[k][ck].filter(r => _recVisible(db, me, r)); });
+      }
+    });
+  }
+  return result;
 }

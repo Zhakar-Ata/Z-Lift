@@ -1,8 +1,32 @@
 /* ================= DIAGNOSTICS — decision tree ================= */
 var diagFilter = { q: '', type: 'all' };
-var diagSession = null; // { flowId, path:[nodeIds], current }
+var diagSession = null; // { flowId, path:[nodeIds], current, evidence:[], startedAt }
+/* bilingual tree text: pick app language, fall back to fa.
+   (measurement-engine's diag-save form calls this — it was never defined,
+   which crashed "save diagnosis" outright) */
+function dg(x) { return x && typeof x === 'object' ? (x[LANG] || x.fa || x.en || '') : (x || ''); }
+/* the session used to live in RAM only: a reload mid-diagnosis (app killed
+   in the machine room, battery saver, an accidental pull-to-refresh) lost
+   the whole trail. Persist every step and resume on return. */
+function _diagPersist() {
+  try {
+    if (diagSession) localStorage.setItem('zlift_diag_session', JSON.stringify(diagSession));
+    else localStorage.removeItem('zlift_diag_session');
+  } catch (e) {}
+}
+function _diagRestore() {
+  if (diagSession) return;
+  try {
+    const raw = localStorage.getItem('zlift_diag_session');
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    if (s && s.flowId && DIAG_FLOWS.some(f => f.id === s.flowId)) diagSession = s;
+    else localStorage.removeItem('zlift_diag_session');
+  } catch (e) {}
+}
 
 function renderDiagnostics() {
+  _diagRestore();
   const c = $('#content');
   if (diagSession) { renderDiagFlow(c); return; }
   c.innerHTML = `
@@ -46,7 +70,7 @@ function drawDiagList() {
       <div class="row-icon" style="background:${d.type === 'hydraulic' ? 'var(--teal-soft)' : d.type === 'traction' ? 'var(--accent-soft)' : 'var(--warn-soft)'};font-size:19px">${d.icon || '🔩'}</div>
       <div class="row-body">
         <strong>${esc(d.symptom[LANG] || d.symptom.fa)}</strong>
-        <span class="sub">🔍 ${esc((d.first && d.first.fa) || '')}</span>
+        <span class="sub">🔍 ${esc(dg(d.first))}</span>
       </div>
       <div class="row-side">${d.type !== 'both' ? typeBadge(d.type) : `<span class="badge b-gray">⚙️/🛢️</span>`}</div>
     </div>`).join('');
@@ -56,12 +80,14 @@ function _diagStepBackDom() {
   if (!diagSession) return;
   if (!diagSession.path.length) { diagSession = null; }
   else { diagSession.current = diagSession.path.pop(); }
+  _diagPersist();
   renderDiagnostics();
 }
 function startDiagFlow(id) {
   const f = DIAG_FLOWS.find(x => x.id === id);
   if (!f) return;
   diagSession = { flowId: id, path: [], current: f.start, evidence: [], startedAt: Date.now() };
+  _diagPersist();
   pushUiLayer('diag', _diagStepBackDom);
   renderDiagnostics();
   window.scrollTo(0, 0);
@@ -69,15 +95,30 @@ function startDiagFlow(id) {
 function _diagQuickObs(key, kind) {
   const f = DIAG_FLOWS.find(x => x.id === diagSession.flowId);
   const cur = f && f.nodes[diagSession.current];
-  const q = cur && cur.q ? cur.q.fa : key;
+  const q = cur && cur.q ? dg(cur.q) : key;
   const txt = kind === 'ok'
     ? (LANG === 'fa' ? `تأیید شد: «${q}» نرمال است` : `Confirmed normal: "${q}"`)
     : (LANG === 'fa' ? `مشاهده غیرنرمال: «${q}»` : `Abnormal observation: "${q}"`);
   _diagEvidenceMark(kind, txt);
 }
 function _diagNoteObs() {
-  const note = prompt(LANG === 'fa' ? 'ثبت یادداشت/اندازه‌گیری:' : 'Record a note/measurement:');
-  if (note && note.trim()) _diagEvidenceMark('meas', note.trim());
+  /* native prompt() is unavailable/ugly in installed-PWA contexts and has no
+     multi-line or numeric input — use a modal like every other note field */
+  openModal(`
+    <div class="modal-head"><h3>📝 ${LANG === 'fa' ? 'ثبت یادداشت/اندازه‌گیری' : 'Record a note/measurement'}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>${t('note') || ''}</label><textarea id="diag_note" style="min-height:80px" dir="auto"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button>
+      <button class="btn btn-primary" id="diagNoteSave">💾 ${t('save')}</button>
+    </div>`);
+  $('#diagNoteSave').onclick = () => {
+    const note = $('#diag_note').value.trim();
+    if (!note) { closeModal(); return; }
+    closeModal();
+    _diagEvidenceMark('meas', note);
+  };
 }
 function diagAnswer(nodeId, qText, aText) {
   if (!diagSession) return;                       // stale button after the flow was closed
@@ -87,6 +128,7 @@ function diagAnswer(nodeId, qText, aText) {
   if (qText) _diagEvidenceMark('hypo', (LANG === 'fa' ? 'پاسخ: ' : 'Answer: ') + qText + ' → ' + aText);
   diagSession.path.push(diagSession.current);
   diagSession.current = nodeId;
+  _diagPersist();
   pushUiLayer('diag', _diagStepBackDom);
   renderDiagnostics();
   window.scrollTo(0, 0);
@@ -94,19 +136,22 @@ function diagAnswer(nodeId, qText, aText) {
 function diagBack() {
   if (!diagSession) return;
   popTaggedLayer('diag');
-  if (!diagSession.path.length) { diagSession = null; renderDiagnostics(); return; }
+  if (!diagSession.path.length) { diagSession = null; _diagPersist(); renderDiagnostics(); return; }
   diagSession.current = diagSession.path.pop();
+  _diagPersist();
   renderDiagnostics();
 }
 function diagExit() {
   while (popTaggedLayer('diag')) {}
   diagSession = null;
+  _diagPersist();
   renderDiagnostics();
 }
 function _diagEvidenceMark(kind, text) {
   if (!diagSession) return;
   diagSession.evidence = diagSession.evidence || [];
   diagSession.evidence.push({ kind, text: String(text || '').slice(0, 240), at: Date.now() });
+  _diagPersist();
   renderDiagnostics();
 }
 function _diagEvidencePanel() {
@@ -129,7 +174,7 @@ function renderDiagFlow(c) {
   /* breadcrumb of previous questions */
   const crumbs = diagSession.path.map(pid => {
     const pn = f.nodes[pid];
-    return pn && pn.q ? `<span class="badge b-gray" style="margin:2px">${esc(pn.q.fa)}</span>` : '';
+    return pn && pn.q ? `<span class="badge b-gray" style="margin:2px">${esc(dg(pn.q))}</span>` : '';
   }).join(' ← ');
 
   let body;
@@ -138,14 +183,14 @@ function renderDiagFlow(c) {
     body = `
       <div class="card" style="border-inline-start:4px solid var(--accent)">
         <div style="font-size:12px;color:var(--text-3);font-weight:700;margin-bottom:6px">${t('diagStep')} ${faNum(stepNo)}</div>
-        <h3 style="font-size:17px;margin-bottom:8px">🧪 TEST: ${esc(node.test.fa)}</h3>
+        <h3 style="font-size:17px;margin-bottom:8px">🧪 TEST: ${esc(dg(node.test))}</h3>
         <span class="badge ${node.verificationStatus === STANDARD_VERIFICATION.UNVERIFIED ? 'b-amber' : 'b-blue'}" style="margin-bottom:12px">${esc(node.verificationStatus)}</span>
-        ${node.why ? `<div class="kv-cell" style="margin-bottom:9px"><div class="k">❓ WHY</div><div class="v" style="font-weight:500">${esc(node.why.fa)}</div></div>` : ''}
-        ${node.how ? `<div class="kv-cell" style="margin-bottom:9px"><div class="k">🔧 ${t('diagHow')}</div><div class="v" style="font-weight:500">${esc(node.how.fa)}</div></div>` : ''}
-        ${node.expectedResult ? `<div class="kv-cell" style="margin-bottom:9px;background:var(--ok-soft)"><div class="k">✅ EXPECTED RESULT</div><div class="v" style="font-weight:500">${esc(node.expectedResult.fa)}</div></div>` : ''}
+        ${node.why ? `<div class="kv-cell" style="margin-bottom:9px"><div class="k">❓ WHY</div><div class="v" style="font-weight:500">${esc(dg(node.why))}</div></div>` : ''}
+        ${node.how ? `<div class="kv-cell" style="margin-bottom:9px"><div class="k">🔧 ${t('diagHow')}</div><div class="v" style="font-weight:500">${esc(dg(node.how))}</div></div>` : ''}
+        ${node.expectedResult ? `<div class="kv-cell" style="margin-bottom:9px;background:var(--ok-soft)"><div class="k">✅ EXPECTED RESULT</div><div class="v" style="font-weight:500">${esc(dg(node.expectedResult))}</div></div>` : ''}
         <div class="form-grid" style="margin-bottom:12px">
-          ${node.ifNormal ? `<div class="kv-cell"><div class="k">IF NORMAL</div><div class="v">${esc(node.ifNormal.fa)}</div></div>` : ''}
-          ${node.ifAbnormal ? `<div class="kv-cell"><div class="k">IF ABNORMAL</div><div class="v">${esc(node.ifAbnormal.fa)}</div></div>` : ''}
+          ${node.ifNormal ? `<div class="kv-cell"><div class="k">IF NORMAL</div><div class="v">${esc(dg(node.ifNormal))}</div></div>` : ''}
+          ${node.ifAbnormal ? `<div class="kv-cell"><div class="k">IF ABNORMAL</div><div class="v">${esc(dg(node.ifAbnormal))}</div></div>` : ''}
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
           <button class="chip" style="cursor:pointer" onclick="_diagQuickObs('${obsKey}','ok')">✅ ${LANG === 'fa' ? 'تأیید شد (نرمال)' : 'Confirmed normal'}</button>
@@ -153,32 +198,32 @@ function renderDiagFlow(c) {
           <button class="chip" style="cursor:pointer" onclick="_diagNoteObs('${obsKey}')">📝 ${LANG === 'fa' ? 'ثبت یادداشت/اندازه' : 'Note/measurement'}</button>
         </div>
         <div style="display:flex;flex-direction:column;gap:9px">
-          ${node.opts.map(o => `<button class="btn btn-primary" style="justify-content:flex-start;text-align:start" onclick="diagAnswer('${o.n}','${esc(node.q.fa)}','${esc(o.l.fa)}')">➜ ${esc(o.l.fa)}</button>`).join('')}
+          ${node.opts.map(o => `<button class="btn btn-primary" style="justify-content:flex-start;text-align:start" onclick="diagAnswer('${o.n}','${esc(dg(node.q))}','${esc(dg(o.l))}')">➜ ${esc(dg(o.l))}</button>`).join('')}
         </div>
       </div>`;
   } else {
     body = `
       <div class="card" style="border-inline-start:4px solid var(--ok)">
         <div style="font-size:12px;color:var(--text-3);font-weight:700;margin-bottom:6px">🎯 ROOT CAUSE / ${t('diagResult')}</div>
-        <h3 style="font-size:17px;margin-bottom:8px">${esc(node.title.fa)}</h3>
+        <h3 style="font-size:17px;margin-bottom:8px">${esc(dg(node.title))}</h3>
         <span class="badge ${node.verificationStatus === STANDARD_VERIFICATION.UNVERIFIED ? 'b-amber' : 'b-blue'}" style="margin-bottom:12px">${esc(node.verificationStatus)}</span>
         ${node.causes && node.causes.length ? `<h5 style="font-size:13px;color:var(--accent-2);margin:10px 0 6px">🔎 ${t('probableCauses')}</h5>
-        <ul style="padding-inline-start:20px;font-size:13.6px;color:var(--text-2)">${node.causes.map(x => `<li style="margin-bottom:4px">${esc(x.fa)}</li>`).join('')}</ul>` : ''}
+        <ul style="padding-inline-start:20px;font-size:13.6px;color:var(--text-2)">${node.causes.map(x => `<li style="margin-bottom:4px">${esc(dg(x))}</li>`).join('')}</ul>` : ''}
         ${node.actions && node.actions.length ? `<h5 style="font-size:13px;color:var(--accent-2);margin:14px 0 6px">🛠️ ${t('diagActions')}</h5>
-        <ul style="padding-inline-start:20px;font-size:13.6px;color:var(--text-2)">${node.actions.map((x, i) => `<li style="margin-bottom:5px"><b>${faNum(i + 1)}.</b> ${esc(x.fa)}</li>`).join('')}</ul>` : ''}
+        <ul style="padding-inline-start:20px;font-size:13.6px;color:var(--text-2)">${node.actions.map((x, i) => `<li style="margin-bottom:5px"><b>${faNum(i + 1)}.</b> ${esc(dg(x))}</li>`).join('')}</ul>` : ''}
         ${node.parts && node.parts.length ? `<h5 style="font-size:13px;color:var(--accent-2);margin:14px 0 6px">📦 ${t('diagParts')}</h5>
-        <div style="display:flex;flex-wrap:wrap;gap:6px">${node.parts.map(x => `<span class="badge b-amber">${esc(x.fa)}</span>`).join('')}</div>` : ''}
-        ${node.next ? `<div class="note-block" style="margin-top:14px">⏭️ <b>${t('diagNext')}:</b> ${esc(node.next.fa)}</div>` : ''}
+        <div style="display:flex;flex-wrap:wrap;gap:6px">${node.parts.map(x => `<span class="badge b-amber">${esc(dg(x))}</span>`).join('')}</div>` : ''}
+        ${node.next ? `<div class="note-block" style="margin-top:14px">⏭️ <b>${t('diagNext')}:</b> ${esc(dg(node.next))}</div>` : ''}
         ${(() => {
           /* smart link: match faulty parts to knowledge base articles */
-          const partTxt = (node.parts || []).map(x => x.fa).join(' ') + ' ' + node.title.fa;
+          const partTxt = (node.parts || []).map(x => x.fa).join(' ') + ' ' + (node.title.fa || '');
           const kbMap = [['ترمز', 'c-brake'], ['انکودر', 'c-encoder'], ['درایو', 'c-vvvf'], ['موتور', 'c-motor'], ['قفل', 'c-doorlock'], ['سردرب', 'c-dooroperator'], ['درب', 'c-dooroperator'], ['فتوسل', 'c-dooroperator'], ['کنتاکتور', 'c-contactor'], ['رله', 'c-relay'], ['بکسل', 'c-traction'], ['فلکه', 'c-traction'], ['پمپ', 'c-pump'], ['شیر', 'c-valveblock'], ['سیل', 'c-cylinder'], ['جک', 'c-cylinder'], ['روغن', 'c-tank'], ['گاورنر', 'c-govsafety'], ['پاراشوت', 'c-govsafety'], ['لیمیت', 'c-limits'], ['سنسور', 'c-sensors'], ['تابلو', 'c-controller'], ['مدار ایمنی', 'c-safetycircuit']];
           const hits = [];
           kbMap.forEach(([w, kid]) => { if (partTxt.includes(w) && !hits.includes(kid)) hits.push(kid); });
           if (!hits.length) return '';
           return `<div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:12px">${hits.slice(0, 3).map(kid => {
             const kb = KNOWLEDGE.find(k => k.id === kid);
-            return kb ? `<button class="chip" onclick="openKbArticle('${kid}')">${kb.icon} ${t('kbReadMore')}: ${esc(kb.title.fa)}</button>` : '';
+            return kb ? `<button class="chip" onclick="openKbArticle('${kid}')">${kb.icon} ${t('kbReadMore')}: ${esc(dg(kb.title))}</button>` : '';
           }).join('')}</div>`;
         })()}
         <div style="display:flex;gap:9px;margin-top:16px;flex-wrap:wrap">
@@ -197,14 +242,14 @@ function renderDiagFlow(c) {
     <div class="detail-head" style="margin-bottom:12px">
       <div class="row-icon" style="background:var(--warn-soft);font-size:22px;width:50px;height:50px">${f.icon || '🔩'}</div>
       <div class="grow">
-        <h2 style="font-size:18px">${esc(f.symptom.fa)}</h2>
+        <h2 style="font-size:18px">${esc(dg(f.symptom))}</h2>
         <div class="sub">${f.type !== 'both' ? typeBadge(f.type) : `<span class="badge b-gray">⚙️ / 🛢️</span>`}</div>
       </div>
     </div>
-    ${f.safety ? `<div class="safety-banner"><span style="font-size:18px">⚠️</span><span><b>${t('diagSafetyThis')}:</b> ${esc(f.safety.fa)}</span></div>` : ''}
+    ${f.safety ? `<div class="safety-banner"><span style="font-size:18px">⚠️</span><span><b>${t('diagSafetyThis')}:</b> ${esc(dg(f.safety))}</span></div>` : ''}
     <div class="grid-2" style="margin-bottom:14px">
-      ${f.tools ? `<div class="kv-cell"><div class="k">🧰 ${t('diagTools')}</div><div class="v" style="font-weight:600">${esc(f.tools.fa)}</div></div>` : ''}
-      ${f.first ? `<div class="kv-cell"><div class="k">🔍 ${t('diagFirst')}</div><div class="v" style="font-weight:600">${esc(f.first.fa)}</div></div>` : ''}
+      ${f.tools ? `<div class="kv-cell"><div class="k">🧰 ${t('diagTools')}</div><div class="v" style="font-weight:600">${esc(dg(f.tools))}</div></div>` : ''}
+      ${f.first ? `<div class="kv-cell"><div class="k">🔍 ${t('diagFirst')}</div><div class="v" style="font-weight:600">${esc(dg(f.first))}</div></div>` : ''}
     </div>
     ${crumbs ? `<div style="font-size:11.5px;color:var(--text-3);margin-bottom:10px;line-height:2.2">🧭 ${crumbs}</div>` : ''}
     ${body}

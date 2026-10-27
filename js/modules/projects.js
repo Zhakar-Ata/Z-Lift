@@ -67,7 +67,7 @@ function drawProjList() {
 
 function openProjectForm(id) {
   const p = id ? state.projects.find(x => x.id === id) : null;
-  const v = p || { name: '', customer: '', phone: '', location: '', elevatorType: 'traction', capacityKg: 630, persons: 8, floors: 5, stops: 5, speed: 1, nominalVoltage: '', voltageTolerance: '', controller: '', motor: '', drive: '', doorOperator: '', roping: '1:1', encoder: '', brake: '', status: 'contract', progress: 0, serviceIntervalDays: 0, notes: '' };
+  const v = p || { name: '', customer: '', phone: '', location: '', elevatorType: 'traction', capacityKg: 630, persons: 8, floors: 5, stops: 5, speed: 1, nominalVoltage: '', voltageTolerance: '', controller: '', motor: '', drive: '', doorOperator: '', roping: '1:1', encoder: '', brake: '', status: 'contract', progress: 0, serviceIntervalDays: 0, certDue: 0, notes: '' };
   const statusOpts = Object.keys(STATUS_META).map(s => `<option value="${s}" ${v.status === s ? 'selected' : ''}>${t(STATUS_META[s].key)}</option>`).join('');
   openModal(`
     <div class="modal-head"><h3>${p ? '✏️ ' + t('editProject') : '🏗️ ' + t('newProject')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
@@ -83,11 +83,11 @@ function openProjectForm(id) {
         <option value="traction" ${v.elevatorType === 'traction' ? 'selected' : ''}>⚙️ ${t('traction')}</option>
         <option value="hydraulic" ${v.elevatorType === 'hydraulic' ? 'selected' : ''}>🛢️ ${t('hydraulic')}</option>
       </select></div>
-      <div class="field"><label>${t('prSpeed')}</label><input id="f_speed" type="number" step="0.1" value="${v.speed}" /></div>
-      <div class="field"><label>${t('prCapacity')}</label><input id="f_cap" type="number" value="${v.capacityKg}" /></div>
-      <div class="field"><label>${t('prPersons')}</label><input id="f_persons" type="number" value="${v.persons}" /></div>
-      <div class="field"><label>${t('prFloors')}</label><input id="f_floors" type="number" value="${v.floors}" /></div>
-      <div class="field"><label>${t('prStops')}</label><input id="f_stops" type="number" value="${v.stops}" /></div>
+      <div class="field"><label>${t('prSpeed')}</label><input id="f_speed" type="number" min="0" step="0.1" value="${v.speed}" /></div>
+      <div class="field"><label>${t('prCapacity')}</label><input id="f_cap" type="number" min="0" value="${v.capacityKg}" /></div>
+      <div class="field"><label>${t('prPersons')}</label><input id="f_persons" type="number" min="0" value="${v.persons}" /></div>
+      <div class="field"><label>${t('prFloors')}</label><input id="f_floors" type="number" min="0" value="${v.floors}" /></div>
+      <div class="field"><label>${t('prStops')}</label><input id="f_stops" type="number" min="0" value="${v.stops}" /></div>
       <div class="field"><label>${t('prRoping')}</label><select id="f_roping">
         <option value="1:1" ${v.roping !== '2:1' ? 'selected' : ''}>1:1</option>
         <option value="2:1" ${v.roping === '2:1' ? 'selected' : ''}>2:1</option>
@@ -107,6 +107,7 @@ function openProjectForm(id) {
       <div class="field"><label>${t('prStatus')}</label><select id="f_status">${statusOpts}</select></div>
       <div class="field"><label>${t('prProgress')}</label><input id="f_progress" type="number" min="0" max="100" value="${v.progress}" /></div>
       <div class="field span2"><label>${t('serviceInterval')}</label><input id="f_interval" type="number" min="0" value="${v.serviceIntervalDays || 0}" /></div>
+      <div class="field span2"><label>📜 ${t('certDue')}</label>${jdateInput('f_certdue', v.certDue || 0, true)}</div>
       <div class="field span2"><label>${t('prNotes')}</label><textarea id="f_notes">${esc(v.notes)}</textarea></div>
     </form></div>
     <div class="modal-foot">
@@ -123,7 +124,7 @@ function openProjectForm(id) {
       stops: +$('#f_stops').value, speed: +$('#f_speed').value, progress: +$('#f_progress').value,
       nominalVoltage: parseNum($('#f_nominalv').value) || 0,
       voltageTolerance: parseNum($('#f_volttol').value),
-      serviceIntervalDays: +$('#f_interval').value,
+      serviceIntervalDays: +$('#f_interval').value, certDue: jdateVal('f_certdue') || 0,
       controller: $('#f_controller').value, motor: $('#f_motor').value,
       drive: $('#f_drive').value, doorOperator: $('#f_doorop').value,
       roping: $('#f_roping').value, encoder: $('#f_encoder').value, brake: $('#f_brake').value,
@@ -293,7 +294,16 @@ async function _doDeleteProject(id) {
 function renderProjectDetail(id) {
   const p = state.projects.find(x => x.id === id);
   const c = $('#content');
-  if (!p) { c.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong></div>`; return; }
+  if (!p) {
+    /* a dead-end here strands anyone who scanned a building QR on another
+       phone (local data!) — always offer the way back */
+    c.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="navigate('/projects')">${IC.back} ${t('projects')}</button>
+        <button class="btn btn-ghost" onclick="navigate('/dashboard')">${t('today')}</button>
+      </div></div>`;
+    return;
+  }
   const services = state.services.filter(s => s.projectId === id).sort((a, b) => b.date - a.date);
   const templates = CHECKLIST_TEMPLATES.filter(tp => tp.type === p.elevatorType || tp.type === 'both');
   const insts = state.checklists.filter(x => x.projectId === id);
@@ -313,6 +323,7 @@ function renderProjectDetail(id) {
     [t('prEncoder'), p.encoder],
     [t('prBrake'), p.brake]
   ].filter(x => x[1]);
+  if (p.certDue) kv.push([t('certDue'), fmtDate(p.certDue) + (p.certDue < Date.now() ? ' — ⚠️' : '')]);
   const due = dueInfo(p);
   if (due) {
     kv.push([t('lastService'), fmtDate(due.last)]);
@@ -334,6 +345,10 @@ function renderProjectDetail(id) {
       </div>
     </div>
 
+    ${(p.phone || p.location) ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      ${p.phone && telHref(p.phone) ? `<a class="btn btn-ghost" href="${telHref(p.phone)}">📞 ${esc(p.phone)}</a>` : ''}
+      ${p.location ? `<a class="btn btn-ghost" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.location)}" target="_blank" rel="noopener">🧭 ${LANG === 'fa' ? 'مسیریابی' : 'Directions'}</a>` : ''}
+    </div>` : ''}
     <div class="card">
       <div class="card-title">📊 ${t('progress')}</div>
       <div class="progress-edit">

@@ -14,6 +14,19 @@ function computeCalc(cal) {
     out.innerHTML = `<div class="error-box" style="padding:10px;margin-top:10px">⚠️ ${LANG === 'fa' ? 'ورودی‌های لازم را وارد کنید' : 'Enter the required inputs'}: ${esc(missing.join('، '))}</div>`;
     return;
   }
+  /* physical sanity: speed/capacity/length… can never be negative — refuse to
+     dress impossible inputs up as a "RESULT" a technician might trust */
+  const outOfRange = cal.inputs.filter(inp => {
+    const v = vals[inp.id];
+    if (v == null) return false;
+    if (inp.min != null && v < inp.min) return true;
+    if (inp.max != null && v > inp.max) return true;
+    return v < 0 && !(inp.min < 0);
+  });
+  if (outOfRange.length) {
+    out.innerHTML = `<div class="error-box" style="padding:10px;margin-top:10px">⚠️ ${LANG === 'fa' ? 'مقدار منفی یا خارج از دامنهٔ فیزیکی معتبر نیست' : 'Negative or out-of-range values are not physically valid'}: ${esc(outOfRange.map(i => i.label[LANG] || i.label.fa || i.id).join('، '))}</div>`;
+    return;
+  }
   try {
     const rows = cal.compute(vals);
     if (!Array.isArray(rows) || rows.some(r => !r || !r.label || r.val == null || /(?:NaN|Infinity)/.test(String(r.val)))) throw new Error('invalid-calculation');
@@ -54,14 +67,27 @@ function wireConverters() {
     b.oninput = () => { a.value = b.value === '' ? '' : +cv.g(parseFloat(b.value) || 0).toFixed(4); };
   });
 }
+/* Filtering toggles card visibility instead of re-rendering the page:
+   re-rendering destroyed the search input (focus/keyboard) AND every
+   number already typed into the calculator cards. */
+function applyCalcFilter() {
+  const q = norm(calcFilter.q), cat = calcFilter.cat;
+  const cw = $('#calcConvWrap');
+  if (cw) cw.style.display = (cat === 'all' || cat === 'quick') ? '' : 'none';
+  let visible = 0;
+  $$('#calcGrid [data-calccard]').forEach(card => {
+    const cal = CALCULATORS.find(x => x.id === card.dataset.calccard);
+    if (!cal) return;
+    let ok = cat === 'all' ? true : cat === 'quick' ? false : cal.cat === cat;
+    if (ok && q) ok = hay(cal.title.fa, cal.title.en, cal.desc.fa, cal.desc.en, cal.formula).includes(q);
+    card.style.display = ok ? '' : 'none';
+    if (ok) visible++;
+  });
+  const em = $('#calcEmpty');
+  if (em) em.style.display = (!visible && cat !== 'quick') ? '' : 'none';
+}
 function renderCalculations() {
   const c = $('#content');
-  const q = norm(calcFilter.q);
-  let list = CALCULATORS;
-  if (calcFilter.cat !== 'all' && calcFilter.cat !== 'quick') list = list.filter(x => x.cat === calcFilter.cat);
-  if (q) list = list.filter(x => hay(x.title.fa, x.title.en, x.desc.fa, x.desc.en, x.formula).includes(q));
-  const showConv = calcFilter.cat === 'all' || calcFilter.cat === 'quick';
-  const showCalcs = calcFilter.cat !== 'quick';
   c.innerHTML = `
     <div class="safety-banner" style="background:var(--accent-soft);border-color:var(--accent-2);color:var(--accent-2)">
       <span style="font-size:18px">🧮</span><span>${esc(CALC_GUIDE[LANG] || CALC_GUIDE.fa)}</span>
@@ -72,11 +98,11 @@ function renderCalculations() {
         ${CALC_CATS.map(ct => `<button class="chip ${calcFilter.cat === ct.id ? 'active' : ''}" data-cc="${ct.id}">${esc(ct[LANG] || ct.fa)}</button>`).join('')}
       </div>
     </div>
-    ${showConv ? converterHTML() : ''}
-    ${showCalcs && !list.length && q ? `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong></div>` : ''}
-    <div class="grid-2">
-    ${(showCalcs ? list : []).map(cal => `
-      <div class="card">
+    <div id="calcConvWrap">${converterHTML()}</div>
+    <div id="calcEmpty" class="empty" style="display:none"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong></div>
+    <div class="grid-2" id="calcGrid">
+    ${CALCULATORS.map(cal => `
+      <div class="card calc-card" data-calccard="${cal.id}">
         <div class="card-title">${esc(cal.title[LANG] || cal.title.fa)}</div>
         <p style="font-size:12.8px;color:var(--text-2);margin-bottom:10px">${esc(cal.desc[LANG] || cal.desc.fa)}</p>
         <div class="formula">${esc(cal.formula)}</div>
@@ -107,7 +133,12 @@ function renderCalculations() {
       if (cal) computeCalc(cal);
     }, 300);
   });
-  $('#calcSearch').oninput = debounce(e => { calcFilter.q = e.target.value; renderCalculations(); }, 300);
-  $$('#content .chip[data-cc]').forEach(ch => ch.onclick = () => { calcFilter.cat = ch.dataset.cc; renderCalculations(); });
+  $('#calcSearch').oninput = debounce(e => { calcFilter.q = e.target.value; applyCalcFilter(); }, 300);
+  $$('#content .chip[data-cc]').forEach(ch => ch.onclick = () => {
+    calcFilter.cat = ch.dataset.cc;
+    $$('#content .chip[data-cc]').forEach(x => x.classList.toggle('active', x === ch));
+    applyCalcFilter();
+  });
   wireConverters();
+  applyCalcFilter();
 }

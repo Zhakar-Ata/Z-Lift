@@ -162,16 +162,26 @@ function openServiceView(id) {
     <button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body"><div class="kv-grid" style="grid-template-columns:1fr">
       ${rows.map(([k, v]) => `<div class="kv-cell"><div class="k">${esc(k)}</div><div class="v" style="font-weight:500;white-space:pre-wrap">${esc(v)}</div></div>`).join('')}
-    </div></div>
+    </div>
+    ${(() => {
+      const phs = (state.photos || []).filter(ph => ph.serviceId === s.id);
+      if (!phs.length) return '';
+      return `<div class="card-title" style="margin:14px 0 8px">📷 ${t('photos')} (${faNum(phs.length)})</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px">${phs.map(ph => `
+        <img src="${photoDataSync(ph) || PHOTO_PLACEHOLDER}" data-phid="${esc(ph.id)}" onclick="viewPhoto('${ph.id}')" title="${esc(ph.cat || '')}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:11px;border:1px solid var(--border);cursor:pointer;background:var(--bg-soft)" />`).join('')}</div>`;
+    })()}
+    </div>
     <div class="modal-foot">
       <button class="btn btn-soft-danger" onclick="deleteService('${s.id}')">${IC.trash} ${t('delete')}</button>
       <button class="btn btn-ghost" onclick="duplicateService('${s.id}')">📋 ${t('dupService')}</button>
       <button class="btn btn-ghost" style="color:#2AABEE" onclick="shareTelegram(buildServiceText(state.services.find(x=>x.id==='${s.id}')))">${IC.telegram}</button>
       <button class="btn btn-ghost" onclick="shareText(buildServiceText(state.services.find(x=>x.id==='${s.id}')))">📤</button>
       <button class="btn btn-ghost" onclick="printServiceReport('${s.id}')">${IC.print} ${t('printReport')}</button>
+      <button class="btn btn-ghost" onclick="openPhotoForm('${s.projectId || ''}','${s.id}')">📷 ${t('addPhoto')}</button>
       <button class="btn btn-ghost" onclick="openServiceForm('${s.id}')">${IC.edit} ${t('edit')}</button>
       <button class="btn btn-primary" onclick="closeModal()">${t('close')}</button>
     </div>`);
+  hydratePhotoImgs();
 }
 /* ================= DIGITAL SIGNATURE ================= */
 function _sigInk() { return document.documentElement.getAttribute('data-theme') === 'dark' ? '#e5e7eb' : '#0b1220'; }
@@ -214,6 +224,7 @@ function wireSignaturePad(prefix, existing) {
   };
   const down = e => {
     drawing = true; last = pos(e); cv.__drawn = true; cv.__hasData = false;
+    cv.__cleared = false;
     if (cv.setPointerCapture && e.pointerId != null) { try { cv.setPointerCapture(e.pointerId); } catch (e2) {} }
     e.preventDefault();
   };
@@ -237,12 +248,23 @@ function clearSignature(prefix) {
     const ctx = cv.getContext && cv.getContext('2d');
     if (ctx) ctx.clearRect(0, 0, cv.width, cv.height);
   }
-  cv.__drawn = false; cv.__hasData = false;
+  cv.__drawn = false; cv.__hasData = false; cv.__cleared = true;
 }
 function readSignature(prefix) {
   const cv = document.getElementById(prefix + '_cv');
   if (!cv || !(cv.__drawn || cv.__hasData)) return '';
   try { return cv.toDataURL('image/png'); } catch (e) { return ''; }
+}
+/* What gets saved for a signature pad: an UNTOUCHED pad keeps the stored
+   signature (editing a signed report must never blank the customer's
+   signature just because the canvas image had not repainted yet — or the
+   canvas is unavailable). Only an explicit clear erases it. */
+function sigValueForSave(prefix, existing) {
+  const cv = document.getElementById(prefix + '_cv');
+  if (!cv) return existing || '';
+  if (cv.__cleared) return '';
+  if (cv.__drawn) { try { return cv.toDataURL('image/png'); } catch (e) { return existing || ''; } }
+  return existing || '';
 }
 
 /* ---- service → stock linkage ----
@@ -267,7 +289,7 @@ function svcPartsHTML() {
       : `<span class="tag free">${t('svcCustomPart')}</span>`;
     return `<div class="spart">
       <div class="grow"><strong>${esc(p.name)}</strong><span class="meta">${tag}</span></div>
-      <input class="qty" type="number" min="1" value="${faNum(p.qty)}" data-spi="${i}" aria-label="${esc(t('svcPartQty'))}" />
+      <input class="qty" type="number" min="1" value="${Math.max(1, Math.round(+p.qty || 1))}" data-spi="${i}" aria-label="${esc(t('svcPartQty'))}" />
       <button type="button" class="icon-btn" style="width:32px;height:32px" data-spdel="${i}" title="${esc(t('svcRemovePart'))}">✕</button>
     </div>`;
   }).join('');
@@ -281,7 +303,13 @@ function svcBindPartsBox() {
   if (!box) return;
   box.addEventListener('input', e => {
     const i = e.target.getAttribute && e.target.getAttribute('data-spi');
-    if (i != null) { const q = Math.max(1, Math.round(+e.target.value || 1)); svcPartsDraft[+i].qty = q; svcRefreshParts(); }
+    /* draft only — rebuilding the row per keystroke destroys the input being
+       typed in (focus + mobile keyboard lost); hints refresh on 'change' */
+    if (i != null && svcPartsDraft[+i]) svcPartsDraft[+i].qty = Math.max(1, Math.round(+e.target.value || 1));
+  });
+  box.addEventListener('change', e => {
+    const i = e.target.getAttribute && e.target.getAttribute('data-spi');
+    if (i != null) svcRefreshParts();
   });
   box.addEventListener('click', e => {
     const d = e.target.getAttribute && e.target.getAttribute('data-spdel');
@@ -301,7 +329,7 @@ function svcTogglePicker(show) {
     const q = ($('#svcPickSearch') || {}).value || '';
     const nq = norm(q);
     const list = (state.parts || []).slice().sort((a, b) => a.name.localeCompare(b.name, 'fa'))
-      .filter(p => !nq || norm(p.name, p.code, p.category).includes(nq));
+      .filter(p => !nq || hay(p.name, p.code, p.category, p.supplier, p.location).includes(nq));
     const box = $('#svcPickList');
     if (box) box.innerHTML = list.length ? list.map(p => {
       const low = +p.qty <= +p.minQty;
@@ -376,8 +404,7 @@ function openServiceForm(id, presetProject) {
     ? JSON.parse(JSON.stringify(s.partsUsed))
     : (s && s.partsReplaced ? s.partsReplaced.split(/[،,]/).map(x => x.trim()).filter(Boolean).map(x => ({ name: x.replace(/\s*[×x*]\s*\d+\s*$/, ''), qty: parseInt((x.match(/(\d+)\s*$/) || [0, 1])[1], 10) || 1 })) : []);
   const v = s || { projectId: presetProject || '', customer: '', elevatorInfo: '', date: Date.now(), technician: (state.settings && state.settings.defaultTech) || state.user.name, serviceType: 'maintenance', complaint: '', problem: '', diagnosis: '', measurements: '', workDone: '', partsReplaced: '', recommendations: '', followUpDate: 0, finalStatus: 'ok' };
-  const projOpts = `<option value="">— ${t('svcNoProject')} —</option>` +
-    state.projects.map(p => `<option value="${p.id}" ${v.projectId === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
+  const projOpts = projectOptsHTML(v.projectId, true, '— ' + t('svcNoProject') + ' —');
   /* jalali date inputs */
   openModal(`
     <div class="modal-head"><h3>${s ? '✏️ ' + t('editService') : '🔧 ' + t('newServiceRec')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
@@ -428,6 +455,10 @@ function openServiceForm(id, presetProject) {
       <div class="field"><label>${t('svcFollowUp')}</label>${jdateInput('s_followup', v.followUpDate || 0, true)}</div>
       ${sigPadMarkup('sig_tech', t('signTech'), s && s.signTech)}
       ${sigPadMarkup('sig_cust', t('signCustomer'), s && s.signCustomer)}
+      <div class="field span2" data-svcphotos><label>📷 ${t('addPhoto')}</label>
+        <input type="file" id="svc_photos" accept="image/*" capture="environment" multiple style="width:100%" />
+        <div class="hint">${LANG === 'fa' ? 'عکس‌ها مستقیم به همین گزارش سرویس پیوست و روی چاپ گزارش هم می‌آیند.' : 'Photos attach directly to this service report and appear on its printout.'}</div>
+      </div>
     </form></div>
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button>
@@ -451,7 +482,7 @@ function openServiceForm(id, presetProject) {
       measurements: $('#s_meas').value, workDone: $('#s_work').value,
       partsUsed, partsReplaced: svcPartsText() || (s && s.partsReplaced) || '',
       recommendations: $('#s_recommend').value, followUpDate: jdateVal('s_followup'),
-      signTech: readSignature('sig_tech'), signCustomer: readSignature('sig_cust')
+      signTech: sigValueForSave('sig_tech', s && s.signTech), signCustomer: sigValueForSave('sig_cust', s && s.signCustomer)
     };
     /* Existing rows always carry their exact authorization context through the
        application seam. New rows deliberately remain project-only so only the
@@ -477,6 +508,19 @@ function openServiceForm(id, presetProject) {
       released.forEach(pt => { const lp = state.parts.find(x => x.id === pt.id); if (lp) Object.assign(lp, pt); });
       svcPartsDraft = []; svcPartsOrig = []; svcPartsEditingId = null;
       state.services.sort((a, b) => b.date - a.date);
+      /* photos picked in the form attach straight to this report
+         (failures never block the already-saved report) */
+      const photoInput = $('#svc_photos');
+      if (photoInput && photoInput.files && photoInput.files.length) {
+        for (const f of photoInput.files) {
+          try {
+            const dataUrl = await svcReadPhoto(f);
+            if (!dataUrl) continue;
+            const pd = await api('/photos', { method: 'POST', body: { data: dataUrl, cat: t('services'), projectId: saved.projectId || projectId, serviceId: saved.id, note: '' } });
+            state.photos.unshift(Object.assign({}, pd.item, { data: dataUrl }));
+          } catch (e) { console.warn('[ZLift] service photo attach failed', e); }
+        }
+      }
       closeModal(); render();
     } catch (e) { toast(errMsg(e), 'err'); btn.disabled = false; }
   };
@@ -511,6 +555,11 @@ function printServiceReport(id) {
   printDoc(`
     ${printHeader(t('reportTitle'))}
     <table>${rows.map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(v || '—')}</td></tr>`).join('')}</table>
+    ${(() => {
+      const phs = (state.photos || []).filter(ph => ph.serviceId === s.id)
+        .map(ph => safePhotoSrc(photoDataSync(ph) || '')).filter(Boolean);
+      return phs.length ? `<div style="margin-top:12px"><b>📷 ${t('photos')}</b><div style="margin-top:6px">${phs.map(src => `<img src="${src}" style="max-width:48%;max-height:220px;border:1px solid #ccc;border-radius:6px;margin:2px" />`).join('')}</div></div>` : '';
+    })()}
     <div class="sig-row">
       ${sigBox(s.signTech, t('signTech'))}
       ${sigBox(s.signCustomer, t('signCustomer'))}
@@ -520,7 +569,9 @@ function printServiceReport(id) {
 function duplicateService(id) {
   const s = state.services.find(x => x.id === id);
   if (!s) return;
-  closeModal();
+  /* no closeModal() first: it queues history.back() whose popstate then kills
+     the fresh form (same race as the fixed Archive button) — openModal()
+     already replaces an open modal in place. */
   openServiceForm(null, s.projectId || '');
   setTimeout(() => {
     const set = (sel, val) => { const el = $(sel); if (el && val) el.value = val; };
@@ -543,5 +594,30 @@ function deleteService(id) {
     closeModal(); render();
     try { await api('/services/' + id + context, { method: 'DELETE' }); toast(t('deleted')); }
     catch (e) { rb.restore(); toast(errMsg(e), 'err'); render(); }
+  });
+}
+
+/* downscale a picked image to a storable JPEG data URL (same limits as the
+   standalone photo form: max 1280px, ~2MB ceiling) */
+function svcReadPhoto(file) {
+  return new Promise(resolve => {
+    const fr = new FileReader();
+    fr.onerror = () => resolve('');
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = () => resolve('');
+      img.onload = () => {
+        const max = 1280;
+        let w = img.width, h = img.height;
+        if (w > max || h > max) { const k = Math.min(max / w, max / h); w = Math.round(w * k); h = Math.round(h * k); }
+        const cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        cv.getContext('2d').drawImage(img, 0, 0, w, h);
+        const url = cv.toDataURL('image/jpeg', 0.75);
+        resolve(url.length > 2000000 ? '' : url);
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
   });
 }

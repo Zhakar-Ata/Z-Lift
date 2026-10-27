@@ -14,8 +14,10 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png" />
 <title>Z Lift — دستیار تکنسین آسانسور</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232563eb'/%3E%3Cpath d='M10 8h12l-8 7h8L10 24l4-7h-6z' fill='white'/%3E%3C/svg%3E" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" />
+<!-- Vazirmatn is vendored locally (assets/fonts/, OFL license) and precached
+     by the service worker: the app makes ZERO external requests, so the
+     first fully-offline launch already renders in the real font -->
+<link rel="preload" href="assets/fonts/Vazirmatn-var.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="stylesheet" href="css/app.css" />
 </head>
 <body>
@@ -118,6 +120,9 @@
       </div>
     </main>
   </div>
+
+  <!-- mobile thumb bar: filled by renderNav() with the daily routes -->
+  <nav class="bottom-nav" id="bottomNav" aria-label="quick navigation"></nav>
 
   <!-- modal + toast roots -->
   <div id="modalRoot"></div>

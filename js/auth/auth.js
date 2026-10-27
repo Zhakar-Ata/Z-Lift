@@ -11,6 +11,7 @@ function doLocalLogout() {
    'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders', 'measurements', 'safetyLogs']
     .forEach(k => { state[k] = null; });
   invDraft = null; diagSession = null;
+  try { sessionStorage.removeItem('zlift_diag_session'); } catch (e) {}
   localStorage.removeItem('zlift_token');
   showAuth();
 }

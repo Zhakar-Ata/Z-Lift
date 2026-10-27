@@ -80,6 +80,14 @@ async function init() {
   updateOnlineBadge();
   window.addEventListener('online', updateOnlineBadge);
   window.addEventListener('offline', updateOnlineBadge);
+  /* multi-tab: when another tab saves, refresh from storage instead of
+     letting this tab's stale in-memory aggregate overwrite the newer data.
+     Never yank data while a form (modal) is open. */
+  window.addEventListener('storage', e => {
+    if (e.key !== 'zlift_sync' || !state.user) return;
+    if (document.getElementById('modalOverlay')) return;
+    loadAll(true).then(() => render()).catch(() => {});
+  });
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;
     if (Date.now() - _lastNotifyCheck < 5 * 60 * 1000) return;
@@ -97,6 +105,7 @@ async function init() {
   $('#gSearchBtn').onclick = openGlobalSearch;
   $('#tgChannelBtn').onclick = openTgChannel;
   $('#logoutBtn').onclick = async () => {
+    try { localStorage.removeItem('zlift_diag_session'); } catch (e) {}
     try { await api('/auth/logout', { method: 'POST' }); } catch (e) {}
     doLocalLogout();
     toast(LANG === 'fa' ? 'با موفقیت خارج شدید' : 'Logged out');

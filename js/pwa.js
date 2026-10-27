@@ -68,8 +68,41 @@
       const btn = document.getElementById('installBtn');
       if (btn) btn.classList.remove('hidden');
     });
+    /* iOS Safari has no beforeinstallprompt: the install button stayed hidden
+       forever on iPhones. Show it and give the Share-sheet instructions. */
+    const _isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const _isStandalone = window.navigator.standalone === true ||
+      (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    function showIOSInstallHint() {
+      if (document.getElementById('iosHint')) return;
+      const fa = (document.documentElement.lang || 'fa') === 'fa';
+      const b = document.createElement('div');
+      b.id = 'iosHint';
+      b.style.cssText = 'position:fixed;bottom:14px;inset-inline:14px;z-index:500;background:#1f2937;color:#fff;padding:14px 16px;border-radius:14px;display:flex;align-items:flex-start;gap:10px;box-shadow:0 8px 30px rgba(0,0,0,.35);font-size:13.5px;line-height:1.9';
+      const span = document.createElement('span');
+      span.style.flex = '1';
+      span.textContent = fa
+        ? '📲 برای نصب Z Lift روی آیفون: دکمهٔ اشتراک‌گذاری (Share ⬆️) در سافاری را بزنید، بعد «Add to Home Screen» را انتخاب کنید.'
+        : '📲 To install Z Lift on iPhone: tap the Share button ⬆️ in Safari, then choose “Add to Home Screen”.';
+      b.appendChild(span);
+      const x = document.createElement('button');
+      x.textContent = '✕';
+      x.setAttribute('aria-label', fa ? 'بستن' : 'Dismiss');
+      x.style.cssText = 'background:transparent;color:#fff;border:0;font-size:15px;cursor:pointer;padding:4px 6px';
+      x.onclick = () => b.remove();
+      b.appendChild(x);
+      document.body.appendChild(b);
+      setTimeout(() => { if (b.parentNode) b.remove(); }, 15000);
+    }
+    if (_isIOS && !_isStandalone) {
+      window.addEventListener('load', () => {
+        const btn = document.getElementById('installBtn');
+        if (btn) btn.classList.remove('hidden');
+      });
+    }
     function promptInstall() {
-      if (!_deferredInstall) return;
+      if (!_deferredInstall) { if (_isIOS) showIOSInstallHint(); return; }
       _deferredInstall.prompt();
       _deferredInstall.userChoice.finally(() => {
         _deferredInstall = null;

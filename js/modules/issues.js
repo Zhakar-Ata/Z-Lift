@@ -37,10 +37,7 @@ function openIssueForm(id, presetProject) {
       <div class="field"><label>${t('issueStatus')}</label><select id="is_kind">
         ${Object.keys(ISSUE_META).map(k => `<option value="${k}" ${v.kind === k ? 'selected' : ''}>${ISSUE_META[k].icon} ${t(ISSUE_META[k].key)}</option>`).join('')}
       </select></div>
-      <div class="field"><label>${t('diagSelProject')}</label><select id="is_project">
-        <option value="">—</option>
-        ${state.projects.map(p => `<option value="${p.id}" ${v.projectId === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}
-      </select></div>
+      <div class="field"><label>${t('diagSelProject')} *</label><select id="is_project">${projectOptsHTML(v.projectId, true)}</select></div>
       <div class="field"><label>${t('prNotes')}</label><textarea id="is_note">${esc(v.note || '')}</textarea></div>
     </div>
     <div class="modal-foot">
@@ -61,6 +58,10 @@ function openIssueForm(id, presetProject) {
   $('#isSave').onclick = guard('#isSave', async () => {
     const title = $('#is_title').value.trim();
     if (!title) { fieldError('#is_title', 'requiredTitle'); return; }
+    /* issues are elevator-owned records: the API cannot file one without a
+       project. Say that on the form instead of a generic failure toast.
+       (Editing a detached legacy issue without a project stays allowed.) */
+    if (!i && !$('#is_project').value) { fieldError('#is_project', 'issueProjectRequired'); return; }
     const body = { title, kind: $('#is_kind').value, projectId: $('#is_project').value, note: $('#is_note').value, closed: i ? i.closed : false };
     if (i) body.elevatorId = String(i.elevatorId || '');
     try {

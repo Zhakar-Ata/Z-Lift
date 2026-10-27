@@ -61,7 +61,7 @@ function kbOpenRelated(name) {
   const hit = KNOWLEDGE.find(k => hay(k.title.fa, k.title.en).includes(q)) ||
               KNOWLEDGE.find(k => kbSearchText(k).includes(q));
   if (hit) { openKbArticle(hit.id); }
-  else { closeModal(); kbQuery = name; navigate('/knowledge'); }
+  else { kbQuery = name; navigate('/knowledge'); } /* router closes the modal; closeModal()+navigate races on history.popstate */
 }
 function openKbArticle(id) {
   const k = KNOWLEDGE.find(x => x.id === id);
@@ -78,7 +78,7 @@ function openKbArticle(id) {
       ${kbSection('💥', 'kbCauses', k.causes)}
       ${k.related && k.related.length ? `<h4>🔗 ${t('kbRelated')}</h4><div style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0">${k.related.map(r => `<span class="badge b-blue" style="cursor:pointer" title="${t('kbRelClick')}" onclick="kbOpenRelated('${jsAttr(r)}')">${esc(r)} ←</span>`).join('')}</div>` : ''}
       ${k.safety ? `<div class="safety-banner" style="margin-top:14px"><span style="font-size:17px">⚠️</span><span>${esc(k.safety)}</span></div>` : ''}
-      ${k.diag ? `<div class="note-block" style="margin-top:10px">🧭 <b>${t('kbDiag')}:</b> ${esc(k.diag)} — <a href="#/diagnostics" onclick="closeModal()">${t('diagnostics')} ←</a></div>` : ''}
+      ${k.diag ? `<div class="note-block" style="margin-top:10px">🧭 <b>${t('kbDiag')}:</b> ${esc(k.diag)} — <a href="#/diagnostics">${t('diagnostics')} ←</a></div>` : ''}
     </div>`;
   } else {
     inner = `<div class="kb-article">${k.body[LANG] || k.body.fa}</div>`;

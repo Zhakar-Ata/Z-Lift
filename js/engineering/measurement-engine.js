@@ -56,16 +56,13 @@ function wireMeasurePanel(prefix) {
 function openDiagSaveForm(flowId, resultNodeId) {
   const f = DIAG_FLOWS.find(x => x.id === flowId);
   const node = f.nodes[resultNodeId];
-  const path = diagSession.path.map(pid => f.nodes[pid] && f.nodes[pid].q ? f.nodes[pid].q.fa : '').filter(Boolean);
+  const path = diagSession.path.map(pid => f.nodes[pid] && f.nodes[pid].q ? dg(f.nodes[pid].q) : '').filter(Boolean);
   openModal(`
     <div class="modal-head"><h3>💾 ${t('diagSave')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body">
-      <div class="field"><label>${t('diagSelProject')}</label><select id="dg_project">
-        <option value="">—</option>
-        ${state.projects.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}
-      </select></div>
-      <div class="field"><label>${t('diagFinal')}</label><textarea id="dg_final" style="min-height:60px">${esc(node.title.fa)}</textarea></div>
-      <div class="field"><label>${t('diagFaultyComp')}</label><input id="dg_comp" value="${esc((node.parts || []).map(x => x.fa).join('، '))}" /></div>
+      <div class="field"><label>${t('diagSelProject')}</label><select id="dg_project">${projectOptsHTML('', true)}</select></div>
+      <div class="field"><label>${t('diagFinal')}</label><textarea id="dg_final" style="min-height:60px">${esc(dg(node.title))}</textarea></div>
+      <div class="field"><label>${t('diagFaultyComp')}</label><input id="dg_comp" value="${esc((node.parts || []).map(x => dg(x)).join('، '))}" /></div>
       ${measurePanelHTML('dgm')}
     </div>
     <div class="modal-foot">
@@ -76,8 +73,8 @@ function openDiagSaveForm(flowId, resultNodeId) {
   $('#dgSave').onclick = guard('#dgSave', async () => {
     const body = {
       projectId: $('#dg_project').value,
-      flowId, symptom: f.symptom.fa,
-      path, result: node.title.fa,
+      flowId, symptom: dg(f.symptom),
+      path, result: dg(node.title),
       finalDiagnosis: $('#dg_final').value,
       faultyComponent: $('#dg_comp').value,
       measurements: collectMeasures('dgm'),
@@ -87,9 +84,8 @@ function openDiagSaveForm(flowId, resultNodeId) {
     try {
       const d = await api('/diagSessions', { method: 'POST', body });
       state.diagSessions.unshift(d.item);
-      closeModal();
       toast(t('diagSaved'));
-      // offer transfer to service report
+      // offer transfer to service report (modal swaps in place — no queued back)
       diagToServicePrompt(d.item);
     } catch (e) { toast(errMsg(e), 'err'); }
   });
@@ -103,8 +99,7 @@ function diagToServicePrompt(sess) {
       <button class="btn btn-primary" id="dg2svc">✅ ${t('diagToService')}</button>
     </div>`, { size: 'sm' });
   $('#dg2svc').onclick = () => {
-    closeModal();
-    openServiceForm(null, sess.projectId || '');
+    openServiceForm(null, sess.projectId || ''); // replaces this modal in place
     // prefill after modal renders
     setTimeout(() => {
       const probEl = $('#s_problem'), diagEl = $('#s_diag'), measEl = $('#s_meas');
@@ -130,10 +125,7 @@ function openCalcSaveForm(calId) {
     <div class="modal-body">
       <div class="kv-cell" style="margin-bottom:12px"><div class="k">${esc(cal.title.fa)}</div>
         <div class="v" style="font-weight:500;font-size:13px">${rows.map(r => esc((r.label.fa || '') + ': ' + r.val)).join(' · ')}</div></div>
-      <div class="field"><label>${t('diagSelProject')}</label><select id="cs_project">
-        <option value="">—</option>
-        ${state.projects.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}
-      </select></div>
+      <div class="field"><label>${t('diagSelProject')}</label><select id="cs_project">${projectOptsHTML('', true)}</select></div>
       <div class="field"><label>${t('prNotes')}</label><input id="cs_note" /></div>
     </div>
     <div class="modal-foot">
@@ -164,10 +156,7 @@ function openConsumeForm(partId) {
     <div class="modal-body">
       <div class="kv-cell" style="margin-bottom:12px"><div class="k">${t('partQty')}</div><div class="v">${faNum(part.qty)} ${esc(part.unit)}</div></div>
       <div class="field"><label>${t('consumeQty')} *</label><input id="cn_qty" type="number" min="1" value="1" /></div>
-      <div class="field"><label>${t('diagSelProject')}</label><select id="cn_project">
-        <option value="">—</option>
-        ${state.projects.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}
-      </select></div>
+      <div class="field"><label>${t('diagSelProject')}</label><select id="cn_project">${projectOptsHTML('', true)}</select></div>
       <div class="field"><label>${t('prNotes')}</label><input id="cn_note" /></div>
       ${Array.isArray(part.history) && part.history.length ? `
         <div class="section-title" style="margin:14px 0 8px"><h3 style="font-size:13.5px">📜 ${t('consumeHistory')}</h3></div>
@@ -202,16 +191,13 @@ var PHOTO_PLACEHOLDER = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABC
 function safePhotoSrc(d) {
   return (typeof d === 'string' && /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(d)) ? d : '';
 }
-function openPhotoForm(presetProject) {
+function openPhotoForm(presetProject, presetService) {
   const cats = photoCats();
   openModal(`
     <div class="modal-head"><h3>📷 ${t('addPhoto')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body">
       <div class="field"><label>${t('photoCat')}</label><select id="ph_cat">${cats.map(x => `<option>${esc(x)}</option>`).join('')}</select></div>
-      <div class="field"><label>${t('diagSelProject')}</label><select id="ph_project">
-        <option value="">—</option>
-        ${state.projects.map(p => `<option value="${p.id}" ${presetProject === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}
-      </select></div>
+      <div class="field"><label>${t('diagSelProject')}</label><select id="ph_project">${projectOptsHTML(presetProject, true)}</select></div>
       <div class="field"><label>${t('prNotes')}</label><input id="ph_note" /></div>
       <input type="file" id="ph_file" accept="image/*" capture="environment" style="width:100%" />
       <div id="ph_preview" style="margin-top:10px"></div>
@@ -249,9 +235,10 @@ function openPhotoForm(presetProject) {
   $('#phSave').onclick = guard('#phSave', async () => {
     if (!dataUrl) return;
     try {
-      const d = await api('/photos', { method: 'POST', body: { data: dataUrl, cat: $('#ph_cat').value, projectId: $('#ph_project').value, note: $('#ph_note').value } });
-      state.photos.unshift(d.item);
-      closeModal(); toast(t('saved')); render();
+      const d = await api('/photos', { method: 'POST', body: { data: dataUrl, cat: $('#ph_cat').value, projectId: $('#ph_project').value, serviceId: presetService || '', note: $('#ph_note').value } });
+      state.photos.unshift(Object.assign({}, d.item, { data: dataUrl }));
+      toast(t('saved'));
+      if (presetService) { openServiceView(presetService); } else { closeModal(); render(); }
     } catch (e) { toast(errMsg(e), 'err'); }
   });
 }
@@ -346,7 +333,7 @@ function drawInvList() {
              (invFilter.status === 'unpaid' && m.key === 'invUnpaid');
     });
   }
-  if (q) list = list.filter(inv => hay(inv.customer, inv.note, inv.projectId ? projName(inv.projectId) : '', (inv.items || []).map(i => i.desc).join(' ')).includes(q));
+  if (q) list = list.filter(inv => hay(inv.customer, inv.number, inv.note, inv.projectId ? projName(inv.projectId) : '', (inv.items || []).map(i => i.desc).join(' ')).includes(q));
   const el = $('#invList');
   if (!state.invoices.length) {
     el.innerHTML = `<div class="empty"><div class="e-icon">🧾</div><strong>${t('noInvoices')}</strong><p>${t('noInvoicesSub')}</p><button class="btn btn-primary" onclick="openInvoiceForm()">${IC.plus} ${t('newInvoice')}</button></div>`;
@@ -367,7 +354,7 @@ function drawInvList() {
       </div>
       <div class="row-side">
         <span class="badge ${m.cls}">${m.icon} ${t(m.key)}</span>
-        <span class="date">${fmtDate(inv.date || inv.createdAt)} · #${esc((inv.id || '').slice(0, 6).toUpperCase())}</span>
+        <span class="date">${fmtDate(inv.date || inv.createdAt)} · #${esc(inv.number || (inv.id || '').slice(0, 6).toUpperCase())}</span>
       </div>
     </div>`;
   });
@@ -487,6 +474,17 @@ function invSyncDraftFromForm() {
   if (dt) invDraft.dateOverride = dt;
 }
 
+/* service <option>s for the invoice form, scoped to the chosen project
+   (standalone services only when no project is chosen) — the API rejects
+   cross-project links, so the UI must not offer them. The currently linked
+   service is always kept when editing. */
+function invServiceOptsHTML(projectId, selectedId) {
+  const pid = String(projectId || '');
+  return (state.services || [])
+    .filter(s => (selectedId && s.id === selectedId) || (pid ? s.projectId === pid : !s.projectId))
+    .slice(0, 100)
+    .map(s => `<option value="${s.id}" ${selectedId === s.id ? 'selected' : ''}>${esc(svcTarget(s))} — ${fmtDate(s.date)}</option>`).join('');
+}
 function openInvoiceForm(id, presetProject, keepDraft) {
   const inv = id ? state.invoices.find(x => x.id === id) : null;
   if (!keepDraft) {
@@ -509,17 +507,14 @@ function openInvoiceForm(id, presetProject, keepDraft) {
   const defTax = (state.settings && state.settings.taxRate != null) ? +state.settings.taxRate : 0;
   const taxRateVal = invDraft.taxRate != null ? invDraft.taxRate : (v.taxRate != null ? +v.taxRate : defTax);
   const taxExemptVal = invDraft.taxExempt != null ? invDraft.taxExempt : !!(v.taxExempt);
-  const svcOpts = state.services.slice(0, 40).map(s => `<option value="${s.id}" ${serviceOverride === s.id ? 'selected' : ''}>${esc(svcTarget(s))} — ${fmtDate(s.date)}</option>`).join('');
+  const svcOpts = invServiceOptsHTML(invDraft.projectOverride !== undefined ? invDraft.projectOverride : v.projectId, serviceOverride);
   openModal(`
     <div class="modal-head"><h3>${inv ? '✏️ ' + t('editInvoice') : '🧾 ' + t('newInvoice')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body">
       <div class="form-grid">
         <div class="field span2"><label>${t('invCustomer')} *</label><input id="inv_customer" value="${esc(invDraft.customerOverride !== undefined ? invDraft.customerOverride : v.customer)}" /></div>
         <div class="field"><label>${t('invDate')}</label>${jdateInput('inv_date', dateTs)}</div>
-        <div class="field"><label>${t('diagSelProject')}</label><select id="inv_project">
-          <option value="">—</option>
-          ${state.projects.map(p => `<option value="${p.id}" ${(invDraft.projectOverride !== undefined ? invDraft.projectOverride : v.projectId) === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}
-        </select></div>
+        <div class="field"><label>${t('diagSelProject')}</label><select id="inv_project">${projectOptsHTML(invDraft.projectOverride !== undefined ? invDraft.projectOverride : v.projectId, true)}</select></div>
         <div class="field span2"><label>${t('invFromService')}</label><select id="inv_service">
           <option value="">—</option>${svcOpts}
         </select></div>
@@ -534,7 +529,7 @@ function openInvoiceForm(id, presetProject, keepDraft) {
       <div class="form-grid">
         <div class="field"><label>${t('invLabor')}</label><input id="inv_labor" type="number" min="0" value="${laborVal}" /></div>
         <div class="field"><label>${t('invDiscount')}</label><input id="inv_discount" type="number" min="0" value="${discountVal}" /></div>
-        <div class="field"><label>${t('invTaxRate')}</label><input id="inv_taxrate" type="number" min="0" max="100" step="1" value="${faNum(taxRateVal)}" ${taxExemptVal ? 'disabled' : ''} /></div>
+        <div class="field"><label>${t('invTaxRate')}</label><input id="inv_taxrate" type="number" min="0" max="100" step="1" value="${Math.max(0, Math.min(100, Math.round(+taxRateVal || 0)))}" ${taxExemptVal ? 'disabled' : ''} /></div>
         <div class="field" style="align-self:end"><label style="display:flex;gap:8px;align-items:center;font-weight:500;cursor:pointer"><input type="checkbox" id="inv_taxexempt" ${taxExemptVal ? 'checked' : ''} style="width:18px;height:18px" /> ${t('invTaxExempt')}</label></div>
         <div class="field span2"><label>${t('invNote2')}</label><input id="inv_note" value="${esc(noteVal)}" /></div>
       </div>
@@ -569,13 +564,15 @@ function openInvoiceForm(id, presetProject, keepDraft) {
   $('#inv_note').oninput = () => { invDraft.noteOverride = $('#inv_note').value; };
   $('#inv_service').onchange = () => { invDraft.serviceOverride = $('#inv_service').value; };
   // keep field values across part-picker roundtrip
-  ['inv_customer', 'inv_project'].forEach(fid => {
-    const el = $('#' + fid);
-    el.onchange = el.oninput = () => {
-      if (fid === 'inv_customer') invDraft.customerOverride = el.value;
-      else invDraft.projectOverride = el.value;
-    };
-  });
+  $('#inv_customer').oninput = () => { invDraft.customerOverride = $('#inv_customer').value; };
+  const invProjEl = $('#inv_project');
+  invProjEl.onchange = invProjEl.oninput = () => {
+    invDraft.projectOverride = invProjEl.value;
+    /* the linked-service list follows the chosen project, so an impossible
+       (cross-project) combination can no longer be picked at all */
+    const sel = $('#inv_service');
+    if (sel) { sel.innerHTML = '<option value="">—</option>' + invServiceOptsHTML(invProjEl.value, ''); invDraft.serviceOverride = ''; }
+  };
   $('#inv_date').addEventListener('change', () => { invDraft.dateOverride = jdateVal('inv_date') || Date.now(); });
 
   $('#invPayBtn').onclick = () => {
@@ -584,6 +581,7 @@ function openInvoiceForm(id, presetProject, keepDraft) {
       <div class="modal-head"><h3>💵 ${t('invAddPay')}</h3><button class="icon-btn" onclick="invBackToForm()">✕</button></div>
       <div class="modal-body">
         <div class="field"><label>${t('invPayAmount')} *</label><input id="pay_amount" type="number" min="1" /></div>
+        <div class="field"><label>${t('invDate')}</label>${jdateInput('pay_date', Date.now())}</div>
         <div class="field"><label>${t('invPayNote')}</label><input id="pay_note" /></div>
       </div>
       <div class="modal-foot">
@@ -611,7 +609,7 @@ function openInvoiceForm(id, presetProject, keepDraft) {
         return; // second tap confirms
       }
       btn.disabled = true;
-      invDraft.payments.push({ amount, note: $('#pay_note').value, date: Date.now() });
+      invDraft.payments.push({ amount, note: $('#pay_note').value, date: jdateVal('pay_date') || Date.now() });
       invBackToForm();
     };
   };
@@ -636,6 +634,9 @@ function openInvoiceForm(id, presetProject, keepDraft) {
       note: $('#inv_note').value,
       payments: invDraft.payments
     };
+    /* a zero-rial invoice with no rows would sit in receivables forever —
+       refuse it here (the data layer stays permissive for imports/fixtures) */
+    if (!body.items.length && !(body.labor > 0)) { toast(t('invEmpty'), 'err'); return; }
     const btn = $('#invSave'); btn.disabled = true;
     try {
       let saved, response;
@@ -751,42 +752,42 @@ function drawGlobalSearch(qRaw) {
 
   grp(t('srProjects'), state.projects
     .filter(p => hay(p.name, p.customer, p.location, p.controller, p.motor).includes(q))
-    .slice(0, 5).map(p => gsRow(p.elevatorType === 'hydraulic' ? '🛢️' : '⚙️', esc(p.name), esc(p.customer || p.location || ''), `closeModal();navigate('/projects/${p.id}')`)));
+    .slice(0, 5).map(p => gsRow(p.elevatorType === 'hydraulic' ? '🛢️' : '⚙️', esc(p.name), esc(p.customer || p.location || ''), `navigate('/projects/${p.id}')`)));
 
   grp(t('srServices'), state.services
-    .filter(s => hay(svcTarget(s), s.problem, s.diagnosis, s.workDone, s.partsReplaced).includes(q))
-    .slice(0, 5).map(s => gsRow('🔧', esc(svcTarget(s)), esc(s.problem || s.complaint || fmtDate(s.date)), `closeModal();openServiceView('${s.id}')`)));
+    .filter(s => hay(svcTarget(s), s.reportNo, s.problem, s.diagnosis, s.workDone, s.partsReplaced).includes(q))
+    .slice(0, 5).map(s => gsRow('🔧', esc(svcTarget(s)), esc(s.problem || s.complaint || fmtDate(s.date)), `openServiceView('${s.id}')`)));
 
   grp(t('srParts'), state.parts
-    .filter(x => hay(x.name, x.category, x.location, x.note).includes(q))
-    .slice(0, 5).map(x => gsRow('📦', esc(x.name), faNum(x.qty) + ' ' + esc(x.unit) + (x.qty <= x.minQty ? ' ⚠️' : ''), `closeModal();navigate('/parts');setTimeout(()=>openPartForm('${x.id}'),120)`)));
+    .filter(x => hay(x.name, x.code, x.supplier, x.category, x.location, x.note).includes(q))
+    .slice(0, 5).map(x => gsRow('📦', esc(x.name), faNum(x.qty) + ' ' + esc(x.unit) + (x.qty <= x.minQty ? ' ⚠️' : ''), `navigate('/parts');setTimeout(()=>openPartForm('${x.id}'),120)`)));
 
   grp(t('srInv'), state.invoices
-    .filter(i => hay(i.customer, i.note, (i.items || []).map(x => x.desc).join(' ')).includes(q))
-    .slice(0, 5).map(i => gsRow('🧾', esc(i.customer || '—'), money(invTotals(i).grand) + ' ' + t('rial'), `closeModal();navigate('/invoices');setTimeout(()=>openInvoiceForm('${i.id}'),120)`)));
+    .filter(i => hay(i.customer, i.number, i.note, (i.items || []).map(x => x.desc).join(' ')).includes(q))
+    .slice(0, 5).map(i => gsRow('🧾', esc(i.customer || '—'), money(invTotals(i).grand) + ' ' + t('rial'), `navigate('/invoices');setTimeout(()=>openInvoiceForm('${i.id}'),120)`)));
 
   grp(t('srContracts'), state.contracts
     .filter(ct => hay(ct.building, ct.note).includes(q))
-    .slice(0, 5).map(ct => gsRow('📄', esc(ct.building), money(ct.amount) + ' ' + t('rial'), `closeModal();navigate('/contracts');setTimeout(()=>openContractForm('${ct.id}'),120)`)));
+    .slice(0, 5).map(ct => gsRow('📄', esc(ct.building), money(ct.amount) + ' ' + t('rial'), `navigate('/contracts');setTimeout(()=>openContractForm('${ct.id}'),120)`)));
 
   grp(t('srNotes'), state.notes
     .filter(n => hay(n.title, n.content, (n.tags || []).join(' ')).includes(q))
-    .slice(0, 5).map(n => gsRow('📝', esc(n.title), esc((n.content || '').slice(0, 60)), `closeModal();navigate('/notes');setTimeout(()=>openNoteForm('${n.id}'),120)`)));
+    .slice(0, 5).map(n => gsRow('📝', esc(n.title), esc((n.content || '').slice(0, 60)), `navigate('/notes');setTimeout(()=>openNoteForm('${n.id}'),120)`)));
 
   grp(t('srKb'), KNOWLEDGE
     .filter(k => kbSearchText(k).includes(q))
-    .slice(0, 5).map(k => gsRow(k.icon, esc(k.title[LANG] || k.title.fa), esc(k.summary[LANG] || k.summary.fa), `closeModal();openKbArticle('${k.id}')`)));
+    .slice(0, 5).map(k => gsRow(k.icon, esc(k.title[LANG] || k.title.fa), esc(k.summary[LANG] || k.summary.fa), `openKbArticle('${k.id}')`)));
 
   grp(t('srDiag'), DIAG_FLOWS
     .filter(f => flowSearchText(f).includes(q))
-    .slice(0, 5).map(f => gsRow(f.icon || '🔩', esc(f.symptom.fa), esc((f.first && f.first.fa) || ''), `closeModal();navigate('/diagnostics');setTimeout(()=>startDiagFlow('${f.id}'),120)`)));
+    .slice(0, 5).map(f => gsRow(f.icon || '🔩', esc(f.symptom.fa), esc((f.first && f.first.fa) || ''), `navigate('/diagnostics');setTimeout(()=>startDiagFlow('${f.id}'),120)`)));
 
   grp(t('srCalc'), CALCULATORS
     .filter(c2 => hay(c2.title.fa, c2.title.en, c2.desc.fa, c2.formula).includes(q))
-    .slice(0, 5).map(c2 => gsRow('🧮', esc(c2.title.fa), esc(c2.desc.fa), `closeModal();calcFilter={cat:'all',q:'${jsAttr(qRaw)}'};navigate('/calculations')`)));
+    .slice(0, 5).map(c2 => gsRow('🧮', esc(c2.title.fa), esc(c2.desc.fa), `calcFilter={cat:'all',q:'${jsAttr(qRaw)}'};navigate('/calculations')`)));
   grp(t('measures'), (state.measurements || [])
     .filter(m => { const f = MEASURE_FIELDS_BY_ID[m.typeId]; return hay(f && f.fa, f && f.en, m.point, m.component, m.note, m.value).includes(q); })
-    .slice(0, 5).map(m => { const f = MEASURE_FIELDS_BY_ID[m.typeId]; return gsRow(MEAS_STATUS_META[m.status] ? MEAS_STATUS_META[m.status].icon : '📐', esc((f && (f[LANG] || f.fa)) || m.typeId), esc((m.point || '') + ' ' + (m.component || '') + ' · ' + fmtDate(m.ts)), `closeModal();navigate('/measurements')`); }));
+    .slice(0, 5).map(m => { const f = MEASURE_FIELDS_BY_ID[m.typeId]; return gsRow(MEAS_STATUS_META[m.status] ? MEAS_STATUS_META[m.status].icon : '📐', esc((f && (f[LANG] || f.fa)) || m.typeId), esc((m.point || '') + ' ' + (m.component || '') + ' · ' + fmtDate(m.ts)), `navigate('/measurements')`); }));
 
   out.innerHTML = S.length ? S.join('') : `<div class="empty"><div class="e-icon">🔍</div><strong>${t('noResults')}</strong></div>`;
 }
@@ -873,10 +874,7 @@ function openContractForm(id) {
         <div class="field"><label>${t('ctAmount')}</label><input id="ct_amount" type="number" min="0" value="${v.amount || 0}" /></div>
         <div class="field"><label>${t('ctMonths')}</label><input id="ct_months" type="number" min="1" max="36" value="${v.months || 12}" /></div>
         <div class="field"><label>${t('ctStart')}</label>${jdateInput('ct_start', v.startTs)}</div>
-        <div class="field"><label>${t('ctLinkProject')}</label><select id="ct_project">
-          <option value="">—</option>
-          ${state.projects.map(p => `<option value="${p.id}" ${v.projectId === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}
-        </select></div>
+        <div class="field"><label>${t('ctLinkProject')}</label><select id="ct_project">${projectOptsHTML(v.projectId, true)}</select></div>
         <div class="field span2"><label>${t('ctNote')}</label><input id="ct_note" value="${esc(v.note || '')}" /></div>
       </div>
       ${ct ? `
