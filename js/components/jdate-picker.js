@@ -41,9 +41,10 @@ function closeJdatePicker() {
   if (had) popTaggedLayer('jdate');
 }
 function jdShift(d) {
-  _jdCur.jm += d;
-  if (_jdCur.jm > 12) { _jdCur.jm = 1; _jdCur.jy++; }
-  if (_jdCur.jm < 1) { _jdCur.jm = 12; _jdCur.jy--; }
+  /* total-month arithmetic so ±12 (year jump) also lands correctly */
+  const total = _jdCur.jy * 12 + (_jdCur.jm - 1) + d;
+  _jdCur.jy = Math.floor(total / 12);
+  _jdCur.jm = total - _jdCur.jy * 12 + 1;
   drawJdate();
 }
 function jdPick(jd) {
@@ -83,12 +84,18 @@ function drawJdate() {
   }
   box.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <button class="icon-btn" style="width:34px;height:34px" onclick="jdShift(-1)" aria-label="${t('prevMonth')}" title="${t('prevMonth')}">${navArrows().prev}</button>
+      <span style="display:flex;gap:2px">
+        <button class="icon-btn" style="width:30px;height:34px" onclick="jdShift(-12)" aria-label="${faNum(1)} ${t('prevMonth')}" title="-12">«</button>
+        <button class="icon-btn" style="width:34px;height:34px" onclick="jdShift(-1)" aria-label="${t('prevMonth')}" title="${t('prevMonth')}">${navArrows().prev}</button>
+      </span>
       <strong style="font-size:14.5px">${jalMonth(jm)} ${faNum(jy)}</strong>
-      <button class="icon-btn" style="width:34px;height:34px" onclick="jdShift(1)" aria-label="${t('nextMonth')}" title="${t('nextMonth')}">${navArrows().next}</button>
+      <span style="display:flex;gap:2px">
+        <button class="icon-btn" style="width:34px;height:34px" onclick="jdShift(1)" aria-label="${t('nextMonth')}" title="${t('nextMonth')}">${navArrows().next}</button>
+        <button class="icon-btn" style="width:30px;height:34px" onclick="jdShift(12)" aria-label="${faNum(1)} ${t('nextMonth')}" title="+12">»</button>
+      </span>
     </div>
     <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;font-size:10.5px;color:var(--text-3);margin-bottom:5px">
-      <span>ش</span><span>ی</span><span>د</span><span>س</span><span>چ</span><span>پ</span><span>ج</span>
+      ${t('weekDays').split(' ').map(wd => `<span>${esc(wd)}</span>`).join('')}
     </div>
     <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center">${cells}</div>
     <div style="display:flex;gap:8px;margin-top:12px">

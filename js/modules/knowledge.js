@@ -38,6 +38,7 @@ function drawKb() {
   if (kbCat !== 'all') list = list.filter(k => k.cat === kbCat);
   if (q) list = list.filter(k => kbSearchText(k).includes(q));
   const el = $('#kbList');
+  if (!el) return; // debounced redraw after leaving the page
   if (!list.length) {
     el.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p></div>`;
     return;

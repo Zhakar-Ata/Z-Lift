@@ -247,7 +247,7 @@ function renderChecklistDetail(idWithQuery) {
       // update failed box
       const failed = [];
       tp.groups.forEach(g => g.items.forEach(it => { if (stateOf(store[it.id]) === 'fail') failed.push(it); }));
-      $('#chFailedBox').innerHTML = failed.length ? `
+      const _chFb = $('#chFailedBox'); if (_chFb) _chFb.innerHTML = failed.length ? `
         <div class="card" style="border-inline-start:4px solid var(--danger);margin-bottom:14px">
           <div class="card-title" style="color:var(--danger);margin-bottom:8px">❗ ${t('chFailed')} (${faNum(failed.length)})</div>
           <ul style="padding-inline-start:20px;font-size:13.3px;color:var(--text-2)">${failed.map(it => `<li>${esc(it[LANG] || it.fa)}</li>`).join('')}</ul>

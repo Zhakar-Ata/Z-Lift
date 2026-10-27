@@ -125,14 +125,23 @@ function parseNum(s) {
   if (!str) return null;
   str = str.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
            .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
-  // accept both 1,234.5 and 1٫234٫5 (Arabic decimal)
-  if (str.indexOf(',') !== -1 || str.indexOf('٬') !== -1) {
-    const lastDot = Math.max(str.lastIndexOf('.'), str.lastIndexOf('٫'));
-    const lastComma = Math.max(str.lastIndexOf(','), str.lastIndexOf('٬'));
-    if (lastComma > lastDot) str = str.replace(/[.,٬]/g, m => (m === ',' || m === '٬') ? '.' : '');
-    else str = str.replace(/,/g, '');
+  /* separators: '٬' (U+066C) is ALWAYS a thousands separator in Persian —
+     '٫' (U+066B) is the decimal mark, and '/' is how many Persian keyboards
+     type it. The old code treated '٬'/',' as the decimal mark whenever it
+     came last, so a pasted «۱٬۲۵۰» (1250) was read as 1.25. */
+  str = str.replace(/٬/g, '').replace(/٫/g, '.').replace(/\//g, '.');
+  if (str.indexOf(',') !== -1) {
+    if (str.indexOf('.') !== -1 || (str.match(/,/g) || []).length > 1) {
+      str = str.replace(/,/g, ''); // 1,234.5 / 12,345,678 -> thousands
+    } else {
+      const seg = str.split(',');
+      // a lone comma with exactly three trailing digits groups thousands (1,250);
+      // anything else is a decimal comma (2,5)
+      str = (seg[1].length === 3 && seg[0].length >= 1 && seg[0].length <= 3 && !/^-?0/.test(seg[0]))
+        ? seg[0] + seg[1] : seg[0] + '.' + seg[1];
+    }
   }
-  str = str.replace(/٫/g, '.').replace(/[^\d.\-]/g, '');
+  str = str.replace(/[^\d.\-]/g, '');
   if (str === '' || str === '-' || str === '.') return null;
   const n = Number(str);
   return isFinite(n) ? n : null;

@@ -16,6 +16,7 @@ function drawNotes() {
   let list = state.notes;
   if (q) list = list.filter(n => hay(n.title, n.content, (n.tags || []).join(' ')).includes(q));
   const el = $('#noteList');
+  if (!el) return; // debounced redraw after leaving the page
   if (!state.notes.length) {
     el.innerHTML = `<div class="empty"><div class="e-icon">📝</div><strong>${t('noNotes')}</strong><p>${t('noNotesSub')}</p><button class="btn btn-primary" onclick="openNoteForm()">${IC.plus} ${t('newNote')}</button></div>`;
     return;

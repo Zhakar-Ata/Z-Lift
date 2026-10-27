@@ -1,8 +1,8 @@
 {
   "name": "z-lift-qa",
   "private": true,
-  "version": "29.3.0",
-  "description": "Z Lift QA \u2014 end-to-end smoke test of the PWA front-end (jsdom)",
+  "version": "29.4.0",
+  "description": "Z Lift QA — end-to-end smoke test of the PWA front-end (jsdom)",
   "scripts": {
     "test": "node qa/smoke.js && node qa/perf.js && node qa/migration.js && node qa/archive.js && node qa/phase2b2.js",
     "test:smoke": "node qa/smoke.js",
@@ -10,7 +10,8 @@
     "test:migration": "node qa/migration.js",
     "test:archive": "node qa/archive.js",
     "test:phase2b2": "node qa/phase2b2.js",
-    "test:real-user": "node qa/real-user.js"
+    "test:real-user": "node qa/real-user.js",
+    "test:personas": "node qa/personas.js"
   },
   "devDependencies": {
     "fake-indexeddb": "^6.2.5",

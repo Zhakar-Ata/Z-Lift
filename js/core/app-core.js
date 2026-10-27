@@ -1,8 +1,8 @@
 /* ================= VERSION SINGLE SOURCE OF TRUTH ================= */
-var APP_VERSION = '29.3.0';
+var APP_VERSION = '29.4.0';
 var DB_SCHEMA_VERSION = 3;
 var BACKUP_FORMAT_VERSION = 8;
-var CACHE_VERSION = 'zlift-pwa-v39';
+var CACHE_VERSION = 'zlift-pwa-v40';
 /* Display badge shown on Settings / about */
 var APP_BUILD = '2026-10-27';
 
@@ -317,6 +317,80 @@ window.addEventListener('popstate', () => {
   }, 30);
 });
 
+/* ---------- unsaved-changes guard for modal forms ----------
+   A half-filled field form (service report, invoice…) is ten minutes of
+   typing in a machine room. One gloved tap on ✕ / Cancel / backdrop / Esc /
+   hardware Back used to throw it away silently. Gesture-closers now check
+   whether any form field differs from its at-open value and ask first —
+   with a small overlay ABOVE the form (like the date picker), so "keep
+   editing" loses nothing. Programmatic closeModal() calls (post-save etc.)
+   are never intercepted. */
+var _modalBaseline = null;
+function _modalFormSnapshot() {
+  const root = document.querySelector('#modalRoot');
+  if (!root) return '';
+  const parts = [];
+  root.querySelectorAll('input:not([type="file"]):not([type="hidden"]), textarea, select').forEach((el, i) => {
+    if (el.closest('.search')) return; // picker/list searches are not form data
+    const v = (el.type === 'checkbox' || el.type === 'radio') ? (el.checked ? '1' : '0') : String(el.value || '');
+    parts.push(i + '=' + v);
+  });
+  return parts.join('\u0001');
+}
+function _modalIsDirty() {
+  if (_modalBaseline == null || !document.getElementById('modalOverlay')) return false;
+  const snap = _modalFormSnapshot();
+  return snap !== '' && snap !== _modalBaseline;
+}
+function _closeUnsavedDom() {
+  const o = document.getElementById('unsavedOverlay');
+  if (o) o.remove();
+}
+function _dismissUnsaved() {
+  const had = !!document.getElementById('unsavedOverlay');
+  _closeUnsavedDom();
+  if (had) popTaggedLayer('unsaved');
+}
+function _showUnsavedConfirm() {
+  if (document.getElementById('unsavedOverlay')) return;
+  const root = document.createElement('div');
+  root.id = 'unsavedOverlay';
+  root.style.cssText = 'position:fixed;inset:0;z-index:450;background:rgba(2,6,23,.55);display:flex;align-items:center;justify-content:center;padding:18px';
+  root.innerHTML = '<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow-lg);width:100%;max-width:360px;padding:20px">' +
+    '<h3 style="font-size:15.5px;margin-bottom:10px">\u26a0\ufe0f ' + esc(t('unsavedTitle')) + '</h3>' +
+    '<p style="font-size:13.5px;color:var(--text-2);line-height:1.9;margin-bottom:16px">' + esc(t('unsavedMsg')) + '</p>' +
+    '<div style="display:flex;gap:9px;flex-wrap:wrap">' +
+      '<button class="btn btn-primary" id="unsavedKeep" style="flex:1">' + esc(t('keepEditing')) + '</button>' +
+      '<button class="btn btn-danger" id="unsavedDiscard" style="flex:1">' + esc(t('discardClose')) + '</button>' +
+    '</div></div>';
+  document.body.appendChild(root);
+  pushUiLayer('unsaved', _closeUnsavedDom);
+  document.getElementById('unsavedKeep').onclick = () => _dismissUnsaved();
+  document.getElementById('unsavedDiscard').onclick = () => { _dismissUnsaved(); closeModal(); };
+  root.addEventListener('mousedown', e => { if (e.target.id === 'unsavedOverlay') _dismissUnsaved(); });
+}
+function requestCloseModal() {
+  if (_modalIsDirty()) _showUnsavedConfirm();
+  else closeModal();
+}
+/* hardware Back popped our layer already: when the form is dirty, re-arm the
+   layer so the form survives and the confirm becomes the top layer */
+function _modalLayerClose() {
+  if (_modalIsDirty()) {
+    pushUiLayer('modal', _modalLayerClose);
+    _showUnsavedConfirm();
+    return;
+  }
+  _closeModalDom();
+}
+/* numeric field reader: accepts Persian/Arabic digits & formatted pastes
+   (same parseNum the measurement fields use) — never silently becomes 0/NaN */
+function numVal(v, dflt) {
+  const raw = v && typeof v === 'object' ? v.value : v;
+  const n = (typeof parseNum === 'function') ? parseNum(raw) : (raw === '' || raw == null ? null : +raw);
+  return (n == null || !isFinite(n)) ? (dflt || 0) : n;
+}
+
 /* ---------- modal ----------
    Accessible dialog: aria roles, focus moved in and restored on close, Tab is
    trapped inside, the page behind cannot scroll, and Enter inside a form runs
@@ -326,6 +400,8 @@ var FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]):not([type
 var _modalReturnFocus = null;
 function _lockScroll(on) { document.body.classList.toggle('scroll-lock', !!on); }
 function _closeModalDom() {
+  _modalBaseline = null;
+  _closeUnsavedDom();
   $('#modalRoot').innerHTML = '';
   document.removeEventListener('keydown', escClose);
   if (!document.getElementById('jdOverlay')) _lockScroll(false);
@@ -344,7 +420,18 @@ function openModal(html, opts = {}) {
   const box = root.querySelector('.modal');
   const head = box.querySelector('.modal-head h3');
   if (head) { head.id = 'modalTitle'; box.setAttribute('aria-labelledby', 'modalTitle'); box.removeAttribute('aria-label'); }
-  $('#modalOverlay').addEventListener('mousedown', e => { if (e.target.id === 'modalOverlay') closeModal(); });
+  $('#modalOverlay').addEventListener('mousedown', e => { if (e.target.id === 'modalOverlay') requestCloseModal(); });
+  /* the plain ✕ / Cancel buttons are inline onclick="closeModal()" — route
+     those exact gesture-closers through the unsaved-changes check */
+  $('#modalOverlay').addEventListener('click', e => {
+    const btn = e.target.closest && e.target.closest('button');
+    if (!btn) return;
+    const oc = (btn.getAttribute('onclick') || '').trim();
+    if ((oc === 'closeModal()' || oc === 'closeModal();') && _modalIsDirty()) {
+      e.preventDefault(); e.stopPropagation();
+      _showUnsavedConfirm();
+    }
+  }, true);
   document.addEventListener('keydown', escClose);
   _lockScroll(true);
   /* Enter anywhere in the form = the primary button (never an implicit submit) */
@@ -369,10 +456,11 @@ function openModal(html, opts = {}) {
   const target = (wide && box.querySelector('input:not([readonly]):not([type="file"]), textarea, select')) ||
                  box.querySelector('.modal-foot .btn-primary') || box.querySelector('.modal-head .icon-btn');
   if (target) { try { target.focus({ preventScroll: true }); } catch (e) {} }
-  if (!hadModal) pushUiLayer('modal', _closeModalDom);
+  if (!hadModal) pushUiLayer('modal', _modalLayerClose);
+  _modalBaseline = _modalFormSnapshot();
   try { enhanceClickableRows(box); } catch (e) {}
 }
-function escClose(e) { if (e.key === 'Escape') closeModal(); }
+function escClose(e) { if (e.key === 'Escape') requestCloseModal(); }
 function closeModal() {
   const had = !!document.getElementById('modalOverlay');
   _closeModalDom();
@@ -506,7 +594,10 @@ async function loadAll(force) {
 /* service-due calculation */
 function dueInfo(p) {
   if (!p.serviceIntervalDays) return null;
-  const svc = state.services.filter(s => s.projectId === p.id && (s.serviceType === 'maintenance' || s.serviceType === 'repair'));
+  /* a future-dated report is a data-entry slip, not work already done: it must
+     not push the next due date out and blind the reminder for two cycles */
+  const nowTs = Date.now();
+  const svc = state.services.filter(s => s.projectId === p.id && (s.serviceType === 'maintenance' || s.serviceType === 'repair') && (+s.date || 0) <= nowTs);
   const last = svc.length ? Math.max(...svc.map(s => s.date)) : p.createdAt;
   const next = last + p.serviceIntervalDays * 86400000;
   const days = Math.round((next - Date.now()) / 86400000);

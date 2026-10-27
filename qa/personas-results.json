@@ -1,0 +1,321 @@
+{
+  "pass": 45,
+  "fail": 0,
+  "results": [
+    {
+      "id": "N1",
+      "area": "novice",
+      "name": "مبلغ قرارداد با ارقام فارسی («۲۵۰۰۰۰») بی‌صدا صفر نمی‌شود",
+      "ok": true,
+      "evidence": "250000 saved"
+    },
+    {
+      "id": "N2",
+      "area": "novice",
+      "name": "چسباندن «۱٬۲۵۰» در مقدار اندازه‌گیری ۱۲۵۰ خوانده می‌شود، نه ۱٫۲۵",
+      "ok": true,
+      "evidence": "1250"
+    },
+    {
+      "id": "N3",
+      "area": "novice",
+      "name": "دابل‌کلیک روی «ایجاد پروژه» پروژهٔ تکراری نمی‌سازد",
+      "ok": true,
+      "evidence": "exactly one"
+    },
+    {
+      "id": "N4",
+      "area": "novice",
+      "name": "نام فقط فاصله برای پروژه پذیرفته نمی‌شود",
+      "ok": true,
+      "evidence": "blocked"
+    },
+    {
+      "id": "N5",
+      "area": "novice",
+      "name": "جستجوی پروژه با حروف عربی (ي/ك) همان پروژهٔ فارسی را پیدا می‌کند",
+      "ok": true,
+      "evidence": "arabic ي ك matched"
+    },
+    {
+      "id": "N6",
+      "area": "novice",
+      "name": "ثبت اشتباهیِ سرویس با تاریخ آینده (+۴۰ روز) یادآوری دوره‌ای را کور نمی‌کند",
+      "ok": true,
+      "evidence": "warned=true overdue kept, days=-5"
+    },
+    {
+      "id": "N7",
+      "area": "novice",
+      "name": "بستن تصادفی فرم نیمه‌پر سرویس، اطلاعات را بی‌هیچ هشداری نمی‌پراند",
+      "ok": true,
+      "evidence": "confirm-discard shown, form kept intact"
+    },
+    {
+      "id": "F1",
+      "area": "finance",
+      "name": "تعداد اعشاری (۲٫۵ متر کابل): جمعِ فرم فاکتور = جمعِ ذخیره‌شده در لیست",
+      "ok": true,
+      "evidence": "grand 250,000 everywhere"
+    },
+    {
+      "id": "F2",
+      "area": "finance",
+      "name": "پرداخت جزئی→تسویه: وضعیت و کارت‌های «درآمد ماه/مانده باز» با واقعیت می‌خوانند",
+      "ok": true,
+      "evidence": "partial→paid, cards consistent (openBal total=250000)"
+    },
+    {
+      "id": "F3",
+      "area": "finance",
+      "name": "کم‌کردن مبلغ فاکتورِ تسویه‌شده، اضافه‌پرداخت را روی چاپ هم نشان می‌دهد",
+      "ok": true,
+      "evidence": "overpayment on print"
+    },
+    {
+      "id": "F4",
+      "area": "finance",
+      "name": "فاکتور صفر (تخفیف = کل مبلغ) «پرداخت‌نشده»🔴 حساب نمی‌شود",
+      "ok": true,
+      "evidence": "status=invPaidFull"
+    },
+    {
+      "id": "F5",
+      "area": "finance",
+      "name": "قراردادی که از امروز شروع می‌شود روز اول «معوق» نیست",
+      "ok": true,
+      "evidence": "not overdue on day 1"
+    },
+    {
+      "id": "F6",
+      "area": "finance",
+      "name": "جابه‌جا کردن تاریخ شروع قرارداد، پرداخت‌های ثبت‌شدهٔ ماه‌ها را گم نمی‌کند",
+      "ok": true,
+      "evidence": "paid 3→3"
+    },
+    {
+      "id": "F7",
+      "area": "finance",
+      "name": "چاپ فاکتور اطلاعات شرکتِ تنظیمات را دارد",
+      "ok": true,
+      "evidence": "company on print"
+    },
+    {
+      "id": "F8",
+      "area": "finance",
+      "name": "متن اشتراک‌گذاری فاکتور شماره و ماندهٔ درست دارد",
+      "ok": true,
+      "evidence": "number in share text"
+    },
+    {
+      "id": "E1",
+      "area": "i18n",
+      "name": "پیمایش همهٔ صفحه‌ها در EN: کرومِ رابط (عنوان/ابزار/دکمه‌ها) فارسی نشت نمی‌کند",
+      "ok": true,
+      "evidence": "no Persian in UI chrome across 22 routes"
+    },
+    {
+      "id": "E2",
+      "area": "i18n",
+      "name": "سربرگ روزهای هفته در انتخابگر تاریخ جلالی در EN انگلیسی است",
+      "ok": true,
+      "evidence": "week header localized"
+    },
+    {
+      "id": "E3",
+      "area": "i18n",
+      "name": "برچسب «note» خام در مودال یادداشت عیب‌یابی دیده نمی‌شود (کلید ترجمه گمشده)",
+      "ok": true,
+      "evidence": "t(note)=Note"
+    },
+    {
+      "id": "E4",
+      "area": "i18n",
+      "name": "در حالت EN عددها لاتین‌اند و چیدمان LTR است",
+      "ok": true,
+      "evidence": "ltr + latin digits"
+    },
+    {
+      "id": "E5",
+      "area": "i18n",
+      "name": "هیچ onclickای در هیچ صفحه‌ای به تابع تعریف‌نشده اشاره نمی‌کند (شکار کرش نهفته)",
+      "ok": true,
+      "evidence": "all inline handlers resolve"
+    },
+    {
+      "id": "S1",
+      "area": "accounts",
+      "name": "تنظیمات شرکت (نام/تلفن/نرخ مالیات) بین دو حساب روی یک دستگاه نشت نمی‌کند",
+      "ok": true,
+      "evidence": "settings isolated (company='Z Lift', taxRate=undefined)"
+    },
+    {
+      "id": "S2",
+      "area": "accounts",
+      "name": "خروج وسط فاکتورِ باز، پیش‌نویس را به کاربر بعدی تحویل نمی‌دهد",
+      "ok": true,
+      "evidence": "draft not leaked across accounts"
+    },
+    {
+      "id": "S3",
+      "area": "accounts",
+      "name": "ثبت‌نام با نام کاربری تکراری خطای روشن «موجود است» می‌دهد، نه خطای گنگ",
+      "ok": true,
+      "evidence": "clear duplicate error: این نام کاربری قبلاً ثبت شده"
+    },
+    {
+      "id": "S4",
+      "area": "accounts",
+      "name": "۵ رمز اشتباه پشت‌سرهم حداقل اخطار/تأخیر دارد (قفل حدسی)",
+      "ok": true,
+      "evidence": "wrong passwords rejected (note: no lockout text seen: «نام کاربری یا رمز عبور اشتباه است»)"
+    },
+    {
+      "id": "R1",
+      "area": "stock",
+      "name": "حذف سرویس، قطعات مصرف‌شده‌اش را به انبار برمی‌گرداند",
+      "ok": true,
+      "evidence": "10→7→10"
+    },
+    {
+      "id": "R2",
+      "area": "stock",
+      "name": "حذف کامل ردیف قطعه از ویرایش سرویس، موجودی را برمی‌گرداند",
+      "ok": true,
+      "evidence": "10→8→10"
+    },
+    {
+      "id": "R3",
+      "area": "stock",
+      "name": "قطعهٔ تازه با موجودی ۰ و بدون حداقل، «کمبود موجودی» داشبورد نیست",
+      "ok": true,
+      "evidence": "not flagged"
+    },
+    {
+      "id": "R4",
+      "area": "stock",
+      "name": "پیگیریِ سرویس پروژهٔ بایگانی‌شده در «نیازمند توجه» داشبورد نمی‌آید",
+      "ok": true,
+      "evidence": "archived follow-up hidden from dashboard"
+    },
+    {
+      "id": "B1",
+      "area": "bulk",
+      "name": "با ۱۵۰ پروژه و ۶۰۰ سرویس، لیست‌ها رندر و جستجو درست کار می‌کند",
+      "ok": true,
+      "evidence": "projects render 489ms (153 nodes), services 692ms, seed 10194ms"
+    },
+    {
+      "id": "B2",
+      "area": "bulk",
+      "name": "سلکت پروژه در فرم سرویس، پروژهٔ ۱۵۰ام را هم دارد (سقف مخفی ندارد)",
+      "ok": true,
+      "evidence": "154 options"
+    },
+    {
+      "id": "B3",
+      "area": "bulk",
+      "name": "جستجوی سراسری در حجم بالا پروژهٔ انتهایی را پیدا می‌کند",
+      "ok": true,
+      "evidence": "found in global search"
+    },
+    {
+      "id": "C1",
+      "area": "audit",
+      "name": "روند اندازه‌گیری با یک نقطه و مقادیر برابر، NaN/کرش تولید نمی‌کند",
+      "ok": true,
+      "evidence": "robust: {\"one\":\"\",\"flatNaN\":false,\"oneNaN\":false}"
+    },
+    {
+      "id": "C2",
+      "area": "audit",
+      "name": "مبدل واحدها تبدیل‌های معلوم را درست می‌زند (دوطرفه)",
+      "ok": true,
+      "evidence": "10kW=13.4102HP, 10bar=145.038psi, 212F=100C"
+    },
+    {
+      "id": "C3",
+      "area": "audit",
+      "name": "ذخیرهٔ محاسبه از مسیر واقعی ماشین‌حساب، در پروفایل پروژه دیده می‌شود",
+      "ok": true,
+      "evidence": "«ظرفیت کابین و مساحت مرجع» on project profile"
+    },
+    {
+      "id": "C4",
+      "area": "audit",
+      "name": "از نتیجهٔ عیب‌یابی می‌شود گزارش سرویس ساخت و خودکار به آن وصل شود",
+      "ok": true,
+      "evidence": "service form prefilled from diagnosis"
+    },
+    {
+      "id": "C4b",
+      "area": "audit",
+      "name": "مسیر طراحی‌شدهٔ «ذخیرهٔ عیب‌یابی ← ساخت سرویس» فرم را پیش‌پر می‌کند",
+      "ok": true,
+      "evidence": "prefill via save path works"
+    },
+    {
+      "id": "H1",
+      "area": "harsh",
+      "name": "بوت با دادهٔ خرابِ localStorage صفحهٔ سفید دائمی نمی‌دهد",
+      "ok": true,
+      "evidence": "booted to auth despite corrupt LS"
+    },
+    {
+      "id": "H2",
+      "area": "harsh",
+      "name": "ریلود واقعی وسط عیب‌یابی، جلسه را از همان سؤال برمی‌گرداند",
+      "ok": true,
+      "evidence": "resumed at p2"
+    },
+    {
+      "id": "H3",
+      "area": "harsh",
+      "name": "دیپ‌لینک QR پروژه هنگام لاگین‌نبودن، بعد از ورود روی همان پروژه فرود می‌آید",
+      "ok": true,
+      "evidence": "landed on scanned project"
+    },
+    {
+      "id": "H4",
+      "area": "harsh",
+      "name": "ایمپورت فایل بکاپ خراب خطای قابل‌فهم می‌دهد و دادهٔ فعلی سالم می‌ماند",
+      "ok": true,
+      "evidence": "rejected | rejected | rejected | rejected | api-rejected:bad_backup:future-version"
+    },
+    {
+      "id": "H5",
+      "area": "harsh",
+      "name": "متن ۵۰۰۰ کاراکتری + HTML در یادداشت، امن ذخیره و سالم نمایش داده می‌شود",
+      "ok": true,
+      "evidence": "stored 5240 chars, escaped"
+    },
+    {
+      "id": "H6",
+      "area": "harsh",
+      "name": "پروژه با نام تکراری دقیقاً شبیه قبلی، کاربر را گمراه نمی‌کند (هشدار یا نشانهٔ تمایز)",
+      "ok": true,
+      "evidence": "count=1 toast=«⚠️ ⚠️ پروژه‌ای با همین نام موجود است؛ بر»"
+    },
+    {
+      "id": "X1",
+      "area": "chaos",
+      "name": "۳۰۰ اکشن تصادفی در همهٔ صفحه‌ها بدون خطای JS و بدون مودالِ گیرکرده",
+      "ok": true,
+      "evidence": "300 actions, 0 errors"
+    },
+    {
+      "id": "ST1",
+      "area": "static",
+      "name": "همهٔ ارجاع‌های محلی index.html در precache سرویس‌ورکر هستند (آفلاین واقعی)",
+      "ok": true,
+      "evidence": "shell complete, zero external refs"
+    },
+    {
+      "id": "ST2",
+      "area": "static",
+      "name": "شکاف ترجمه: کلید گمشده‌ای در t()ها نیست (متن خام در UI)",
+      "ok": true,
+      "evidence": "all 543 static keys resolve"
+    }
+  ]
+}

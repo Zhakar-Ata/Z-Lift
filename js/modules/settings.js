@@ -31,7 +31,7 @@ function renderSettings() {
         <div class="card-title">🔧 ${t('setSvcDefaults')}</div>
         <div class="field"><label>${t('setDefaultTech')}</label><input id="st_defaulttech" value="${esc(s.defaultTech || '')}" placeholder="${esc((state.user && state.user.name) || '')}" /></div>
         <p class="hint">${t('setDefaultTechHint')}</p>
-        <div class="field" style="max-width:160px;margin-top:6px"><label>${t('invTaxRate')}</label><input id="st_taxrate" type="number" min="0" max="100" step="1" value="${Math.max(0, Math.min(100, Math.round(+(s.taxRate != null ? s.taxRate : 0) || 0)))}" /></div>
+        <div class="field" style="max-width:160px;margin-top:6px"><label>${t('invTaxRate')}</label><input id="st_taxrate" inputmode="decimal" value="${Math.max(0, Math.min(100, Math.round(+(s.taxRate != null ? s.taxRate : 0) || 0)))}" /></div>
         <button class="btn btn-primary btn-sm" id="stSaveSvc" style="margin-top:8px">💾 ${t('save')}</button>
       </div>
     </div>
@@ -106,7 +106,7 @@ function renderSettings() {
     catch (e) { toast(errMsg(e), 'err'); }
   });
   $('#stSaveSvc').onclick = guard('#stSaveSvc', async () => {
-    try { const d = await api('/settings', { method: 'PUT', body: { defaultTech: $('#st_defaulttech').value, taxRate: Math.max(0, Math.min(100, Math.round(+$('#st_taxrate').value || 0))) } }); state.settings = d.settings; toast(t('saved')); }
+    try { const d = await api('/settings', { method: 'PUT', body: { defaultTech: $('#st_defaulttech').value, taxRate: Math.max(0, Math.min(100, Math.round(numVal($('#st_taxrate').value)))) } }); state.settings = d.settings; toast(t('saved')); }
     catch (e) { toast(errMsg(e), 'err'); }
   });
   const ab = document.getElementById('st_autobackup');
