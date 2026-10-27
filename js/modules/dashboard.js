@@ -32,11 +32,13 @@ function renderDashboard() {
     .map(p => ({ p, d: dueInfo(p) }))
     .filter(x => x.d && (x.d.overdue || x.d.soon))
     .sort((a, b) => a.d.days - b.d.days);
-  /* open follow-ups & out-of-order units */
+  /* open follow-ups & out-of-order units — handed-over (archived) buildings
+     stop nagging here too, exactly like their reminders already do */
+  const archivedIds = new Set((state.projects || []).filter(p => p.archived).map(p => p.id));
   const openIssues = state.services
-    .filter(s => s.finalStatus === 'followup' || s.finalStatus === 'outoforder')
+    .filter(s => (s.finalStatus === 'followup' || s.finalStatus === 'outoforder') && !(s.projectId && archivedIds.has(s.projectId)))
     .slice(0, 4);
-  const openIssueItems = state.issues.filter(i => !i.closed).slice(0, 4);
+  const openIssueItems = state.issues.filter(i => !i.closed && !(i.projectId && archivedIds.has(i.projectId))).slice(0, 4);
   const ctOverdue = state.contracts
     .map(ct => ({ ct, st: ctStats(ct) }))
     .filter(x => x.st.overdue > 0)
@@ -96,7 +98,7 @@ function renderDashboard() {
   ) : `<p style="font-size:13.5px;color:var(--ok);font-weight:600">${t('noDue')}</p>`;
 
   /* low stock */
-  const low = state.parts.filter(x => x.qty <= x.minQty);
+  const low = state.parts.filter(x => (+x.minQty || 0) > 0 && (+x.qty || 0) <= +x.minQty);
 
   c.innerHTML = `
     ${hero}

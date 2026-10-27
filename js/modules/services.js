@@ -289,7 +289,7 @@ function svcPartsHTML() {
       : `<span class="tag free">${t('svcCustomPart')}</span>`;
     return `<div class="spart">
       <div class="grow"><strong>${esc(p.name)}</strong><span class="meta">${tag}</span></div>
-      <input class="qty" type="number" min="1" value="${Math.max(1, Math.round(+p.qty || 1))}" data-spi="${i}" aria-label="${esc(t('svcPartQty'))}" />
+      <input class="qty" inputmode="numeric" value="${Math.max(1, Math.round(+p.qty || 1))}" data-spi="${i}" aria-label="${esc(t('svcPartQty'))}" />
       <button type="button" class="icon-btn" style="width:32px;height:32px" data-spdel="${i}" title="${esc(t('svcRemovePart'))}">✕</button>
     </div>`;
   }).join('');
@@ -305,7 +305,7 @@ function svcBindPartsBox() {
     const i = e.target.getAttribute && e.target.getAttribute('data-spi');
     /* draft only — rebuilding the row per keystroke destroys the input being
        typed in (focus + mobile keyboard lost); hints refresh on 'change' */
-    if (i != null && svcPartsDraft[+i]) svcPartsDraft[+i].qty = Math.max(1, Math.round(+e.target.value || 1));
+    if (i != null && svcPartsDraft[+i]) svcPartsDraft[+i].qty = Math.max(1, Math.round(numVal(e.target.value, 1)));
   });
   box.addEventListener('change', e => {
     const i = e.target.getAttribute && e.target.getAttribute('data-spi');
@@ -332,7 +332,7 @@ function svcTogglePicker(show) {
       .filter(p => !nq || hay(p.name, p.code, p.category, p.supplier, p.location).includes(nq));
     const box = $('#svcPickList');
     if (box) box.innerHTML = list.length ? list.map(p => {
-      const low = +p.qty <= +p.minQty;
+      const low = (+p.minQty || 0) > 0 && (+p.qty || 0) <= +p.minQty;
       return `<div class="row-item" style="margin-bottom:6px;${low ? 'border-color:var(--danger-soft)' : ''}">
         <div class="row-body" onclick="svcAddStockPart('${p.id}')"><strong style="font-size:13.5px">${esc(p.name)}</strong>
         <span class="sub">${t('svcStockHint')}: <b style="color:${low ? 'var(--danger)' : 'inherit'}">${faNum(p.qty)}</b> ${esc(p.unit)}${p.code ? ' · ' + esc(p.code) : ''}</span></div>
@@ -348,7 +348,7 @@ function svcAddStockPart(partId) {
   if (ex) ex.qty = Math.max(1, (+ex.qty || 0) + 1);
   else svcPartsDraft.push({ partId, name: p.name, qty: 1 });
   svcRefreshParts();
-  if (+p.qty <= (+p.minQty)) toast(t('stockAlert'), 'err');
+  if ((+p.minQty || 0) > 0 && (+p.qty || 0) <= +p.minQty) toast(t('stockAlert'), 'err');
 }
 /* Inline free-text part row — no nested modal, so it never wipes the form. */
 function svcCustomAdd() {
@@ -358,7 +358,7 @@ function svcCustomAdd() {
 function svcCustomCommit() {
   const nm = ($('#svcCustomName') || {}).value || '';
   if (!nm.trim()) { fieldError('#svcCustomName', 'requiredTitle'); return; }
-  svcPartsDraft.push({ name: nm.trim(), qty: Math.max(1, Math.round(+$('#svcCustomQty').value || 1)) });
+  svcPartsDraft.push({ name: nm.trim(), qty: Math.max(1, Math.round(numVal($('#svcCustomQty').value, 1))) });
   $('#svcCustomName').value = '';
   $('#svcCustomRow').classList.add('hidden');
   svcRefreshParts();
@@ -372,8 +372,10 @@ async function svcApplyStock(serviceId, projectId) {
   const newByPart = {};
   svcPartsDraft.forEach(p => { if (p.partId) newByPart[p.partId] = (newByPart[p.partId] || 0) + (+p.qty || 0); });
   const note = t('svcConsumedNote') + (svcPartsEditingId || serviceId || '').slice(0, 6).toUpperCase();
-  for (const partId of Object.keys(newByPart)) {
-    const delta = newByPart[partId] - (origByPart[partId] || 0);
+  /* union of both sides: a part whose row was deleted from the draft is not
+     in newByPart at all — iterating only the new side never released it */
+  for (const partId of new Set([...Object.keys(newByPart), ...Object.keys(origByPart)])) {
+    const delta = (newByPart[partId] || 0) - (origByPart[partId] || 0);
     if (delta > 0) {
       try {
         const d = await api('/parts-consume', { method: 'POST', body: { partId, qty: delta, projectId: projectId || '', serviceId, note } });
@@ -437,7 +439,7 @@ function openServiceForm(id, presetProject) {
         </div>
         <div id="svcCustomRow" class="hidden" style="display:flex;gap:8px;margin-top:9px;align-items:flex-end">
           <div class="field" style="flex:1;margin:0"><label>${t('svcPartName')}</label><input id="svcCustomName" /></div>
-          <div class="field" style="width:90px;margin:0"><label>${t('svcPartQty')}</label><input id="svcCustomQty" type="number" min="1" value="1" /></div>
+          <div class="field" style="width:90px;margin:0"><label>${t('svcPartQty')}</label><input id="svcCustomQty" inputmode="numeric" value="1" /></div>
           <button type="button" class="btn btn-primary btn-sm" onclick="svcCustomCommit()">${IC.plus}</button>
         </div>
         <div id="svcPickPanel" class="hidden" style="margin-top:9px;border:1px solid var(--border);border-radius:12px;padding:10px;background:var(--bg-card)">
@@ -467,16 +469,25 @@ function openServiceForm(id, presetProject) {
   wireSignaturePad('sig_tech', s && s.signTech);
   wireSignaturePad('sig_cust', s && s.signCustomer);
   svcBindPartsBox();
+  let svcFutureConfirmed = false;
   $('#svcSave').onclick = async () => {
     const projectId = $('#s_project').value;
     const customer = $('#s_customer').value.trim();
     if (!projectId && !customer) { fieldError('#s_customer', 'requiredCustomer'); return; }
+    /* a fat-fingered future date silently blinds the periodic reminder for
+       two cycles — make the technician say it out loud (second tap saves) */
+    const svcDate = jdateVal('s_date') || Date.now();
+    if (svcDate > Date.now() && !svcFutureConfirmed) {
+      svcFutureConfirmed = true;
+      toast(t('svcFutureDate'), 'err');
+      return;
+    }
     const partsUsed = svcPartsDraft
       .map(p => ({ partId: p.partId || '', name: String(p.name || ''), qty: Math.max(1, Math.round(+p.qty || 1)) }))
       .filter(p => p.name);
     const body = {
       projectId, customer, elevatorInfo: $('#s_elevator').value,
-      date: jdateVal('s_date') || Date.now(),
+      date: svcDate,
       technician: $('#s_tech').value, serviceType: $('#s_type').value, finalStatus: $('#s_final').value,
       complaint: $('#s_complaint').value, problem: $('#s_problem').value, diagnosis: $('#s_diag').value,
       measurements: $('#s_meas').value, workDone: $('#s_work').value,
@@ -584,7 +595,14 @@ function duplicateService(id) {
   }, 80);
 }
 function deleteService(id) {
-  confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteSvcMsg'), async () => {
+  const svcRow = state.services.find(x => x.id === id);
+  const partCount = svcRow && Array.isArray(svcRow.partsUsed)
+    ? svcRow.partsUsed.filter(p => p && p.partId).reduce((a, p) => a + Math.max(0, Math.round(+p.qty || 0)), 0) : 0;
+  const extra = partCount > 0
+    ? (LANG === 'fa' ? `\n\n⚠️ این گزارش شامل ${faNum(partCount)} عدد قطعه از انبار می‌باشد — با حذف گزارش، موجودی قطعات مربوطه بازگردانده می‌شود.`
+                    : `\n\n⚠️ This report consumed ${partCount} part(s) from inventory — deleting it will return them to stock.`)
+    : '';
+  confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteSvcMsg') + extra, async () => {
     const rb = optimisticRemove(state.services, id);
     if (!rb) { closeModal(); return; }
     const owner = rb.removed || {};
@@ -592,7 +610,14 @@ function deleteService(id) {
       ? '?projectId=' + encodeURIComponent(owner.projectId) + '&elevatorId=' + encodeURIComponent(owner.elevatorId)
       : '';
     closeModal(); render();
-    try { await api('/services/' + id + context, { method: 'DELETE' }); toast(t('deleted')); }
+    try {
+      const response = await api('/services/' + id + context, { method: 'DELETE' });
+      (response.changedParts || []).forEach(changed => {
+        const local = state.parts.find(x => x.id === changed.id);
+        if (local) Object.assign(local, changed);
+      });
+      toast(t('deleted')); render();
+    }
     catch (e) { rb.restore(); toast(errMsg(e), 'err'); render(); }
   });
 }

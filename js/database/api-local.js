@@ -193,7 +193,10 @@ function normalizeInvoicePayload(body) {
   validateInvoicePayloadInput(body);
   const items = (Array.isArray(body.items) ? body.items : []).slice(0, 200).map(row => ({
     desc: String(row && row.desc || '').slice(0, 240),
-    qty: Math.round(Number(row.qty)),
+    /* qty may be fractional (metres of cable, litres of oil); price is rials.
+       Rounding qty here charged 2.5 m as 3 m — the shelf itself still counts
+       whole units (invoicePartQuantities). */
+    qty: Math.max(0, Number(row.qty) || 0),
     price: Math.round(Number(row.price)),
     partId: row && row.partId ? String(row.partId) : undefined
   })).filter(row => row.desc || row.price || row.partId);
@@ -245,6 +248,98 @@ function applyInvoiceInventory(db, beforeItems, afterItems, invoiceId, projectId
     if (part.history.length > 100) part.history.length = 100;
   });
   return changes.map(x => x.part);
+}
+
+/* Deleting a service report hands its consumed parts back to the shelf.
+   The hand-back is capped at what this service actually took (a consumption
+   may have been short: requested 5, shelf held 2), using the prev/new
+   quantities recorded on the part history rows that carry this serviceId. */
+function _svcStockReturn(db, svc) {
+  const changed = [];
+  const used = {};
+  (Array.isArray(svc.partsUsed) ? svc.partsUsed : []).forEach(p => {
+    if (p && p.partId) used[p.partId] = (used[p.partId] || 0) + Math.max(0, Math.round(+p.qty || 0));
+  });
+  Object.keys(used).forEach(partId => {
+    const part = (db.parts || []).find(x => x.id === partId);
+    if (!part || !used[partId]) return;
+    let give = used[partId];
+    const hist = (Array.isArray(part.history) ? part.history : []).filter(h => h && h.serviceId === svc.id);
+    if (hist.length) {
+      let net = 0;
+      hist.forEach(h => {
+        const a = +h.prevQty || 0, bn = +h.newQty || 0;
+        if ((+h.qty || 0) < 0) net += Math.max(0, a - bn);
+        else if ((+h.qty || 0) > 0) net -= Math.max(0, bn - a);
+      });
+      give = Math.min(give, Math.max(0, net));
+    }
+    if (!give) return;
+    const prevQty = Math.max(0, +part.qty || 0);
+    part.qty = prevQty + give;
+    part.updatedAt = Date.now();
+    if (!Array.isArray(part.history)) part.history = [];
+    part.history.unshift({ id: _lsUid(), qty: give, date: Date.now(), projectId: resolveProjectRef(db, svc.projectId), serviceId: svc.id, note: 'service deleted — returned to stock', prevQty, newQty: part.qty });
+    if (part.history.length > 100) part.history.length = 100;
+    changed.push(part);
+  });
+  return changed;
+}
+
+/* Contract payments are keyed by calendar month ('1404-7'). Editing the
+   start date must slide the stream with the contract ("month 3 paid" stays
+   month 3 paid) instead of silently orphaning collected payments. */
+function _ctMonthKeys(startTs, months) {
+  if (typeof tsToJalali !== 'function') return [];
+  let cur = tsToJalali(+startTs || Date.now());
+  let jy = cur.jy, jm = cur.jm;
+  const n = Math.max(1, Math.min(120, Math.round(+months || 12)));
+  const out = [];
+  for (let i = 0; i < n; i++) { out.push(jy + '-' + jm); jm++; if (jm > 12) { jm = 1; jy++; } }
+  return out;
+}
+function _ctRemapPaid(item, b) {
+  if (b.startTs === undefined || typeof tsToJalali !== 'function') return;
+  const oldStart = +item.startTs || +item.createdAt || Date.now();
+  const newStart = +b.startTs || oldStart;
+  const o = tsToJalali(oldStart), nw = tsToJalali(newStart);
+  if (o.jy === nw.jy && o.jm === nw.jm) return;
+  const paid = (b.paid && typeof b.paid === 'object') ? b.paid : (item.paid || {});
+  const oldKeys = _ctMonthKeys(oldStart, item.months);
+  const newKeys = _ctMonthKeys(newStart, b.months !== undefined ? b.months : item.months);
+  const remapped = {};
+  oldKeys.forEach((k, i) => { if (paid[k] && newKeys[i]) remapped[newKeys[i]] = true; });
+  newKeys.forEach(k => { if (paid[k]) remapped[k] = true; });
+  b.paid = remapped;
+}
+
+/* Per-user settings (v29.4): company profile, default technician, tax rate
+   and notification/backup preferences belong to the account, not the device
+   — two companies sharing one workshop tablet must not issue invoices on
+   each other's letterhead. Stored INSIDE db.settings (`.byUser`) so the
+   structured persistence of the settings value carries it unchanged;
+   document sequences (invoiceSeq/reportSeq) stay device-level on purpose. */
+var _USER_SETTING_FIELDS = ['company', 'phone', 'address', 'defaultTech', 'taxRate', 'autoBackup', 'notify'];
+function _userSettings(db, me, claim) {
+  db.settings = db.settings || {};
+  if (!me) return db.settings;
+  if (!db.settings.byUser || typeof db.settings.byUser !== 'object') db.settings.byUser = {};
+  if (!db.settings.byUser[me.id]) {
+    db.settings.byUser[me.id] = {};
+    /* the first account to arrive after this split inherits the profile
+       that older builds kept at device level (then it is gone from there) */
+    if (claim && Object.keys(db.settings.byUser).length === 1) {
+      let moved = false;
+      _USER_SETTING_FIELDS.forEach(f => {
+        if (db.settings[f] !== undefined) { db.settings.byUser[me.id][f] = db.settings[f]; delete db.settings[f]; moved = true; }
+      });
+      if (moved) { try { _lsSave(); } catch (e) {} }
+    }
+  }
+  return db.settings.byUser[me.id];
+}
+function _settingsView(db, me) {
+  return Object.assign({ company: 'Z Lift', phone: '', address: '' }, _userSettings(db, me, true));
 }
 
 /* ---- LOCAL PERSISTENCE — the actual data-access implementation ----
@@ -787,10 +882,13 @@ async function _apiLocalCore(path, opts = {}) {
     }
     if (method === 'DELETE') {
       _apiAuthorizeRecord(db, s, query, true);
+      /* parts this report consumed go back on the shelf (same policy as
+         invoice delete) — otherwise every mistaken report eats stock */
+      const changedParts = _svcStockReturn(db, s);
       db.services = db.services.filter(x => x.id !== s.id);
       (db.invoices || []).forEach(x => { if (x.serviceId === s.id) x.serviceId = ''; });
       (db.measurements || []).forEach(x => { if (x.serviceId === s.id) x.serviceId = ''; });
-      await _lsSave(); return { ok: true };
+      await _lsSave(); return { ok: true, changedParts };
     }
   }
 
@@ -909,7 +1007,7 @@ async function _apiLocalCore(path, opts = {}) {
     const seq = typeof numberResult === 'string' ? oldSeq : numberResult.seq;
     const item = Object.assign({}, payload, {
       id: _lsUid(), number: invoiceNumber,
-      taxRate: payload.taxExempt ? 0 : Math.max(0, Math.min(100, +(b.taxRate != null ? b.taxRate : db.settings.taxRate) || 0)),
+      taxRate: payload.taxExempt ? 0 : Math.max(0, Math.min(100, +(b.taxRate != null ? b.taxRate : _userSettings(db, me, true).taxRate) || 0)),
       inventoryApplied: true, inventoryEffectVersion: 1,
       createdAt: Date.now(), updatedAt: Date.now()
     });
@@ -1133,6 +1231,7 @@ async function _apiLocalCore(path, opts = {}) {
       }
       if (method === 'GET') return { item };
       if (method === 'PUT') {
+        if (parts[0] === 'contracts') _ctRemapPaid(item, b);
         const targetProjectId = _apiHasContext(b) ? _apiProjectOnlyId(db, b) : String(item.projectId || '');
         Object.keys(b).forEach(k => { if (!['id', 'createdAt', 'projectId', 'elevatorId'].includes(k)) item[k] = b[k]; });
         if (parts[0] === 'contracts' && b.amount !== undefined) item.amount = Math.max(0, Math.round(+b.amount || 0));
@@ -1222,9 +1321,9 @@ async function _apiLocalCore(path, opts = {}) {
       }
     } catch (e) { exportPhotos = db.photos; }
     const safeSettings = {};
-    ['company', 'phone', 'address', 'defaultTech', 'taxRate', 'invoiceSeq', 'autoBackup', 'notify'].forEach(k => {
-      if (db.settings && db.settings[k] !== undefined) safeSettings[k] = db.settings[k];
-    });
+    const _mineSet = _userSettings(db, me, true);
+    _USER_SETTING_FIELDS.forEach(k => { if (_mineSet[k] !== undefined) safeSettings[k] = _mineSet[k]; });
+    if (db.settings && db.settings.invoiceSeq !== undefined) safeSettings.invoiceSeq = db.settings.invoiceSeq;
     const backup = {
       app: 'zlift',
       version: BACKUP_FORMAT_VERSION,
@@ -1260,9 +1359,17 @@ async function _apiLocalCore(path, opts = {}) {
     candidate.checklists = Array.isArray(bk.checklists) ? JSON.parse(JSON.stringify(bk.checklists)) : [];
     candidate.parts = Array.isArray(bk.parts) ? JSON.parse(JSON.stringify(bk.parts)) : [];
     if (bk.settings && typeof bk.settings === 'object') {
-      const preserved = { autoBackup: db.settings && db.settings.autoBackup };
-      candidate.settings = JSON.parse(JSON.stringify(bk.settings));
-      if (preserved.autoBackup !== undefined && candidate.settings.autoBackup === undefined) candidate.settings.autoBackup = preserved.autoBackup;
+      /* the exported profile belongs to whoever restores it (per-user
+         settings); device-level leftovers (sequences) stay on db.settings */
+      const srcSet = JSON.parse(JSON.stringify(bk.settings));
+      const restoredMine = {};
+      _USER_SETTING_FIELDS.forEach(f => { if (srcSet[f] !== undefined) restoredMine[f] = srcSet[f]; delete srcSet[f]; });
+      const mineNow = _userSettings(db, me, false);
+      if (mineNow.autoBackup !== undefined && restoredMine.autoBackup === undefined) restoredMine.autoBackup = mineNow.autoBackup;
+      delete srcSet.byUser;
+      candidate.settings = Object.assign({}, candidate.settings, srcSet);
+      candidate.settings.byUser = Object.assign({}, (candidate.settings && candidate.settings.byUser) || {}, { [me.id]: restoredMine });
+      _USER_SETTING_FIELDS.forEach(f => { delete candidate.settings[f]; });
     }
     ['diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders', 'measurements', 'safetyLogs'].forEach(k => {
       candidate[k] = Array.isArray(bk[k]) ? JSON.parse(JSON.stringify(bk[k])) : [];
@@ -1310,15 +1417,16 @@ async function _apiLocalCore(path, opts = {}) {
     return { ok: true, verified: true, photosOffloaded: !!photosOffloaded, counts: valid.counts || {} };
   }
 
-  /* settings */
-  if (path === '/settings' && method === 'GET') return { settings: db.settings };
+  /* settings — per-user profile (company/tax/preferences); see _userSettings */
+  if (path === '/settings' && method === 'GET') return { settings: _settingsView(db, me) };
   if (path === '/settings' && method === 'PUT') {
-    ['company', 'phone', 'address', 'defaultTech'].forEach(f => { if (b[f] !== undefined) db.settings[f] = String(b[f]); });
-    if (b.taxRate !== undefined) db.settings.taxRate = Math.max(0, Math.min(100, Math.round(+b.taxRate || 0)));
-    if (b.autoBackup !== undefined) db.settings.autoBackup = b.autoBackup !== false;
-    if (b.notify !== undefined) db.settings.notify = !!b.notify;
+    const mine = _userSettings(db, me, true);
+    ['company', 'phone', 'address', 'defaultTech'].forEach(f => { if (b[f] !== undefined) mine[f] = String(b[f]); });
+    if (b.taxRate !== undefined) mine.taxRate = Math.max(0, Math.min(100, Math.round(+b.taxRate || 0)));
+    if (b.autoBackup !== undefined) mine.autoBackup = b.autoBackup !== false;
+    if (b.notify !== undefined) mine.notify = !!b.notify;
     await _lsSave();
-    return { settings: db.settings };
+    return { settings: _settingsView(db, me) };
   }
 
   throw _lsErr('not_found', 404);
@@ -1331,7 +1439,8 @@ async function _apiLocalCore(path, opts = {}) {
    delete the first account's data. Records without `_owner` predate this
    feature: they stay visible to accounts that already existed when it was
    introduced (`db._ownerSince`) so no installed device loses its data.
-   Settings (company/tax/sequences) intentionally stay device-level. */
+   Company/tax settings are per-user since v29.4 (db.settings.byUser);
+   only document sequences stay device-level. */
 var _OWNER_COLLECTIONS = ['projects', 'services', 'notes', 'checklists', 'parts', 'invoices', 'contracts', 'reminders', 'measurements', 'diagSessions', 'issues', 'safetyLogs', 'calcSaves', 'tools', 'photos'];
 function _apiMe(db) {
   const sess = state.token && db.sessions && db.sessions[state.token];

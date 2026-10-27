@@ -612,6 +612,7 @@ function drawStd() {
   if (stdCat !== 'all') list = list.filter(s => s.cat === stdCat);
   if (q) list = list.filter(s => stdSearchText(s).includes(q));
   const el = $('#stdList');
+  if (!el) return; // debounced redraw after leaving the page
   if (!list.length) {
     el.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('stdNoMatch')}</p></div>`;
     return;

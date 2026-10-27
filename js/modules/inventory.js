@@ -2,7 +2,7 @@
 var partFilter = { q: '', low: false };
 function renderParts() {
   const c = $('#content');
-  const lowCount = state.parts.filter(x => x.qty <= x.minQty).length;
+  const lowCount = state.parts.filter(x => (+x.minQty || 0) > 0 && (+x.qty || 0) <= +x.minQty).length;
   const stockValue = state.parts.reduce((a, x) => a + (+x.price || 0) * (+x.qty || 0), 0);
   c.innerHTML = `
     <div class="grid-3" style="margin-bottom:16px">
@@ -31,7 +31,7 @@ function drawParts() {
   if (!$('#partList')) return;
   const q = norm(partFilter.q);
   let list = state.parts;
-  if (partFilter.low) list = list.filter(x => x.qty <= x.minQty);
+  if (partFilter.low) list = list.filter(x => (+x.minQty || 0) > 0 && (+x.qty || 0) <= +x.minQty);
   if (q) list = list.filter(x => hay(x.name, x.category, x.location, x.note, x.unit, x.supplier, x.code).includes(q));
   const el = $('#partList');
   if (!state.parts.length) {
@@ -49,7 +49,7 @@ function drawParts() {
       <th class="hide-sm">${t('partPrice')}</th><th></th>
     </tr></thead>
     <tbody>${list.map(x => {
-      const isLow = x.qty <= x.minQty;
+      const isLow = (+x.minQty || 0) > 0 && (+x.qty || 0) <= +x.minQty;
       return `<tr onclick="openPartForm('${x.id}')">
         <td><span class="p-name">${esc(x.name)}</span>${x.note ? `<div class="p-sub">${esc(x.note)}</div>` : ''}</td>
         <td class="hide-sm"><span class="badge b-gray">${esc(x.category)}</span></td>
@@ -77,9 +77,9 @@ function openPartForm(id) {
       <div class="field"><label>${t('partCategory')}</label><input id="p_cat" value="${esc(v.category)}" list="catList" />
         <datalist id="catList"><option>الکتریکال</option><option>مکانیکال</option><option>هیدرولیک</option><option>درب</option><option>مصرفی</option><option>عمومی</option></datalist></div>
       <div class="field"><label>${t('partUnit')}</label><input id="p_unit" value="${esc(v.unit)}" /></div>
-      <div class="field"><label>${t('partQty')}</label><input id="p_qty" type="number" min="0" value="${v.qty}" /></div>
-      <div class="field"><label>${t('partMin')}</label><input id="p_min" type="number" min="0" value="${v.minQty}" /></div>
-      <div class="field"><label>${t('partPrice')}</label><input id="p_price" type="number" min="0" value="${v.price}" /></div>
+      <div class="field"><label>${t('partQty')}</label><input id="p_qty" inputmode="numeric" value="${v.qty}" /></div>
+      <div class="field"><label>${t('partMin')}</label><input id="p_min" inputmode="numeric" value="${v.minQty}" /></div>
+      <div class="field"><label>${t('partPrice')}</label><input id="p_price" inputmode="decimal" value="${v.price}" /></div>
       <div class="field"><label>${t('partLocation')}</label><input id="p_loc" value="${esc(v.location)}" /></div>
       <div class="field"><label>${t('partSupplier')}</label><input id="p_supplier" value="${esc(v.supplier || '')}" /></div>
       <div class="field"><label>${t('partCode')}</label><input id="p_code" value="${esc(v.code || '')}" style="direction:ltr" /></div>
@@ -95,7 +95,7 @@ function openPartForm(id) {
     if (!name) { fieldError('#p_name', 'requiredTitle'); return; }
     const body = {
       name, category: $('#p_cat').value, unit: $('#p_unit').value,
-      qty: +$('#p_qty').value, minQty: +$('#p_min').value, price: +$('#p_price').value,
+      qty: numVal($('#p_qty').value), minQty: numVal($('#p_min').value), price: numVal($('#p_price').value),
       location: $('#p_loc').value, note: $('#p_note').value,
       supplier: $('#p_supplier').value, code: $('#p_code').value
     };

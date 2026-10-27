@@ -83,11 +83,11 @@ function openProjectForm(id) {
         <option value="traction" ${v.elevatorType === 'traction' ? 'selected' : ''}>⚙️ ${t('traction')}</option>
         <option value="hydraulic" ${v.elevatorType === 'hydraulic' ? 'selected' : ''}>🛢️ ${t('hydraulic')}</option>
       </select></div>
-      <div class="field"><label>${t('prSpeed')}</label><input id="f_speed" type="number" min="0" step="0.1" value="${v.speed}" /></div>
-      <div class="field"><label>${t('prCapacity')}</label><input id="f_cap" type="number" min="0" value="${v.capacityKg}" /></div>
-      <div class="field"><label>${t('prPersons')}</label><input id="f_persons" type="number" min="0" value="${v.persons}" /></div>
-      <div class="field"><label>${t('prFloors')}</label><input id="f_floors" type="number" min="0" value="${v.floors}" /></div>
-      <div class="field"><label>${t('prStops')}</label><input id="f_stops" type="number" min="0" value="${v.stops}" /></div>
+      <div class="field"><label>${t('prSpeed')}</label><input id="f_speed" inputmode="decimal" value="${v.speed}" /></div>
+      <div class="field"><label>${t('prCapacity')}</label><input id="f_cap" inputmode="decimal" value="${v.capacityKg}" /></div>
+      <div class="field"><label>${t('prPersons')}</label><input id="f_persons" inputmode="numeric" value="${v.persons}" /></div>
+      <div class="field"><label>${t('prFloors')}</label><input id="f_floors" inputmode="numeric" value="${v.floors}" /></div>
+      <div class="field"><label>${t('prStops')}</label><input id="f_stops" inputmode="numeric" value="${v.stops}" /></div>
       <div class="field"><label>${t('prRoping')}</label><select id="f_roping">
         <option value="1:1" ${v.roping !== '2:1' ? 'selected' : ''}>1:1</option>
         <option value="2:1" ${v.roping === '2:1' ? 'selected' : ''}>2:1</option>
@@ -105,8 +105,8 @@ function openProjectForm(id) {
 
       <div class="form-sep span2">${t('secStatus')}</div>
       <div class="field"><label>${t('prStatus')}</label><select id="f_status">${statusOpts}</select></div>
-      <div class="field"><label>${t('prProgress')}</label><input id="f_progress" type="number" min="0" max="100" value="${v.progress}" /></div>
-      <div class="field span2"><label>${t('serviceInterval')}</label><input id="f_interval" type="number" min="0" value="${v.serviceIntervalDays || 0}" /></div>
+      <div class="field"><label>${t('prProgress')}</label><input id="f_progress" inputmode="numeric" value="${v.progress}" /></div>
+      <div class="field span2"><label>${t('serviceInterval')}</label><input id="f_interval" inputmode="numeric" value="${v.serviceIntervalDays || 0}" /></div>
       <div class="field span2"><label>📜 ${t('certDue')}</label>${jdateInput('f_certdue', v.certDue || 0, true)}</div>
       <div class="field span2"><label>${t('prNotes')}</label><textarea id="f_notes">${esc(v.notes)}</textarea></div>
     </form></div>
@@ -114,17 +114,25 @@ function openProjectForm(id) {
       <button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button>
       <button class="btn btn-primary" id="projSave">${p ? t('save') : t('create')}</button>
     </div>`, { size: 'lg' });
+  let projDupConfirmed = false;
   $('#projSave').onclick = async () => {
     const name = $('#f_name').value.trim();
     if (!name) { fieldError('#f_name', 'requiredName'); return; }
+    /* two buildings with the identical name invite filing work on the wrong
+       tower — warn once, but namesakes stay possible (second tap creates) */
+    if (!p && !projDupConfirmed && state.projects.some(x => norm(x.name) === norm(name))) {
+      projDupConfirmed = true;
+      toast(t('dupProjectName'), 'err');
+      return;
+    }
     const body = {
       name, customer: $('#f_customer').value, phone: $('#f_phone').value, location: $('#f_location').value,
       elevatorType: $('#f_type').value, status: $('#f_status').value,
-      capacityKg: +$('#f_cap').value, persons: +$('#f_persons').value, floors: +$('#f_floors').value,
-      stops: +$('#f_stops').value, speed: +$('#f_speed').value, progress: +$('#f_progress').value,
+      capacityKg: numVal($('#f_cap').value), persons: numVal($('#f_persons').value), floors: numVal($('#f_floors').value),
+      stops: numVal($('#f_stops').value), speed: numVal($('#f_speed').value), progress: numVal($('#f_progress').value),
       nominalVoltage: parseNum($('#f_nominalv').value) || 0,
       voltageTolerance: parseNum($('#f_volttol').value),
-      serviceIntervalDays: +$('#f_interval').value, certDue: jdateVal('f_certdue') || 0,
+      serviceIntervalDays: numVal($('#f_interval').value), certDue: jdateVal('f_certdue') || 0,
       controller: $('#f_controller').value, motor: $('#f_motor').value,
       drive: $('#f_drive').value, doorOperator: $('#f_doorop').value,
       roping: $('#f_roping').value, encoder: $('#f_encoder').value, brake: $('#f_brake').value,

@@ -235,14 +235,15 @@ const U = (base) => base + ' #' + (++uniq);
     A.clearToasts();
     if (x) x.click(); else await A.ev('closeModal()');
     await A.wait(700);
-    const asked = A.modalOpen() && /لغو|پیش‌نویس|از دست|discard|unsaved/i.test(A.$('#modalRoot').textContent);
-    if (A.modalOpen()) {
-      // prefer "keep editing" if asked; otherwise close whatever is open
-      const btns = A.$$('#modalRoot button');
-      const keep = btns.find(b => /ادامه|keep/i.test(b.textContent));
-      (keep || btns[btns.length - 1] || { click() {} }).click(); await A.wait(400);
+    const promptTxt = (A.$('#unsavedOverlay') || {}).textContent || '';
+    const asked = A.modalOpen() && /ذخیره‌نشده|unsaved/i.test(promptTxt);
+    let keptIntact = false;
+    if (asked) {
+      A.$('#unsavedKeep').click(); await A.wait(400);
+      keptIntact = (A.$('#s_problem') || {}).value === 'شرح کامل خرابی که تکنسین ده دقیقه تایپ کرده است';
       if (A.modalOpen()) { await A.ev('closeModal()'); await A.wait(200); }
     }
+    if (asked && !keptIntact) return BAD('هشدار «تغییرات ذخیره‌نشده» داده شد ولی بعد از «ادامهٔ ویرایش» متن فرم سر جایش نیست');
     // reopen: was the typed text preserved as a draft anywhere?
     let preserved = false;
     if (!asked) {
@@ -250,7 +251,7 @@ const U = (base) => base + ' #' + (++uniq);
       preserved = (A.$('#s_problem') || {}).value === 'شرح کامل خرابی که تکنسین ده دقیقه تایپ کرده است';
       await A.ev('closeModal()'); await A.wait(200);
     }
-    return (asked || preserved) ? OK(asked ? 'confirm-discard shown' : 'draft preserved')
+    return (asked || preserved) ? OK(asked ? 'confirm-discard shown, form kept intact' : 'draft preserved')
       : BAD('یک لمس اشتباه روی ✕ یعنی کل فرم پرشده بی‌سروصدا دور ریخته می‌شود: نه تأیید «تغییرات ذخیره‌نشده» هست نه پیش‌نویس خودکار — در موتورخانه با دستکش یعنی از نو تایپ‌کردن');
   });
 
@@ -627,7 +628,8 @@ const U = (base) => base + ' #' + (++uniq);
       return pid;
     })()`);
     await A.nav('/dashboard');
-    const shown = A.$('#content').textContent.includes('ساختمان تحویل‌داده‌شده تست داشبورد');
+    const attention = A.$$('#content .card').find(c => (c.querySelector('.card-title') || {}).textContent.includes('⏰'));
+    const shown = !!attention && attention.textContent.includes('ساختمان تحویل‌داده‌شده تست داشبورد');
     return !shown ? OK('archived follow-up hidden from dashboard')
       : BAD('ساختمان بایگانی/تحویل‌شده هنوز با بج ⛔ «نیازمند توجه» است — یادآوری‌هایش ساکت شدند (فیکس قبلی) ولی لیست پیگیری داشبورد (openIssues) پروژهٔ آرشیوی را فیلتر نمی‌کند؛ پس هیچ‌وقت از جلوی چشم نمی‌رود');
   });
@@ -751,9 +753,9 @@ const U = (base) => base + ' #' + (++uniq);
     const no = btns.find(b => (b.getAttribute('onclick') || '').includes("diagAnswer('r1'"));
     if (!no) return BAD('f01 option r1 not found');
     no.click(); await A.wait(500);
-    const toSvc = A.$$('#content [onclick]').find(b => (b.getAttribute('onclick') || '').includes('openServiceForm'));
+    const toSvc = A.$$('#content [onclick]').find(b => (b.getAttribute('onclick') || '').includes('openServiceForm') || (b.getAttribute('onclick') || '').includes('diagResultToService'));
     if (!toSvc) { await A.ev('diagExit()'); return BAD('دکمهٔ «ثبت سرویس» در صفحهٔ نتیجه نیست'); }
-    toSvc.click(); await A.until('#svcSave');
+    toSvc.click(); await A.until('#svcSave'); await A.wait(300);
     const prefill = (A.$('#s_diag') || {}).value || (A.$('#s_problem') || {}).value || '';
     await A.ev('closeModal()'); await A.wait(250);
     await A.ev('diagExit()'); await A.wait(250);

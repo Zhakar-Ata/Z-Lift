@@ -61,6 +61,7 @@ function drawDiagList() {
   if (diagFilter.type !== 'all') list = list.filter(d => d.type === 'both' || d.type === diagFilter.type);
   if (q) list = list.filter(d => flowSearchText(d).includes(q));
   const el = $('#diagList');
+  if (!el) return; // debounced redraw after leaving the page
   if (!list.length) {
     el.innerHTML = `<div class="empty"><div class="e-icon">🔍</div><strong>${t('notFound')}</strong><p>${t('notFoundSub')}</p></div>`;
     return;
@@ -228,7 +229,7 @@ function renderDiagFlow(c) {
         })()}
         <div style="display:flex;gap:9px;margin-top:16px;flex-wrap:wrap">
           <button class="btn btn-primary" onclick="openDiagSaveForm('${f.id}','${diagSession.current}')">💾 ${t('diagSave')}</button>
-          <button class="btn btn-ghost" onclick="openServiceForm()">${IC.plus} ${t('logService')}</button>
+          <button class="btn btn-ghost" onclick="diagResultToService()">${IC.plus} ${t('logService')}</button>
           <button class="btn btn-ghost" onclick="startDiagFlow('${f.id}')">🔄 ${t('diagRestart')}</button>
         </div>
       </div>`;
@@ -254,4 +255,29 @@ function renderDiagFlow(c) {
     ${crumbs ? `<div style="font-size:11.5px;color:var(--text-3);margin-bottom:10px;line-height:2.2">🧭 ${crumbs}</div>` : ''}
     ${body}
     ${_diagEvidencePanel()}`;
+}
+
+/* "log a service" straight from a diagnosis result: carry the symptom, the
+   root cause and the measured evidence into the form instead of opening it
+   blank (the save-diagnosis path already did this via diagToServicePrompt) */
+function diagResultToService() {
+  const sess = diagSession;
+  const f = sess && DIAG_FLOWS.find(x => x.id === sess.flowId);
+  const node = f && f.nodes[sess.current];
+  openServiceForm();
+  if (!f || !node) return;
+  setTimeout(() => {
+    const probEl = document.querySelector('#s_problem');
+    const diagEl = document.querySelector('#s_diag');
+    const measEl = document.querySelector('#s_meas');
+    if (probEl && !probEl.value) probEl.value = dg(f.symptom);
+    if (diagEl && !diagEl.value) {
+      diagEl.value = dg(node.title) + ((node.parts && node.parts.length)
+        ? ' — ' + (LANG === 'fa' ? 'قطعه: ' : 'part: ') + node.parts.map(x => dg(x)).join('، ') : '');
+    }
+    if (measEl && !measEl.value && sess.evidence) {
+      const meas = sess.evidence.filter(e => e.kind === 'meas').map(e => e.text);
+      if (meas.length) measEl.value = meas.join(' · ');
+    }
+  }, 60);
 }

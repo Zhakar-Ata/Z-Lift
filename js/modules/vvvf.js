@@ -37,14 +37,14 @@ function renderVVVF() {
     <div class="toolbar">
       <div class="search">${IC.search}<input id="vvvfSearch" placeholder="${t('vvvfSearch')}" value="${esc(vvvfSel.q)}" /></div>
       <div class="chip-row">
-        ${VVVF_DB.map((d, i) => `<button class="chip ${vvvfSel.brand === i ? 'active' : ''}" data-b="${i}">${esc(d.brand)}</button>`).join('')}
+        ${VVVF_DB.map((d, i) => `<button class="chip ${vvvfSel.brand === i ? 'active' : ''}" data-b="${i}">${esc(LANG === 'en' && d.brandEn ? d.brandEn : d.brand)}</button>`).join('')}
       </div>
     </div>
     <div class="form-grid" style="margin-bottom:12px">
       <div class="field"><label>MANUFACTURER / MODEL</label><input id="vvvfModel" value="${esc(vvvfSel.model)}" placeholder="${LANG === 'fa' ? 'مدل دقیق دستگاه لازم است' : 'Exact device model required'}" /></div>
       <div class="field"><label>VERSION / FIRMWARE</label><input id="vvvfFirmware" value="${esc(vvvfSel.firmware)}" /></div>
     </div>
-    <p style="font-size:12.5px;color:var(--text-3);margin-bottom:8px">📟 ${esc(drive.brand)} — ${esc(drive.model)} · <b>MODEL-DEPENDENT</b></p>
+    <p style="font-size:12.5px;color:var(--text-3);margin-bottom:8px">📟 ${esc(LANG === 'en' && drive.brandEn ? drive.brandEn : drive.brand)} — ${esc(LANG === 'en' && drive.modelEn ? drive.modelEn : drive.model)} · <b>MODEL-DEPENDENT</b></p>
     ${!vvvfSel.model ? `<div class="note-block" style="margin-bottom:12px">⚠️ ${LANG === 'fa' ? 'مدل دستگاه لازم است. این جدول فقط الگوی جست‌وجو است و معنی کد/ترمینال/پارامتر را تأیید نمی‌کند.' : 'The device model is required. This table is a search pattern and does not verify code, terminal or parameter meanings.'}</div>` : ''}
     <div id="vvvfCodes"></div>`;
   drawVvvfCodes();

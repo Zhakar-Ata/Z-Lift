@@ -8,7 +8,7 @@ function measurePanelHTML(prefix) {
         ${MEASURE_FIELDS.map(f => `
           <div class="field" style="margin-bottom:8px">
             <label>${esc(f.fa)} <span style="color:var(--text-3);direction:ltr;display:inline-block">(${f.unit})</span></label>
-            <input type="number" step="any" id="${prefix}_${f.id}" placeholder="—" />
+            <input inputmode="decimal" id="${prefix}_${f.id}" placeholder="—" />
           </div>`).join('')}
       </div>
       <button class="btn btn-ghost btn-sm" id="${prefix}_evalBtn">🧪 ${t('measCheck')}</button>
@@ -155,7 +155,7 @@ function openConsumeForm(partId) {
     <div class="modal-head"><h3>📉 ${t('consume')} — ${esc(part.name)}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body">
       <div class="kv-cell" style="margin-bottom:12px"><div class="k">${t('partQty')}</div><div class="v">${faNum(part.qty)} ${esc(part.unit)}</div></div>
-      <div class="field"><label>${t('consumeQty')} *</label><input id="cn_qty" type="number" min="1" value="1" /></div>
+      <div class="field"><label>${t('consumeQty')} *</label><input id="cn_qty" inputmode="numeric" value="1" /></div>
       <div class="field"><label>${t('diagSelProject')}</label><select id="cn_project">${projectOptsHTML('', true)}</select></div>
       <div class="field"><label>${t('prNotes')}</label><input id="cn_note" /></div>
       ${Array.isArray(part.history) && part.history.length ? `
@@ -168,7 +168,7 @@ function openConsumeForm(partId) {
     </div>`);
   let overStockConfirmed = false;
   $('#cnSave').onclick = guard('#cnSave', async () => {
-    const qty = Math.max(1, Math.round(+$('#cn_qty').value || 1));
+    const qty = Math.max(1, Math.round(numVal($('#cn_qty').value, 1)));
     if (qty > (+part.qty || 0) && !overStockConfirmed) {
       overStockConfirmed = true;                 // second tap confirms
       toast(t('consumeOverStock'), 'err');
@@ -276,7 +276,7 @@ function money(n) { return faNum((Math.round(+n || 0)).toLocaleString('en-US'));
 function invTotals(inv) {
   /* integer-safe: rials have no fractions; round every term to avoid FP drift.
      Tax is computed on the post-discount subtotal (items+labor-discount). */
-  const items = (inv.items || []).reduce((a, it) => a + Math.round(+it.qty || 0) * Math.round(+it.price || 0), 0);
+  const items = (inv.items || []).reduce((a, it) => a + Math.round((+it.qty || 0) * (+it.price || 0)), 0);
   const labor = Math.round(+inv.labor || 0);
   const discount = Math.round(+inv.discount || 0);
   const base = Math.max(0, items + labor - discount);
@@ -288,6 +288,7 @@ function invTotals(inv) {
 }
 function invStatusMeta(inv) {
   const tt = invTotals(inv);
+  if (tt.grand <= 0) return { key: 'invPaidFull', cls: 'b-green', icon: '✅' }; // nothing owed — e.g. fully discounted warranty work
   if (tt.grand > 0 && tt.paid >= tt.grand) return { key: 'invPaidFull', cls: 'b-green', icon: '✅' };
   if (tt.paid > 0) return { key: 'invPartial', cls: 'b-amber', icon: '🟠' };
   return { key: 'invUnpaid', cls: 'b-red', icon: '🔴' };
@@ -365,9 +366,9 @@ function invItemsHTML() {
     <div style="display:flex;gap:7px;align-items:flex-start;margin-bottom:8px;flex-wrap:wrap">
       <input placeholder="${t('invDesc')}" value="${esc(it.desc)}" data-if="desc" data-ix="${i}"
         style="flex:2;min-width:130px;background:var(--bg-soft);border:1.5px solid var(--border);border-radius:10px;padding:9px 11px;outline:none" />
-      <input type="number" min="1" placeholder="${t('invQty')}" value="${it.qty}" data-if="qty" data-ix="${i}"
+      <input inputmode="decimal" placeholder="${t('invQty')}" value="${it.qty}" data-if="qty" data-ix="${i}"
         style="width:64px;background:var(--bg-soft);border:1.5px solid var(--border);border-radius:10px;padding:9px 8px;outline:none" />
-      <input type="number" min="0" placeholder="${t('invUnitPrice')}" value="${it.price}" data-if="price" data-ix="${i}"
+      <input inputmode="decimal" placeholder="${t('invUnitPrice')}" value="${it.price}" data-if="price" data-ix="${i}"
         style="flex:1;min-width:100px;background:var(--bg-soft);border:1.5px solid var(--border);border-radius:10px;padding:9px 8px;outline:none" />
       <button class="icon-btn" style="width:36px;height:36px" onclick="invDelItem(${i})">✕</button>
       <div style="width:100%;font-size:11.5px;color:var(--text-3);direction:ltr;text-align:end">${money((+it.qty || 0) * (+it.price || 0))} ${t('rial')}</div>
@@ -383,7 +384,7 @@ function invWireItems() {
       const it = invDraft.items[+inp.dataset.ix];
       if (!it) return;
       if (inp.dataset.if === 'desc') it.desc = inp.value;
-      else it[inp.dataset.if] = +inp.value || 0;
+      else it[inp.dataset.if] = numVal(inp.value);
       invRefreshTotals();
     };
   });
@@ -410,9 +411,9 @@ function invAddItem(item) {
 function invRefreshTotals() {
   if (!invDraft) return;
   const items = invDraft.items.reduce((a, it) => a + Math.round((+it.qty || 0) * (+it.price || 0)), 0);
-  const labor = Math.round(+($('#inv_labor') && $('#inv_labor').value) || 0);
-  const disc = Math.round(+($('#inv_discount') && $('#inv_discount').value) || 0);
-  const rate = Math.max(0, Math.min(100, Math.round(+($('#inv_taxrate') && $('#inv_taxrate').value) || 0)));
+  const labor = Math.round(numVal($('#inv_labor') && $('#inv_labor').value));
+  const disc = Math.round(numVal($('#inv_discount') && $('#inv_discount').value));
+  const rate = Math.max(0, Math.min(100, Math.round(numVal($('#inv_taxrate') && $('#inv_taxrate').value))));
   const exempt = ($('#inv_taxexempt') && $('#inv_taxexempt').checked) || invDraft.taxExempt;
   invDraft.taxRate = rate; invDraft.taxExempt = !!exempt;
   const base = Math.max(0, items + labor - disc);
@@ -466,9 +467,9 @@ function invSyncDraftFromForm() {
   if (g('inv_project')) invDraft.projectOverride = g('inv_project').value;
   if (g('inv_service')) invDraft.serviceOverride = g('inv_service').value;
   if (g('inv_note')) invDraft.noteOverride = g('inv_note').value;
-  if (g('inv_labor')) invDraft.laborOverride = Math.max(0, Math.round(+g('inv_labor').value || 0));
-  if (g('inv_discount')) invDraft.discountOverride = Math.max(0, Math.round(+g('inv_discount').value || 0));
-  if (g('inv_taxrate')) invDraft.taxRate = Math.max(0, Math.min(100, Math.round(+g('inv_taxrate').value || 0)));
+  if (g('inv_labor')) invDraft.laborOverride = Math.max(0, Math.round(numVal(g('inv_labor').value)));
+  if (g('inv_discount')) invDraft.discountOverride = Math.max(0, Math.round(numVal(g('inv_discount').value)));
+  if (g('inv_taxrate')) invDraft.taxRate = Math.max(0, Math.min(100, Math.round(numVal(g('inv_taxrate').value))));
   if (g('inv_taxexempt')) invDraft.taxExempt = !!g('inv_taxexempt').checked;
   const dt = jdateVal('inv_date');
   if (dt) invDraft.dateOverride = dt;
@@ -527,9 +528,9 @@ function openInvoiceForm(id, presetProject, keepDraft) {
         <button class="btn btn-ghost btn-sm" onclick="invPickPart()">📦 ${t('invAddPart')}</button>
       </div>
       <div class="form-grid">
-        <div class="field"><label>${t('invLabor')}</label><input id="inv_labor" type="number" min="0" value="${laborVal}" /></div>
-        <div class="field"><label>${t('invDiscount')}</label><input id="inv_discount" type="number" min="0" value="${discountVal}" /></div>
-        <div class="field"><label>${t('invTaxRate')}</label><input id="inv_taxrate" type="number" min="0" max="100" step="1" value="${Math.max(0, Math.min(100, Math.round(+taxRateVal || 0)))}" ${taxExemptVal ? 'disabled' : ''} /></div>
+        <div class="field"><label>${t('invLabor')}</label><input id="inv_labor" inputmode="decimal" value="${laborVal}" /></div>
+        <div class="field"><label>${t('invDiscount')}</label><input id="inv_discount" inputmode="decimal" value="${discountVal}" /></div>
+        <div class="field"><label>${t('invTaxRate')}</label><input id="inv_taxrate" inputmode="decimal" value="${Math.max(0, Math.min(100, Math.round(+taxRateVal || 0)))}" ${taxExemptVal ? 'disabled' : ''} /></div>
         <div class="field" style="align-self:end"><label style="display:flex;gap:8px;align-items:center;font-weight:500;cursor:pointer"><input type="checkbox" id="inv_taxexempt" ${taxExemptVal ? 'checked' : ''} style="width:18px;height:18px" /> ${t('invTaxExempt')}</label></div>
         <div class="field span2"><label>${t('invNote2')}</label><input id="inv_note" value="${esc(noteVal)}" /></div>
       </div>
@@ -554,8 +555,8 @@ function openInvoiceForm(id, presetProject, keepDraft) {
 
   invWireItems();
   invRefreshTotals();
-  $('#inv_labor').oninput = () => { invDraft.laborOverride = +$('#inv_labor').value || 0; invRefreshTotals(); };
-  $('#inv_discount').oninput = () => { invDraft.discountOverride = +$('#inv_discount').value || 0; invRefreshTotals(); };
+  $('#inv_labor').oninput = () => { invDraft.laborOverride = numVal($('#inv_labor').value); invRefreshTotals(); };
+  $('#inv_discount').oninput = () => { invDraft.discountOverride = numVal($('#inv_discount').value); invRefreshTotals(); };
   $('#inv_taxrate').oninput = () => invRefreshTotals();
   $('#inv_taxexempt').onchange = e => {
     $('#inv_taxrate').disabled = e.target.checked;
@@ -580,7 +581,7 @@ function openInvoiceForm(id, presetProject, keepDraft) {
     openModal(`
       <div class="modal-head"><h3>💵 ${t('invAddPay')}</h3><button class="icon-btn" onclick="invBackToForm()">✕</button></div>
       <div class="modal-body">
-        <div class="field"><label>${t('invPayAmount')} *</label><input id="pay_amount" type="number" min="1" /></div>
+        <div class="field"><label>${t('invPayAmount')} *</label><input id="pay_amount" inputmode="decimal" /></div>
         <div class="field"><label>${t('invDate')}</label>${jdateInput('pay_date', Date.now())}</div>
         <div class="field"><label>${t('invPayNote')}</label><input id="pay_note" /></div>
       </div>
@@ -592,7 +593,7 @@ function openInvoiceForm(id, presetProject, keepDraft) {
     $('#payOk').onclick = () => {
       const btn = $('#payOk');
       if (btn.disabled) return;
-      const amount = Math.round(+$('#pay_amount').value || 0);
+      const amount = Math.round(numVal($('#pay_amount').value));
       if (amount <= 0) { fieldError('#pay_amount', 'invPayInvalid'); return; }
       // Overpayment guard uses the exact same VAT/discount rounding as persisted totals.
       const draftTotals = invTotals({
@@ -624,12 +625,12 @@ function openInvoiceForm(id, presetProject, keepDraft) {
       serviceId: $('#inv_service').value,
       date: jdateVal('inv_date') || Date.now(),
       items: invDraft.items.filter(it => it.desc || it.price).map(it => ({
-        desc: String(it.desc || ''), qty: Math.max(0, Math.round(+it.qty || 0)),
+        desc: String(it.desc || ''), qty: Math.max(0, +it.qty || 0),
         price: Math.max(0, Math.round(+it.price || 0)), partId: it.partId || undefined
       })),
-      labor: Math.max(0, Math.round(+$('#inv_labor').value || 0)),
-      discount: Math.max(0, Math.round(+$('#inv_discount').value || 0)),
-      taxRate: Math.max(0, Math.min(100, Math.round(+$('#inv_taxrate').value || 0))),
+      labor: Math.max(0, Math.round(numVal($('#inv_labor').value))),
+      discount: Math.max(0, Math.round(numVal($('#inv_discount').value))),
+      taxRate: Math.max(0, Math.min(100, Math.round(numVal($('#inv_taxrate').value)))),
       taxExempt: !!$('#inv_taxexempt').checked,
       note: $('#inv_note').value,
       payments: invDraft.payments
@@ -714,6 +715,7 @@ function printInvoice(id) {
       <tr><td colspan="3"><b>${t('invGrand')}</b></td><td><b>${money(tt.grand)} ${t('rial')}</b></td></tr>
       ${tt.paid ? `<tr><td colspan="3">${t('invPaid')}</td><td>${money(tt.paid)}</td></tr>
       <tr><td colspan="3"><b>${t('invBalance')}</b></td><td><b>${money(tt.balance)} ${t('rial')}</b></td></tr>` : ''}
+      ${tt.overpayment ? `<tr><td colspan="3"><b>${t('invOverpayment')}</b></td><td><b>${money(tt.overpayment)} ${t('rial')}</b></td></tr>` : ''}
     </table>
     ${inv.note ? `<p style="font-size:12px">${esc(inv.note)}</p>` : ''}
     <div class="sig-row">
@@ -746,6 +748,7 @@ function gsRow(icon, title, sub, onclick) {
 function drawGlobalSearch(qRaw) {
   const q = norm(qRaw);
   const out = $('#gsOut');
+  if (!out) return; // debounced redraw landing after the modal was closed
   if (q.length < 2) { out.innerHTML = `<p style="font-size:12.5px;color:var(--text-3)">…</p>`; return; }
   const S = [];
   const grp = (label, rows) => { if (rows.length) S.push(`<div class="nav-section" style="margin:10px 2px 6px">${label} (${faNum(rows.length)})</div>` + rows.join('')); };
@@ -760,7 +763,7 @@ function drawGlobalSearch(qRaw) {
 
   grp(t('srParts'), state.parts
     .filter(x => hay(x.name, x.code, x.supplier, x.category, x.location, x.note).includes(q))
-    .slice(0, 5).map(x => gsRow('📦', esc(x.name), faNum(x.qty) + ' ' + esc(x.unit) + (x.qty <= x.minQty ? ' ⚠️' : ''), `navigate('/parts');setTimeout(()=>openPartForm('${x.id}'),120)`)));
+    .slice(0, 5).map(x => gsRow('📦', esc(x.name), faNum(x.qty) + ' ' + esc(x.unit) + (((+x.minQty || 0) > 0 && (+x.qty || 0) <= +x.minQty) ? ' ⚠️' : ''), `navigate('/parts');setTimeout(()=>openPartForm('${x.id}'),120)`)));
 
   grp(t('srInv'), state.invoices
     .filter(i => hay(i.customer, i.number, i.note, (i.items || []).map(x => x.desc).join(' ')).includes(q))
@@ -813,13 +816,18 @@ function ctStats(ct) {
   const list = ctMonthList(ct);
   const started = list.filter(m => m.ts <= now);
   const paidCount = list.filter(m => ct.paid && ct.paid[m.key]).length;
-  const overdue = started.filter(m => !(ct.paid && ct.paid[m.key])).length;
+  /* the running month is due, not yet overdue — a contract signed today must
+     not open its life with a red "1 overdue month" on every screen */
+  const nowJ = tsToJalali(now);
+  const curKey = nowJ.jy + '-' + nowJ.jm;
+  const overdue = started.filter(m => m.key !== curKey && !(ct.paid && ct.paid[m.key])).length;
+  const dueThisMonth = started.some(m => m.key === curKey && !(ct.paid && ct.paid[m.key]));
   /* a contract runs until the END of its last month, not its first day */
   const last = list[list.length - 1];
   const endTs = last ? jalMonthRange(last.jy, last.jm).to : 0;
   const active = !!list.length && endTs > now && list[0].ts <= now;
   const expired = !!list.length && endTs <= now;
-  return { list, paidCount, overdue, active, expired, total: list.length, endTs };
+  return { list, paidCount, overdue, dueThisMonth, active, expired, total: list.length, endTs };
 }
 function renderContracts() {
   const c = $('#content');
@@ -856,7 +864,7 @@ function renderContracts() {
           <span class="sub">${money(ct.amount)} ${t('rial')} / ${jalMonth(tsToJalali(ctStartTs(ct)).jm)} ${faNum(tsToJalali(ctStartTs(ct)).jy)} · ${faNum(st.total)} ${LANG === 'fa' ? 'ماه' : 'months'}</span>
         </div>
         <div class="row-side">
-          ${st.overdue ? `<span class="badge b-red">${faNum(st.overdue)} ${t('ctOverdueMonths')}</span>` : `<span class="badge b-green">${st.expired ? t('ctExpired') : t('ctActive')}</span>`}
+          ${st.overdue ? `<span class="badge b-red">${faNum(st.overdue)} ${t('ctOverdueMonths')}</span>` : st.dueThisMonth && !st.expired ? `<span class="badge b-amber">${t('ctDueThisMonth')}</span>` : `<span class="badge b-green">${st.expired ? t('ctExpired') : t('ctActive')}</span>`}
           <span class="date">${faNum(st.paidCount)}/${faNum(st.total)} ${t('ctPaid')}</span>
         </div>
       </div>`;
@@ -871,8 +879,8 @@ function openContractForm(id) {
     <div class="modal-body">
       <div class="form-grid">
         <div class="field span2"><label>${t('ctBuilding')} *</label><input id="ct_building" value="${esc(v.building)}" /></div>
-        <div class="field"><label>${t('ctAmount')}</label><input id="ct_amount" type="number" min="0" value="${v.amount || 0}" /></div>
-        <div class="field"><label>${t('ctMonths')}</label><input id="ct_months" type="number" min="1" max="36" value="${v.months || 12}" /></div>
+        <div class="field"><label>${t('ctAmount')}</label><input id="ct_amount" inputmode="decimal" value="${v.amount || 0}" /></div>
+        <div class="field"><label>${t('ctMonths')}</label><input id="ct_months" inputmode="numeric" value="${v.months || 12}" /></div>
         <div class="field"><label>${t('ctStart')}</label>${jdateInput('ct_start', v.startTs)}</div>
         <div class="field"><label>${t('ctLinkProject')}</label><select id="ct_project">${projectOptsHTML(v.projectId, true)}</select></div>
         <div class="field span2"><label>${t('ctNote')}</label><input id="ct_note" value="${esc(v.note || '')}" /></div>
@@ -891,8 +899,8 @@ function openContractForm(id) {
     const building = $('#ct_building').value.trim();
     if (!building) { fieldError('#ct_building', 'requiredTitle'); return; }
     const body = {
-      building, amount: +$('#ct_amount').value || 0,
-      months: Math.max(1, Math.min(36, +$('#ct_months').value || 12)),
+      building, amount: numVal($('#ct_amount').value),
+      months: Math.max(1, Math.min(36, Math.round(numVal($('#ct_months').value, 12)) || 12)),
       startTs: jdateVal('ct_start') || Date.now(),
       projectId: $('#ct_project').value, note: $('#ct_note').value,
       paid: ct ? ct.paid || {} : {}
@@ -906,13 +914,16 @@ function openContractForm(id) {
 }
 function ctMonthsHTML(ct) {
   const now = Date.now();
+  const nowJ = tsToJalali(now);
+  const curKey = nowJ.jy + '-' + nowJ.jm;
   return ctMonthList(ct).map(m => {
     const paid = ct.paid && ct.paid[m.key];
-    const due = m.ts <= now && !paid;
-    return `<button onclick="ctTogglePaid('${ct.id}','${m.key}')" style="border:1.5px solid ${paid ? 'var(--ok)' : due ? 'var(--danger)' : 'var(--border)'};
-      background:${paid ? 'var(--ok-soft)' : due ? 'var(--danger-soft)' : 'var(--bg-soft)'};
+    const isCur = m.key === curKey && !paid;
+    const due = m.ts <= now && !paid && !isCur;
+    return `<button onclick="ctTogglePaid('${ct.id}','${m.key}')" style="border:1.5px solid ${paid ? 'var(--ok)' : due ? 'var(--danger)' : isCur ? 'var(--warn)' : 'var(--border)'};
+      background:${paid ? 'var(--ok-soft)' : due ? 'var(--danger-soft)' : isCur ? 'var(--warn-soft)' : 'var(--bg-soft)'};
       border-radius:11px;padding:9px 4px;font-family:inherit;font-size:12px;cursor:pointer;color:var(--text);line-height:1.5">
-      ${paid ? '✅' : due ? '🔴' : '⬜'}<br><b>${jalMonth(m.jm)}</b><br><span style="font-size:10px;color:var(--text-3)">${faNum(m.jy)}</span>
+      ${paid ? '✅' : due ? '🔴' : isCur ? '🟡' : '⬜'}<br><b>${jalMonth(m.jm)}</b><br><span style="font-size:10px;color:var(--text-3)">${faNum(m.jy)}</span>
     </button>`;
   }).join('');
 }
