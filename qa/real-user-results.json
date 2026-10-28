@@ -46,7 +46,7 @@
     "area": "projects",
     "name": "ساخت پروژه با فرم و نمایش در لیست",
     "ok": true,
-    "evidence": "created 1146fe07652f6bbd"
+    "evidence": "created 0c8d8c158a2c2581"
   },
   {
     "id": "C2",
@@ -109,7 +109,7 @@
     "area": "services",
     "name": "ثبت سرویس کامل برای پروژه از طریق فرم",
     "ok": true,
-    "evidence": "saved 7cc699ce9c809032"
+    "evidence": "saved 93e146362208d33f"
   },
   {
     "id": "E5",
@@ -360,8 +360,8 @@
     "id": "Q11",
     "area": "missing-feature",
     "name": "رابط کاربری چندآسانسوری برای یک ساختمان وجود دارد",
-    "ok": false,
-    "evidence": "لایه داده از فاز ۲B آماده است ولی UI هنوز «هر پروژه = یک آسانسور» است؛ برج ۳ آسانسوره یعنی ۳ پروژه تکراری با مشتری/آدرس تکراری و سوابق پراکنده"
+    "ok": true,
+    "evidence": "exists"
   },
   {
     "id": "Q12",

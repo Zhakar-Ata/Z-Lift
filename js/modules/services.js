@@ -398,14 +398,14 @@ async function svcApplyStock(serviceId, projectId) {
 function svcPartsText() {
   return svcPartsDraft.map(p => `${p.name} ×${faNum(p.qty)}`).join('، ');
 }
-function openServiceForm(id, presetProject) {
+function openServiceForm(id, presetProject, presetElevator) {
   const s = id ? state.services.find(x => x.id === id) : null;
   svcPartsEditingId = s ? s.id : null;
   svcPartsOrig = s && Array.isArray(s.partsUsed) ? JSON.parse(JSON.stringify(s.partsUsed)) : [];
   svcPartsDraft = s && Array.isArray(s.partsUsed)
     ? JSON.parse(JSON.stringify(s.partsUsed))
     : (s && s.partsReplaced ? s.partsReplaced.split(/[،,]/).map(x => x.trim()).filter(Boolean).map(x => ({ name: x.replace(/\s*[×x*]\s*\d+\s*$/, ''), qty: parseInt((x.match(/(\d+)\s*$/) || [0, 1])[1], 10) || 1 })) : []);
-  const v = s || { projectId: presetProject || '', customer: '', elevatorInfo: '', date: Date.now(), technician: (state.settings && state.settings.defaultTech) || state.user.name, serviceType: 'maintenance', complaint: '', problem: '', diagnosis: '', measurements: '', workDone: '', partsReplaced: '', recommendations: '', followUpDate: 0, finalStatus: 'ok' };
+  const v = s || { projectId: presetProject || '', elevatorId: presetElevator || '', customer: '', elevatorInfo: '', date: Date.now(), technician: (state.settings && state.settings.defaultTech) || state.user.name, serviceType: 'maintenance', complaint: '', problem: '', diagnosis: '', measurements: '', workDone: '', partsReplaced: '', recommendations: '', followUpDate: 0, finalStatus: 'ok' };
   const projOpts = projectOptsHTML(v.projectId, true, '— ' + t('svcNoProject') + ' —');
   /* jalali date inputs */
   openModal(`
@@ -414,6 +414,7 @@ function openServiceForm(id, presetProject) {
       <!-- 1) where & who: picking a project fills in the identity, so it comes first -->
       <div class="form-sep span2">${t('secJob')}</div>
       <div class="field span2"><label>${t('svcLinkProject')}</label><select id="s_project">${projOpts}</select></div>
+      <div id="s_elevWrap" style="display:contents">${elevatorPickerHTML(v.projectId, v.elevatorId, 's_elevator_sel')}</div>
       <div class="field span2"><label>${t('svcCustomer')} ${v.projectId ? '' : '*'}</label><input id="s_customer" value="${esc(v.customer || '')}" placeholder="${esc(t('phCustomer'))}" /></div>
       <div class="field span2"><label>${t('svcElevator')}</label><input id="s_elevator" value="${esc(v.elevatorInfo || '')}" placeholder="${esc(t('phElevator'))}" /></div>
       <div class="field"><label>${t('svcDate')}</label>${jdateInput('s_date', v.date)}</div>
@@ -469,6 +470,7 @@ function openServiceForm(id, presetProject) {
   wireSignaturePad('sig_tech', s && s.signTech);
   wireSignaturePad('sig_cust', s && s.signCustomer);
   svcBindPartsBox();
+  wireElevatorPicker('#s_project', 's_elevWrap', 's_elevator_sel');
   let svcFutureConfirmed = false;
   $('#svcSave').onclick = async () => {
     const projectId = $('#s_project').value;
@@ -495,10 +497,20 @@ function openServiceForm(id, presetProject) {
       recommendations: $('#s_recommend').value, followUpDate: jdateVal('s_followup'),
       signTech: sigValueForSave('sig_tech', s && s.signTech), signCustomer: sigValueForSave('sig_cust', s && s.signCustomer)
     };
-    /* Existing rows always carry their exact authorization context through the
-       application seam. New rows deliberately remain project-only so only the
-       documented exact-1:1 wrapper can resolve them without an elevator UI. */
-    if (s) body.elevatorId = String(s.elevatorId || '');
+    /* Elevator context: the picker only appears for multi-elevator buildings.
+       On edit the stored pair stays the access context; a different picked
+       pair is an explicit target (the API's canonical reassignment). */
+    const elevId = pickedElevatorId('#s_project', 's_elevator_sel');
+    if (s) {
+      body.elevatorId = String(s.elevatorId || '');
+      if (projectId !== (s.projectId || '') || (elevId && elevId !== String(s.elevatorId || ''))) {
+        body.projectId = s.projectId || '';
+        body.targetProjectId = projectId;
+        body.targetElevatorId = projectId ? elevId : '';
+      }
+    } else {
+      body.elevatorId = projectId ? elevId : '';
+    }
     const btn = $('#svcSave'); btn.disabled = true;
     try {
       let saved;

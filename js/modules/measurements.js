@@ -120,10 +120,11 @@ function drawMeasList() {
   }
   enhanceClickableRows(box);
 }
-function measServiceOptsHTML(projectId, selectedId) {
+function measServiceOptsHTML(projectId, selectedId, elevatorId) {
   const pid = String(projectId || '');
+  const eid = String(elevatorId || '');
   return `<option value="">—</option>` + (state.services || []).slice().sort((a, b) => (+b.date || 0) - (+a.date || 0))
-    .filter(s => (selectedId && s.id === selectedId) || (pid ? s.projectId === pid : !s.projectId))
+    .filter(s => (selectedId && s.id === selectedId) || (pid ? (s.projectId === pid && (!eid || s.elevatorId === eid)) : !s.projectId))
     .slice(0, 100)
     .map(s => `<option value="${s.id}" ${selectedId === s.id ? 'selected' : ''}>${esc(svcTarget(s))} — ${fmtDate(s.date)}</option>`).join('');
 }
@@ -142,7 +143,7 @@ function openMeasForm(id) {
     return `<optgroup label="${cat.icon} ${t(cat.key)}">` + fs.map(f => `<option value="${f.id}" ${v.typeId === f.id ? 'selected' : ''}>${esc(f[LANG] || f.fa)}${f.unit ? ' (' + f.unit + ')' : ''}</option>`).join('') + '</optgroup>';
   }).join('');
   const projectOpts = projectOptsHTML(v.projectId, true);
-  const serviceOpts = measServiceOptsHTML(v.projectId, v.serviceId);
+  const serviceOpts = measServiceOptsHTML(v.projectId, v.serviceId, v.elevatorId);
   const photoOpts = measPhotoOptsHTML(v.projectId, v.photoId);
   openModal(`
     <div class="modal-head"><h3>${m ? '✏️ ' + t('measAdd') : '📐 ' + t('measAdd')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
@@ -151,6 +152,7 @@ function openMeasForm(id) {
       <div class="field span2"><label>${t('measType')}</label><select id="m_type">${fieldOpts}</select></div>
       <div class="field"><label>${t('svcDate')}</label>${jdateInput('m_date', v.ts || Date.now())}</div>
       <div class="field"><label>${t('svcProject')}</label><select id="m_project">${projectOpts}</select></div>
+      <div id="m_elevWrap" style="display:contents">${elevatorPickerHTML(v.projectId, v.elevatorId, 'm_elevator')}</div>
       <div class="field span2"><label>${t('measService')}</label><select id="m_service">${serviceOpts}</select></div>
       <div class="field"><label>${t('measLocation')}</label><input id="m_location" value="${esc(v.location || '')}" /></div>
       <div class="field"><label>${t('measPoint')}</label><input id="m_point" value="${esc(v.point || '')}" placeholder="${esc(t('measPoint'))}" /></div>
@@ -244,10 +246,15 @@ function openMeasForm(id) {
   syncField();
   /* linked service/photo lists follow the chosen project (the API rejects
      cross-project links, so they are not offered in the first place) */
+  wireElevatorPicker('#m_project', 'm_elevWrap', 'm_elevator');
+  const refreshMeasLinks = () => {
+    $('#m_service').innerHTML = measServiceOptsHTML($('#m_project').value, '', pickedElevatorId('#m_project', 'm_elevator'));
+  };
   $('#m_project').addEventListener('change', () => {
-    $('#m_service').innerHTML = measServiceOptsHTML($('#m_project').value, '');
+    refreshMeasLinks();
     $('#m_photo').innerHTML = measPhotoOptsHTML($('#m_project').value, '');
   });
+  $('#m_elevWrap').addEventListener('change', refreshMeasLinks);
   if (m) $('#m_del').onclick = () => confirmDialog(t('confirmDeleteTitle'), t('confirmDeleteMsg'), async () => {
     state.measurements = state.measurements.filter(x => x.id !== m.id);
     const context = m.projectId && m.elevatorId
@@ -284,15 +291,23 @@ function openMeasForm(id) {
       ts: jdateVal('m_date') || Date.now(), timestamp: jdateVal('m_date') || Date.now(),
       technician: (state.user && state.user.name) || '', status: 'unknown'
     };
-    /* Preserve the loaded row's exact owner across edits. A new record remains
-       project-only and therefore succeeds only through the exact-1:1 wrapper. */
-    if (m) rec.elevatorId = String(m.elevatorId || '');
+    /* Preserve the loaded row's exact owner across edits; a different picked
+       pair is an explicit target (canonical reassignment). New records carry
+       the picked elevator so multi-elevator buildings file correctly. */
+    const elevId = pickedElevatorId('#m_project', 'm_elevator');
+    if (m) {
+      rec.elevatorId = String(m.elevatorId || '');
+      if (rec.projectId !== (m.projectId || '') || (elevId && elevId !== String(m.elevatorId || ''))) {
+        rec.targetProjectId = rec.projectId; rec.targetElevatorId = rec.projectId ? elevId : '';
+        rec.projectId = m.projectId || '';
+      }
+    } else rec.elevatorId = rec.projectId ? elevId : '';
     const res = evalMeasurement(rec);
     rec.status = res.status;
     rec.reason = res.reason || null;
     rec.nextStep = res.next || null;
     rec._res = res;
-    if (m) { Object.assign(m, rec); delete m._res; await api('/measurements/' + m.id, { method: 'PUT', body: m }); Object.assign(m, rec); }
+    if (m) { Object.assign(m, rec); delete m._res; const d = await api('/measurements/' + m.id, { method: 'PUT', body: m }); if (d && d.item) Object.assign(m, d.item); delete m.targetProjectId; delete m.targetElevatorId; }
     else { const d = await api('/measurements', { method: 'POST', body: rec }); state.measurements.unshift(d.item); }
     closeModal(); toast(t('measSaved'));
     if (res.status === 'critical') toast((res.reason && (res.reason[LANG] || res.reason.fa)) || t('measStatusCritical'), 'err');

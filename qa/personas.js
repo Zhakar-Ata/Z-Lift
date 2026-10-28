@@ -545,7 +545,9 @@ const U = (base) => base + ' #' + (++uniq);
     }
     const inApp = await appVisible(A);
     await loginAs(A, 'رضا', 'reza123'); // correct login must still work for the legit user afterwards
-    return !inApp ? OK('wrong passwords rejected (note: no lockout text seen: «' + lastErr + '»)')
+    const waited = /صبر کنید|wait|too many/i.test(lastErr);
+    return (!inApp && waited) ? OK('wrong passwords rejected + progressive wait shown: «' + lastErr + '» (correct password still accepted)')
+      : !inApp ? BAD('رمزهای اشتباه رد شدند ولی هیچ اخطار/تأخیر تصاعدی‌ای نیست — حدس‌زدن رمز با گوشی سرقتی نامحدود می‌ماند (err=«' + lastErr + '»)')
       : BAD('با رمز اشتباه وارد اپ شد!');
   });
 
