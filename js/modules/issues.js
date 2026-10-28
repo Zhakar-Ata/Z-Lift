@@ -22,7 +22,7 @@ function issueRow(i) {
     <div class="row-icon" style="background:var(--bg-soft);border:1px solid var(--border);font-size:18px">${i.closed ? '✔️' : m.icon}</div>
     <div class="row-body">
       <strong>${esc(i.title)}</strong>
-      <span class="sub">${i.projectId ? esc(projName(i.projectId)) + ' · ' : ''}${fmtDate(i.createdAt)}</span>
+      <span class="sub">${i.projectId ? esc(projName(i.projectId) + elevatorSuffix(i.projectId, i.elevatorId)) + ' · ' : ''}${fmtDate(i.createdAt)}</span>
     </div>
     <div class="row-side"><span class="badge ${m.cls}">${t(m.key)}</span></div>
   </div>`;
@@ -38,6 +38,7 @@ function openIssueForm(id, presetProject) {
         ${Object.keys(ISSUE_META).map(k => `<option value="${k}" ${v.kind === k ? 'selected' : ''}>${ISSUE_META[k].icon} ${t(ISSUE_META[k].key)}</option>`).join('')}
       </select></div>
       <div class="field"><label>${t('diagSelProject')} *</label><select id="is_project">${projectOptsHTML(v.projectId, true)}</select></div>
+      <div id="is_elevWrap">${elevatorPickerHTML(v.projectId, v.elevatorId, 'is_elevator')}</div>
       <div class="field"><label>${t('prNotes')}</label><textarea id="is_note">${esc(v.note || '')}</textarea></div>
     </div>
     <div class="modal-foot">
@@ -46,6 +47,7 @@ function openIssueForm(id, presetProject) {
       <button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button>
       <button class="btn btn-primary" id="isSave">${i ? t('save') : t('create')}</button>
     </div>`);
+  wireElevatorPicker('#is_project', 'is_elevWrap', 'is_elevator');
   if (i) $('#isToggle').onclick = async () => {
     try {
       const d = await api('/issues/' + i.id, { method: 'PUT', body: {
@@ -63,7 +65,14 @@ function openIssueForm(id, presetProject) {
        (Editing a detached legacy issue without a project stays allowed.) */
     if (!i && !$('#is_project').value) { fieldError('#is_project', 'issueProjectRequired'); return; }
     const body = { title, kind: $('#is_kind').value, projectId: $('#is_project').value, note: $('#is_note').value, closed: i ? i.closed : false };
-    if (i) body.elevatorId = String(i.elevatorId || '');
+    const elevId = pickedElevatorId('#is_project', 'is_elevator');
+    if (i) {
+      body.elevatorId = String(i.elevatorId || '');
+      if (body.projectId !== (i.projectId || '') || (elevId && elevId !== String(i.elevatorId || ''))) {
+        body.targetProjectId = body.projectId; body.targetElevatorId = body.projectId ? elevId : '';
+        body.projectId = i.projectId || '';
+      }
+    } else body.elevatorId = body.projectId ? elevId : '';
     try {
       if (i) { const d = await api('/issues/' + i.id, { method: 'PUT', body }); Object.assign(i, d.item); }
       else { const d = await api('/issues', { method: 'POST', body }); state.issues.unshift(d.item); }

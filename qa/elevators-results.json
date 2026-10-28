@@ -1,0 +1,63 @@
+{
+  "app": "Z Lift",
+  "suite": "elevators (Q11 multi-elevator)",
+  "generatedAt": "2026-10-28T05:56:17.871Z",
+  "pass": 9,
+  "fail": 0,
+  "results": [
+    {
+      "id": "E1",
+      "name": "ساختن ساختمان، آسانسور اصلی (legacy) را هم می‌سازد و API برمی‌گرداند",
+      "ok": true,
+      "evidence": "legacy elevator present in state"
+    },
+    {
+      "id": "E2",
+      "name": "افزودن آسانسور دوم از رابط جزئیات ساختمان (فرم addElevator)",
+      "ok": true,
+      "evidence": "east elevator created via UI, cap=1000kg"
+    },
+    {
+      "id": "E3",
+      "name": "فرم سرویس برای ساختمان چندآسانسوره انتخابگر شفت نشان می‌دهد و روی همان شفت ثبت می‌کند",
+      "ok": true,
+      "evidence": "service on east shaft, label: برج سه‌آسانسوره تست — شرقی"
+    },
+    {
+      "id": "E4",
+      "name": "ثبت رکورد آسانسورمحور بدون مشخص‌کردن شفت در ساختمان چندآسانسوره رد می‌شود، با شفت قبول",
+      "ok": true,
+      "evidence": "ambiguous refused, explicit accepted"
+    },
+    {
+      "id": "E5",
+      "name": "آسانسور اصلی از مسیر CRUD آسانسورها قابل ویرایش/حذف نیست (آینهٔ پروژه است)",
+      "ok": true,
+      "evidence": "legacy elevator protected"
+    },
+    {
+      "id": "E6",
+      "name": "حذف آسانسوری که سابقه دارد رد می‌شود؛ آسانسور بی‌سابقه حذف می‌شود",
+      "ok": true,
+      "evidence": "history protected, empty shaft removable"
+    },
+    {
+      "id": "E7",
+      "name": "چک‌لیست هر شفت نمونهٔ مستقل خودش را دارد",
+      "ok": true,
+      "evidence": "one instance per shaft"
+    },
+    {
+      "id": "E8",
+      "name": "بک‌آپ v8 (بدون ردیف آسانسور) بعد از ری‌استور، نام و مشخصات شفت دوم را از آینهٔ پروفایل برمی‌گرداند",
+      "ok": true,
+      "evidence": "label+specs+history all survived the v8 round-trip"
+    },
+    {
+      "id": "E9",
+      "name": "کاربر دوم روی همان دستگاه آسانسورهای کاربر اول را نمی‌بیند",
+      "ok": true,
+      "evidence": "per-user isolation holds for elevators"
+    }
+  ]
+}

@@ -558,6 +558,44 @@ function _apiBuildElevator(project, id, contextOnly) {
     createdAt: +project.createdAt || now, updatedAt: +project.updatedAt || now
   };
 }
+/* Sanitize an independent (non-legacy) elevator's technical specs from a
+   request body — same whitelist/coercion the project write applies to the
+   legacy mirror row, so every elevator row carries one consistent shape. */
+function _apiElevatorSpecs(b, base) {
+  const v = base || {};
+  const num = f => b[f] !== undefined ? Math.max(0, +b[f] || 0) : (v[f] !== undefined ? v[f] : 0);
+  const str = f => b[f] !== undefined ? String(b[f]) : (v[f] !== undefined ? String(v[f]) : '');
+  return {
+    elevatorType: (b.elevatorType !== undefined ? b.elevatorType : v.elevatorType) === 'hydraulic' ? 'hydraulic' : 'traction',
+    capacityKg: num('capacityKg'), persons: num('persons'), floors: num('floors'), stops: num('stops'),
+    speed: num('speed'), nominalVoltage: num('nominalVoltage'), serviceIntervalDays: num('serviceIntervalDays'),
+    voltageTolerance: b.voltageTolerance !== undefined
+      ? (b.voltageTolerance == null || b.voltageTolerance === '' ? null : Math.max(0, +b.voltageTolerance || 0))
+      : (v.voltageTolerance !== undefined ? v.voltageTolerance : null),
+    controller: str('controller'), motor: str('motor'), drive: str('drive'), doorOperator: str('doorOperator'),
+    roping: (b.roping !== undefined ? b.roping : v.roping) === '2:1' ? '2:1' : '1:1',
+    encoder: str('encoder'), brake: str('brake')
+  };
+}
+/* Backup v8 (a format contract pinned by the Phase-2B suite) carries no
+   elevator rows: restore re-derives them from projects + child pairs. So a
+   mirror of each independent elevator rides inside its PROJECT record
+   (project rows export whole) and _apiNormalizeRestoreOwnership folds it
+   back into the re-derived row — a cross-device restore keeps the second
+   shaft's label and specs. The mirror is restore-only bookkeeping; live
+   reads always come from db.elevators. */
+function _apiSyncElevatorProfile(db, elevator) {
+  const p = (db.projects || []).find(x => x && x.id === elevator.projectId);
+  if (!p || elevator.id === p.id) return; // the legacy elevator derives from the project itself
+  if (!p.elevatorProfiles || typeof p.elevatorProfiles !== 'object') p.elevatorProfiles = {};
+  const prof = { name: elevator.name || '', number: elevator.number != null ? elevator.number : '' };
+  (typeof ELEVATOR_SPEC_FIELDS !== 'undefined' ? ELEVATOR_SPEC_FIELDS : []).forEach(f => { if (elevator[f] !== undefined) prof[f] = elevator[f]; });
+  p.elevatorProfiles[elevator.id] = prof;
+}
+function _apiDropElevatorProfile(db, projectId, elevatorId) {
+  const p = (db.projects || []).find(x => x && x.id === projectId);
+  if (p && p.elevatorProfiles) delete p.elevatorProfiles[elevatorId];
+}
 function _apiProjectContext(db, projectId, query) {
   if (_apiHas(query, 'projectId') && _apiValue(query, 'projectId') !== projectId) {
     throw _apiContextError('RECORD_CONTEXT_MISMATCH', 'URL project does not match query projectId', { projectId });
@@ -610,6 +648,32 @@ function _apiNormalizeRestoreOwnership(candidate) {
   ['invoices', 'contracts', 'reminders', 'photos', 'calcSaves', 'notes', 'tools'].forEach(collection => {
     (candidate[collection] || []).forEach(record => { if (record) delete record.elevatorId; });
   });
+  /* Independent elevators re-derived above start as bare context stubs.
+     Fold each project's elevatorProfiles mirror back in (real label/specs),
+     and materialize profiled elevators that have no child records yet, so a
+     restore never silently drops a building's second shaft. Child pairs
+     always win over a mirror whose claim conflicts with them. */
+  {
+    const byId = new Map(elevators.map(e => [e.id, e]));
+    projects.forEach(project => {
+      const profs = (project.elevatorProfiles && typeof project.elevatorProfiles === 'object') ? project.elevatorProfiles : {};
+      Object.keys(profs).forEach(eid => {
+        if (!eid || eid === project.id) return;
+        const claimedBy = elevatorOwners.get(eid);
+        if (claimedBy && claimedBy !== project.id) return;
+        let row = byId.get(eid);
+        if (!row) {
+          row = _apiBuildElevator(project, eid, true);
+          elevators.push(row); byId.set(eid, row); elevatorOwners.set(eid, project.id);
+        }
+        const prof = profs[eid] || {};
+        Object.assign(row, _apiElevatorSpecs(prof, {}), {
+          name: String(prof.name || ''), number: prof.number != null ? prof.number : '',
+          contextOnly: false
+        });
+      });
+    });
+  }
   candidate.elevators = elevators;
   if (typeof validateElevatorRelationships === 'function') {
     const validation = validateElevatorRelationships(candidate);
@@ -633,8 +697,28 @@ async function _apiLocalCore(path, opts = {}) {
 
   /* auth */
   if (path === '/auth/login' && method === 'POST') {
-    const u = db.users.find(x => x.username === String(b.username || '').trim().toLowerCase());
-    if (!u || !_lsVerify(String(b.password || ''), u.password)) throw _lsErr('invalid_credentials', 401);
+    const uname = String(b.username || '').trim().toLowerCase();
+    const u = db.users.find(x => x.username === uname);
+    /* Progressive anti-guessing delay (per username, device-local): 3 free
+       tries, then 5s, 10s, 20s … capped at 60s. Deliberately NOT a hard
+       lockout — this password is the only door into an offline app with no
+       reset channel, so a CORRECT password is always accepted (and resets
+       the counter); only wrong guesses are pushed back with a growing wait. */
+    if (!db.settings || typeof db.settings !== 'object') db.settings = {};
+    if (!db.settings.loginGuard || typeof db.settings.loginGuard !== 'object') db.settings.loginGuard = {};
+    const guard = db.settings.loginGuard;
+    const now = Date.now();
+    if (Object.keys(guard).length > 50) Object.keys(guard).forEach(k => { if ((guard[k].until || 0) < now && k !== uname) delete guard[k]; });
+    if (!u || !_lsVerify(String(b.password || ''), u.password)) {
+      const g = guard[uname] || { fails: 0, until: 0 };
+      g.fails = (+g.fails || 0) + 1;
+      if (g.fails >= 3) g.until = now + Math.min(60, 5 * Math.pow(2, g.fails - 3)) * 1000;
+      guard[uname] = g;
+      await _lsSave();
+      if ((g.until || 0) > now) { const e = _lsErr('too_many_attempts', 429); e.retryAfter = Math.ceil((g.until - now) / 1000); throw e; }
+      throw _lsErr('invalid_credentials', 401);
+    }
+    if (guard[uname]) delete guard[uname];
     if (!String(u.password).startsWith('v2$')) u.password = _lsHashV2(String(b.password || '')); // upgrade legacy hash in place
     const token = _lsUid() + _lsUid();
     db.sessions[token] = { userId: u.id, createdAt: Date.now() };
@@ -648,6 +732,7 @@ async function _apiLocalCore(path, opts = {}) {
     if (db.users.find(x => x.username === username)) throw _lsErr('username_taken', 409);
     const u = { id: _lsUid(), username, name: String(b.name || '').trim() || username, password: _lsHashV2(String(b.password)), role: 'technician', createdAt: Date.now() };
     db.users.push(u);
+    if (db.settings && db.settings.loginGuard) delete db.settings.loginGuard[username]; // a brand-new account starts with a clean guessing slate
     const token = _lsUid() + _lsUid();
     db.sessions[token] = { userId: u.id, createdAt: Date.now() };
     await _lsSave();
@@ -750,10 +835,69 @@ async function _apiLocalCore(path, opts = {}) {
     if (!Array.isArray(db.elevators)) db.elevators = [];
     /* writeAggregate derives this row in its clone, but the live aggregate must
        see it immediately so the next API call can validate context reliably. */
-    db.elevators.push(_apiBuildElevator(p, p.id, false));
+    const legacyElevator = _apiBuildElevator(p, p.id, false);
+    if (me) legacyElevator._owner = me.id;
+    db.elevators.push(legacyElevator);
     await _lsSave();
-    return { project: p };
+    return { project: p, elevator: legacyElevator };
   }
+  /* elevators of a project — the multi-elevator building model. The legacy
+     elevator (id === projectId) mirrors the project fields and keeps being
+     managed through the project itself; these routes manage the independent
+     rows. Per-user access to the parent project is enforced by the _apiLocal
+     pre-check on segs[1], exactly like every other /projects/:id route. */
+  if (parts[0] === 'projects' && parts[1] && parts[2] === 'elevators') {
+    const p = db.projects.find(x => x.id === parts[1]);
+    if (!p) throw _lsErr('not_found', 404);
+    if (!Array.isArray(db.elevators)) db.elevators = [];
+    const mine = () => db.elevators.filter(e => e && e.projectId === p.id);
+    if (!parts[3]) {
+      if (method === 'GET') return { elevators: [...mine()].sort((a, c) => (a.id === p.id ? -1 : c.id === p.id ? 1 : (+a.createdAt || 0) - (+c.createdAt || 0))) };
+      if (method === 'POST') {
+        /* a new shaft starts from the building's own specs — usually a twin */
+        const el = Object.assign({
+          id: _lsUid(), projectId: p.id,
+          name: String(b.name || '').trim(),
+          number: b.number != null && b.number !== '' ? b.number : (mine().length + 1),
+          status: 'active', archived: !!p.archived,
+          createdAt: Date.now(), updatedAt: Date.now()
+        }, _apiElevatorSpecs(b, p));
+        if (me) el._owner = me.id;
+        db.elevators.push(el);
+        _apiSyncElevatorProfile(db, el);
+        await _lsSave();
+        return { elevator: el };
+      }
+      throw _lsErr('not_found', 404);
+    }
+    const el = db.elevators.find(e => e && e.id === parts[3] && e.projectId === p.id);
+    if (!el) throw _lsErr('not_found', 404);
+    if (method === 'GET') return { elevator: el };
+    if (el.id === p.id) throw _lsErr('elevator_legacy_mirrored', 400);
+    if (method === 'PUT') {
+      if (b.name !== undefined) el.name = String(b.name).trim();
+      if (b.number !== undefined) el.number = b.number;
+      Object.assign(el, _apiElevatorSpecs(b, el));
+      el.contextOnly = false; // editing a restore stub materializes it
+      el.updatedAt = Date.now();
+      _apiSyncElevatorProfile(db, el);
+      await _lsSave();
+      return { elevator: el };
+    }
+    if (method === 'DELETE') {
+      /* an elevator with technical history is never destroyed (same policy
+         as project delete) — its records would lose their home */
+      const hasRecords = API_ELEVATOR_OWNED_COLLECTIONS.some(k => (db[k] || []).some(r => r && r.elevatorId === el.id));
+      if (hasRecords) throw _lsErr('elevator_has_records', 409);
+      if (mine().length <= 1) throw _lsErr('elevator_last', 400);
+      db.elevators = db.elevators.filter(e => e.id !== el.id);
+      _apiDropElevatorProfile(db, p.id, el.id);
+      await _lsSave();
+      return { ok: true };
+    }
+    throw _lsErr('not_found', 404);
+  }
+  if (path === '/elevators' && method === 'GET') return { elevators: [...(db.elevators || [])] };
   if (parts[0] === 'projects' && parts[1]) {
     const p = db.projects.find(x => x.id === parts[1]);
     if (!p) throw _lsErr('not_found', 404);
@@ -1396,6 +1540,7 @@ async function _apiLocalCore(path, opts = {}) {
        restoring user's own (per-user workspaces must not hide it from them). */
     ['projects', 'services', 'notes', 'checklists', 'parts', 'diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders', 'measurements', 'safetyLogs']
       .forEach(k => (candidate[k] || []).forEach(r => { if (r) r._owner = me.id; }));
+    (candidate.elevators || []).forEach(e => { if (e) e._owner = me.id; });
     if (!candidate._ownerSince) candidate._ownerSince = db._ownerSince || Date.now();
 
     /* Keep restored photo bytes inline in the staged aggregate until the atomic

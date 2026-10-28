@@ -1,8 +1,8 @@
 /* ================= VERSION SINGLE SOURCE OF TRUTH ================= */
-var APP_VERSION = '29.4.0';
+var APP_VERSION = '29.5.0';
 var DB_SCHEMA_VERSION = 3;
 var BACKUP_FORMAT_VERSION = 8;
-var CACHE_VERSION = 'zlift-pwa-v40';
+var CACHE_VERSION = 'zlift-pwa-v41';
 /* Display badge shown on Settings / about */
 var APP_BUILD = '2026-10-27';
 
@@ -19,7 +19,7 @@ var state = {
   checklists: null,
   parts: null,
   settings: null,
-  diagSessions: null, calcSaves: null, issues: null, tools: null, photos: null, invoices: null, contracts: null, reminders: null, measurements: null, safetyLogs: null,
+  diagSessions: null, calcSaves: null, issues: null, tools: null, photos: null, invoices: null, contracts: null, reminders: null, measurements: null, safetyLogs: null, elevators: null,
   route: location.hash.slice(1) || '/dashboard'
 };
 
@@ -94,7 +94,8 @@ var ERR_KEYS = {
     name_required: 'requiredTitle', customer_required: 'requiredCustomer', title_required: 'requiredTitle',
   invalid_invoice: 'invInvalidRecord', duplicate_invoice_number: 'invDuplicateNumber', invoice_empty: 'invEmpty',
   not_found: 'errNotFound', invoice_part_not_found: 'errNotFound', insufficient_stock: 'stockAlert', too_large: 'photoTooLarge', bad_backup: 'restoreBad',
-  unauthorized: 'errSessionExpired', invalid_credentials: 'errInvalidCred',
+  unauthorized: 'errSessionExpired', invalid_credentials: 'errInvalidCred', too_many_attempts: 'errTooMany',
+  elevator_has_records: 'errElevatorHasRecords',
   username_taken: 'errUserTaken', weak_password: 'errWeakPass', bad_username: 'errBadUser',
   invalid_measurement: 'measInvalid',
   /* Phase 2B context errors must reach the technician as words, not "something went wrong" */
@@ -106,7 +107,7 @@ var ERR_KEYS = {
   RESTORE_PROJECT_RELATION_INVALID: 'restoreBad', RESTORE_ELEVATOR_RELATION_INVALID: 'restoreBad', RESTORE_ELEVATOR_CONTEXT_AMBIGUOUS: 'restoreBad'
 };
 function errMsg(e) {
-  if (e && e.code && ERR_KEYS[e.code]) return t(ERR_KEYS[e.code]);
+  if (e && e.code && ERR_KEYS[e.code]) { let m = t(ERR_KEYS[e.code]); if (e.retryAfter) m = m.replace('{s}', faNum(e.retryAfter)); return m; }
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return t('errOffline');
   return t('errGeneric');
 }
@@ -568,10 +569,10 @@ function faultTally(services, icons) {
 /* ---------- data loading ---------- */
 async function loadAll(force) {
   if (state.projects && !force) return;
-  const [p, s, n, c, pa, st, ds, cs, is_, tl, ph, inv, ct, rm, me, sl] = await Promise.all([
+  const [p, s, n, c, pa, st, ds, cs, is_, tl, ph, inv, ct, rm, me, sl, el] = await Promise.all([
     api('/projects'), api('/services'), api('/notes'), api('/checklists'), api('/parts'), api('/settings'),
     api('/diagSessions'), api('/calcSaves'), api('/issues'), api('/tools'), api('/photos'), api('/invoices'), api('/contracts'),
-    api('/reminders'), api('/measurements'), api('/safetyLogs')
+    api('/reminders'), api('/measurements'), api('/safetyLogs'), api('/elevators')
   ]);
   state.projects = p.projects;
   state.services = s.services;
@@ -589,7 +590,9 @@ async function loadAll(force) {
   state.reminders = rm.reminders;
   state.measurements = me.items;
   state.safetyLogs = sl.items;
+  state.elevators = el.elevators;
 }
+async function refreshElevators() { try { const d = await api('/elevators'); state.elevators = d.elevators; } catch (e) {} }
 
 /* service-due calculation */
 function dueInfo(p) {
@@ -623,8 +626,62 @@ function telHref(phone) {
   return d ? 'tel:' + d : '';
 }
 function svcTarget(s) {
-  if (s.projectId) { const p = (state.projects || []).find(x => x.id === s.projectId); if (p) return p.name; }
+  if (s.projectId) {
+    const p = (state.projects || []).find(x => x.id === s.projectId);
+    /* in a multi-elevator building the shaft matters as much as the tower */
+    if (p) return p.name + elevatorSuffix(p.id, s.elevatorId);
+  }
   return s.customer || s.elevatorInfo || '—';
+}
+/* ---------- multi-elevator buildings ----------
+   The data model always allowed several elevators per project; the legacy
+   elevator (id === projectId) mirrors the project fields. These helpers are
+   the single seam every form uses to ask "which shaft?" — and they stay
+   invisible for single-elevator buildings, so old forms look/behave the same. */
+function elevatorsOfProject(pid) {
+  return (state.elevators || []).filter(e => e && e.projectId === pid)
+    .sort((a, b) => (a.id === pid ? -1 : b.id === pid ? 1 : (+a.createdAt || 0) - (+b.createdAt || 0)));
+}
+function elevatorLabel(e, pid) {
+  if (!e) return '';
+  if (e.id === e.projectId) return t('mainElevator');
+  if (e.name && e.name !== e.id) return e.name;
+  if (e.number !== '' && e.number != null) return t('elevator') + ' ' + faNum(e.number);
+  return t('elevator');
+}
+function elevatorOptsHTML(pid, selectedId) {
+  return elevatorsOfProject(pid).map(e =>
+    `<option value="${e.id}" ${String(selectedId || '') === e.id ? 'selected' : ''}>${esc(elevatorLabel(e, pid))}</option>`).join('');
+}
+function elevatorPickerHTML(pid, selectedId, selectId) {
+  if (!pid || elevatorsOfProject(pid).length < 2) return '';
+  return `<div class="field span2"><label>🛗 ${t('selectElevator')} *</label><select id="${selectId}">${elevatorOptsHTML(pid, selectedId)}</select></div>`;
+}
+function wireElevatorPicker(projectSel, wrapId, selectId) {
+  const ps = $(projectSel);
+  if (!ps) return;
+  ps.addEventListener('change', () => {
+    const wrap = document.getElementById(wrapId);
+    if (wrap) wrap.innerHTML = elevatorPickerHTML(ps.value, '', selectId);
+  });
+}
+/* the elevatorId to save with: the picker value when shown, else the
+   project's single elevator, else '' (standalone / project not chosen) */
+/* ' — East' style suffix for rows of elevator-owned records (multi-elevator only) */
+function elevatorSuffix(projectId, elevatorId) {
+  if (!projectId || !elevatorId) return '';
+  const els = elevatorsOfProject(projectId);
+  if (els.length < 2) return '';
+  const e = els.find(x => x.id === elevatorId);
+  return e ? ' — ' + elevatorLabel(e, projectId) : '';
+}
+function pickedElevatorId(projectSel, selectId) {
+  const pid = ($(projectSel) || {}).value || '';
+  if (!pid) return '';
+  const sel = document.getElementById(selectId);
+  if (sel) return sel.value || '';
+  const list = elevatorsOfProject(pid);
+  return list.length === 1 ? list[0].id : '';
 }
 function svcTargetSub(s) {
   if (s.projectId) return '';

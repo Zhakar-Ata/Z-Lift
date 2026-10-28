@@ -168,7 +168,7 @@
       "area": "accounts",
       "name": "۵ رمز اشتباه پشت‌سرهم حداقل اخطار/تأخیر دارد (قفل حدسی)",
       "ok": true,
-      "evidence": "wrong passwords rejected (note: no lockout text seen: «نام کاربری یا رمز عبور اشتباه است»)"
+      "evidence": "wrong passwords rejected + progressive wait shown: «چند بار رمز اشتباه وارد شده است؛ ۲۰ ثانیه صبر کنید و دوباره تلاش کنید» (correct password still accepted)"
     },
     {
       "id": "R1",
@@ -203,7 +203,7 @@
       "area": "bulk",
       "name": "با ۱۵۰ پروژه و ۶۰۰ سرویس، لیست‌ها رندر و جستجو درست کار می‌کند",
       "ok": true,
-      "evidence": "projects render 489ms (153 nodes), services 692ms, seed 10194ms"
+      "evidence": "projects render 503ms (153 nodes), services 791ms, seed 13177ms"
     },
     {
       "id": "B2",
@@ -315,7 +315,7 @@
       "area": "static",
       "name": "شکاف ترجمه: کلید گمشده‌ای در t()ها نیست (متن خام در UI)",
       "ok": true,
-      "evidence": "all 543 static keys resolve"
+      "evidence": "all 556 static keys resolve"
     }
   ]
 }

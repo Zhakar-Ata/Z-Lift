@@ -61,6 +61,7 @@ function openDiagSaveForm(flowId, resultNodeId) {
     <div class="modal-head"><h3>💾 ${t('diagSave')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body">
       <div class="field"><label>${t('diagSelProject')}</label><select id="dg_project">${projectOptsHTML('', true)}</select></div>
+      <div id="dg_elevWrap"></div>
       <div class="field"><label>${t('diagFinal')}</label><textarea id="dg_final" style="min-height:60px">${esc(dg(node.title))}</textarea></div>
       <div class="field"><label>${t('diagFaultyComp')}</label><input id="dg_comp" value="${esc((node.parts || []).map(x => dg(x)).join('، '))}" /></div>
       ${measurePanelHTML('dgm')}
@@ -70,9 +71,10 @@ function openDiagSaveForm(flowId, resultNodeId) {
       <button class="btn btn-primary" id="dgSave">💾 ${t('save')}</button>
     </div>`, { size: 'lg' });
   wireMeasurePanel('dgm');
+  wireElevatorPicker('#dg_project', 'dg_elevWrap', 'dg_elevator');
   $('#dgSave').onclick = guard('#dgSave', async () => {
     const body = {
-      projectId: $('#dg_project').value,
+      projectId: $('#dg_project').value, elevatorId: pickedElevatorId('#dg_project', 'dg_elevator'),
       flowId, symptom: dg(f.symptom),
       path, result: dg(node.title),
       finalDiagnosis: $('#dg_final').value,
@@ -99,7 +101,7 @@ function diagToServicePrompt(sess) {
       <button class="btn btn-primary" id="dg2svc">✅ ${t('diagToService')}</button>
     </div>`, { size: 'sm' });
   $('#dg2svc').onclick = () => {
-    openServiceForm(null, sess.projectId || ''); // replaces this modal in place
+    openServiceForm(null, sess.projectId || '', sess.elevatorId || ''); // replaces this modal in place
     // prefill after modal renders
     setTimeout(() => {
       const probEl = $('#s_problem'), diagEl = $('#s_diag'), measEl = $('#s_meas');

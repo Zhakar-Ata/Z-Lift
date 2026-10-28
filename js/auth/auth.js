@@ -8,7 +8,7 @@ function doLocalLogout() {
   flushUiLayers();
   state.token = null; state.user = null;
   ['projects', 'services', 'notes', 'checklists', 'parts', 'settings', 'diagSessions',
-   'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders', 'measurements', 'safetyLogs']
+   'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders', 'measurements', 'safetyLogs', 'elevators']
     .forEach(k => { state[k] = null; });
   invDraft = null; diagSession = null;
   try { sessionStorage.removeItem('zlift_diag_session'); } catch (e) {}
@@ -34,7 +34,13 @@ async function initAuth() {
       enterApp();
     } catch (err) {
       const map = { invalid_credentials: 'errInvalidCred', username_taken: 'errUserTaken', weak_password: 'errWeakPass', bad_username: 'errBadUser' };
-      $('#authError').textContent = t(map[err.code] || 'errGeneric');
+      if (err.code === 'too_many_attempts') {
+        const secs = Math.max(1, err.retryAfter || 5);
+        $('#authError').textContent = t('errTooMany').replace('{s}', faNum(secs));
+        startAuthCooldown(secs);
+      } else {
+        $('#authError').textContent = t(map[err.code] || 'errGeneric');
+      }
       $('#authError').classList.remove('hidden');
     } finally { btn.disabled = false; }
   };
@@ -45,4 +51,27 @@ function setAuthMode(m) {
   $('#tabRegister').classList.toggle('active', m === 'register');
   $('#nameField').classList.toggle('hidden', m === 'login');
   $('#authSubmit').textContent = m === 'login' ? t('loginBtn') : t('registerBtn');
+}
+
+/* after repeated wrong passwords the API asks for a growing wait; mirror it
+   on the button with a live countdown so the pause is explained, not a
+   mysteriously dead form (the correct password still works right after) */
+var _authCooldownTimer = null;
+function startAuthCooldown(secs) {
+  const btn = $('#authSubmit');
+  if (!btn) return;
+  const until = Date.now() + secs * 1000;
+  if (_authCooldownTimer) clearInterval(_authCooldownTimer);
+  const tick = () => {
+    const left = Math.ceil((until - Date.now()) / 1000);
+    if (left <= 0) {
+      clearInterval(_authCooldownTimer); _authCooldownTimer = null;
+      btn.disabled = false; setAuthMode(authMode);
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = t('loginWaitBtn').replace('{s}', faNum(left));
+  };
+  _authCooldownTimer = setInterval(tick, 250);
+  setTimeout(tick, 0); // the submit handler's finally{} re-enables first — re-disable right after
 }

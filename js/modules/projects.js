@@ -60,7 +60,7 @@ function drawProjList() {
       </div>
       <div class="row-side">
         ${statusBadge(p.status)}
-        <span class="date">${faNum(p.floors)} ${t('floorsUnit')} · ${faNum(p.capacityKg)}kg · ${faNum(p.progress)}٪</span>
+        <span class="date">${elevatorsOfProject(p.id).length > 1 ? '🛗×' + faNum(elevatorsOfProject(p.id).length) + ' · ' : ''}${faNum(p.floors)} ${t('floorsUnit')} · ${faNum(p.capacityKg)}kg · ${faNum(p.progress)}٪</span>
       </div>
     </div>`);
 }
@@ -143,10 +143,12 @@ function openProjectForm(id) {
       if (p) {
         const d = await api('/projects/' + p.id, { method: 'PUT', body });
         Object.assign(p, d.project);
+        await refreshElevators(); // the legacy elevator mirrors these specs server-side
         toast(t('saved'));
       } else {
         const d = await api('/projects', { method: 'POST', body });
         state.projects.unshift(d.project);
+        if (d.elevator) { if (!Array.isArray(state.elevators)) state.elevators = []; state.elevators.push(d.elevator); }
         toast(t('created'));
       }
       state.projects.sort((a, b) => b.updatedAt - a.updatedAt);
@@ -372,6 +374,8 @@ function renderProjectDetail(id) {
       ${p.notes ? `<div class="note-block" style="margin-top:14px">📝 ${esc(p.notes)}</div>` : ''}
     </div>
 
+    ${renderProjectElevators(p)}
+
     <div class="section-title"><h3>✅ ${t('projectChecklists')}</h3></div>
     <div class="grid-2">
       ${templates.map(tp => {
@@ -491,4 +495,127 @@ function renderProjectDetail(id) {
     saveProg(v);
   };
   hydratePhotoImgs();
+}
+
+/* ================= ELEVATORS OF A BUILDING =================
+   A tower with three shafts is ONE building: one customer, one address,
+   three technical profiles. The legacy elevator (id === projectId) mirrors
+   the project fields, so it is presented read-only here; independent
+   elevators get their own form. */
+function renderProjectElevators(p) {
+  const list = elevatorsOfProject(p.id);
+  const rowFor = e => {
+    const legacy = e.id === p.id;
+    const specs = [
+      e.capacityKg ? faNum(e.capacityKg) + 'kg' : '',
+      e.persons ? faNum(e.persons) + ' ' + t('personsUnit') : '',
+      e.floors ? faNum(e.floors) + ' ' + t('floorsUnit') : '',
+      e.speed ? faNum(e.speed) + ' m/s' : '',
+      e.controller || ''
+    ].filter(Boolean).join(' · ');
+    return `<div class="row-item">
+      <div class="row-icon" style="background:var(--accent-soft);font-size:19px">🛗</div>
+      <div class="row-body">
+        <strong>${esc(elevatorLabel(e, p.id))}</strong>${legacy ? ` <span class="badge b-gray badge-sm">${t('mainElevator')}</span>` : ''}
+        <span class="sub">${esc(specs)}</span>
+      </div>
+      <div class="row-side">${legacy
+        ? `<span style="font-size:11px;color:var(--text-3)">${t('mainElevatorHint')}</span>`
+        : `<button class="btn btn-ghost btn-sm" onclick="openElevatorForm('${p.id}','${e.id}')">${IC.edit}</button>
+           <button class="btn btn-ghost btn-sm" onclick="deleteElevator('${p.id}','${e.id}')">${IC.trash}</button>`}
+      </div>
+    </div>`;
+  };
+  return `<div class="section-title"><h3>🛗 ${t('elevatorsTitle')} (${faNum(list.length)})</h3>
+      <button class="btn btn-ghost btn-sm" onclick="addElevator('${p.id}')">${IC.plus} ${t('addElevator')}</button></div>
+    ${list.map(rowFor).join('')}`;
+}
+function addElevator(projectId) { openElevatorForm(projectId, null); }
+function openElevatorForm(projectId, elevatorId) {
+  const p = state.projects.find(x => x.id === projectId);
+  if (!p) return;
+  const el = elevatorId ? (state.elevators || []).find(e => e.id === elevatorId) : null;
+  /* a new shaft is usually a twin of the existing one — prefill from the building */
+  const v = el || {
+    name: '', number: elevatorsOfProject(projectId).length + 1,
+    elevatorType: p.elevatorType, capacityKg: p.capacityKg, persons: p.persons, floors: p.floors, stops: p.stops,
+    speed: p.speed, nominalVoltage: p.nominalVoltage || '', voltageTolerance: p.voltageTolerance != null ? p.voltageTolerance : '',
+    controller: p.controller || '', motor: p.motor || '', drive: p.drive || '', doorOperator: p.doorOperator || '',
+    roping: p.roping || '1:1', encoder: p.encoder || '', brake: p.brake || '', serviceIntervalDays: p.serviceIntervalDays || 0
+  };
+  openModal(`
+    <div class="modal-head"><h3>${el ? '✏️ ' + t('editElevator') : '🛗 ' + t('newElevator')} — ${esc(p.name)}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="modal-body"><form class="form-grid">
+      <div class="field"><label>${t('elevatorName')}</label><input id="e_name" value="${esc(v.name || '')}" /></div>
+      <div class="field"><label>${t('elevatorNumber')}</label><input id="e_number" value="${esc(v.number != null ? v.number : '')}" /></div>
+
+      <div class="form-sep span2">${t('secSpecs')}</div>
+      <div class="field"><label>${t('prType')}</label><select id="e_type">
+        <option value="traction" ${v.elevatorType === 'traction' ? 'selected' : ''}>⚙️ ${t('traction')}</option>
+        <option value="hydraulic" ${v.elevatorType === 'hydraulic' ? 'selected' : ''}>🛢️ ${t('hydraulic')}</option>
+      </select></div>
+      <div class="field"><label>${t('prSpeed')}</label><input id="e_speed" inputmode="decimal" value="${v.speed}" /></div>
+      <div class="field"><label>${t('prCapacity')}</label><input id="e_cap" inputmode="decimal" value="${v.capacityKg}" /></div>
+      <div class="field"><label>${t('prPersons')}</label><input id="e_persons" inputmode="numeric" value="${v.persons}" /></div>
+      <div class="field"><label>${t('prFloors')}</label><input id="e_floors" inputmode="numeric" value="${v.floors}" /></div>
+      <div class="field"><label>${t('prStops')}</label><input id="e_stops" inputmode="numeric" value="${v.stops}" /></div>
+      <div class="field"><label>${t('prRoping')}</label><select id="e_roping">
+        <option value="1:1" ${v.roping !== '2:1' ? 'selected' : ''}>1:1</option>
+        <option value="2:1" ${v.roping === '2:1' ? 'selected' : ''}>2:1</option>
+      </select></div>
+      <div class="field"><label>${t('prNominalVoltage')}</label><input id="e_nominalv" inputmode="decimal" value="${v.nominalVoltage || ''}" /></div>
+      <div class="field"><label>${t('prVoltageTolerance')}</label><input id="e_volttol" inputmode="decimal" value="${v.voltageTolerance != null ? v.voltageTolerance : ''}" /></div>
+      <div class="field"><label>${t('serviceInterval')}</label><input id="e_interval" inputmode="numeric" value="${v.serviceIntervalDays || 0}" /></div>
+
+      <div class="form-sep span2">${t('secEquip')}</div>
+      <div class="field span2"><label>${t('prController')}</label><input id="e_controller" value="${esc(v.controller || '')}" /></div>
+      <div class="field span2"><label>${t('prMotor')}</label><input id="e_motor" value="${esc(v.motor || '')}" /></div>
+      <div class="field"><label>${t('prDrive')}</label><input id="e_drive" value="${esc(v.drive || '')}" /></div>
+      <div class="field"><label>${t('prDoorOp')}</label><input id="e_doorop" value="${esc(v.doorOperator || '')}" /></div>
+      <div class="field"><label>${t('prEncoder')}</label><input id="e_encoder" value="${esc(v.encoder || '')}" /></div>
+      <div class="field"><label>${t('prBrake')}</label><input id="e_brake" value="${esc(v.brake || '')}" /></div>
+    </form></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button>
+      <button class="btn btn-primary" id="elevSave">${el ? t('save') : t('create')}</button>
+    </div>`, { size: 'lg' });
+  $('#elevSave').onclick = async () => {
+    const numRaw = $('#e_number').value.trim();
+    const body = {
+      name: $('#e_name').value.trim(),
+      number: numRaw === '' ? '' : (parseNum(numRaw) != null ? parseNum(numRaw) : numRaw),
+      elevatorType: $('#e_type').value,
+      capacityKg: numVal($('#e_cap').value), persons: numVal($('#e_persons').value), floors: numVal($('#e_floors').value),
+      stops: numVal($('#e_stops').value), speed: numVal($('#e_speed').value),
+      nominalVoltage: parseNum($('#e_nominalv').value) || 0,
+      voltageTolerance: parseNum($('#e_volttol').value),
+      serviceIntervalDays: numVal($('#e_interval').value),
+      controller: $('#e_controller').value, motor: $('#e_motor').value,
+      drive: $('#e_drive').value, doorOperator: $('#e_doorop').value,
+      roping: $('#e_roping').value, encoder: $('#e_encoder').value, brake: $('#e_brake').value
+    };
+    const btn = $('#elevSave'); btn.disabled = true;
+    try {
+      if (el) {
+        const d = await api('/projects/' + p.id + '/elevators/' + el.id, { method: 'PUT', body });
+        Object.assign(el, d.elevator);
+      } else {
+        const d = await api('/projects/' + p.id + '/elevators', { method: 'POST', body });
+        if (!Array.isArray(state.elevators)) state.elevators = [];
+        state.elevators.push(d.elevator);
+      }
+      toast(t('saved'));
+      closeModal(); render();
+    } catch (e) { toast(errMsg(e), 'err'); btn.disabled = false; }
+  };
+}
+function deleteElevator(projectId, elevatorId) {
+  confirmDialog(t('confirmDeleteTitle'), t('deleteElevatorQ'), async () => {
+    try {
+      await api('/projects/' + projectId + '/elevators/' + elevatorId, { method: 'DELETE' });
+      state.elevators = (state.elevators || []).filter(e => e.id !== elevatorId);
+      toast(t('deleted'));
+      closeModal(); render();
+    } catch (e) { toast(errMsg(e), 'err'); }
+  });
 }

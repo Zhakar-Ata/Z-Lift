@@ -28,13 +28,18 @@ function renderSafetyGate(tp, selectedProject, ackKey) {
     if (!cb || !btn) return;
     const sync = () => { btn.disabled = !cb.checked; };
     cb.addEventListener('change', sync); sync();
+    wireElevatorPicker('#safetyProject', 'safetyElevWrap', 'safetyElevator');
+    const sElevW = document.getElementById('safetyElevWrap');
+    if (sElevW) sElevW.innerHTML = elevatorPickerHTML(selectedProject, '', 'safetyElevator');
     btn.onclick = async () => {
       if (!cb.checked) return;
       const sp = (document.getElementById('safetyProject') || {}).value || selectedProject || '';
+      const seEl = document.getElementById('safetyElevator');
+      const se = seEl ? (seEl.value || '') : ((elevatorsOfProject(sp)[0] || {}).id || '');
       if (sp) {
         try {
           const entry = {
-            id: _lsUid(), checklistId: tp.id, projectId: sp,
+            id: _lsUid(), checklistId: tp.id, projectId: sp, elevatorId: se,
             ts: Date.now(), technician: (state.user && state.user.name) || '',
             appVersion: APP_VERSION
           };
@@ -53,7 +58,7 @@ function renderSafetyGate(tp, selectedProject, ackKey) {
         toast(t('safetyAckNoProject'), 'err');
       }
       try { sessionStorage.setItem(ackKey, '1'); } catch (e) {}
-      navigate('/checklists/' + tp.id + (sp ? '?project=' + sp : ''));
+      navigate('/checklists/' + tp.id + (sp ? '?project=' + sp + (se ? '&elevator=' + se : '') : ''));
     };
   }, 0);
   return `
@@ -74,6 +79,7 @@ function renderSafetyGate(tp, selectedProject, ackKey) {
           <option value="">${t('chNoProject')}</option>
           ${state.projects.filter(p => !p.archived && (p.elevatorType === tp.type || tp.type === 'both')).map(p => `<option value="${p.id}" ${selectedProject === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}
         </select></div>
+      <div id="safetyElevWrap" style="margin-bottom:14px"></div>
       <label style="display:flex;gap:10px;align-items:flex-start;font-size:13.5px;cursor:pointer;margin-bottom:14px">
         <input type="checkbox" id="safetyAck" style="width:20px;height:20px;margin-top:2px" />
         <span>${t('safetyAck')}</span>
@@ -89,6 +95,7 @@ function renderChecklistDetail(idWithQuery) {
   const [tid, query] = idWithQuery.split('?');
   const params = new URLSearchParams(query || '');
   let selectedProject = params.get('project') || '';
+  let selectedElevator = params.get('elevator') || '';
   const tp = CHECKLIST_TEMPLATES.find(x => x.id === tid);
   const c = $('#content');
   if (!tp) {
@@ -108,12 +115,10 @@ function renderChecklistDetail(idWithQuery) {
   if (selectedProject && !eligible.find(p => p.id === selectedProject)) selectedProject = '';
 
   function getInst() {
-    /* Canonical identity lookup (js/data/checklist-data.js). No elevator
-       dimension is passed because this phase intentionally adds no picker: the
-       legacy project-id projection can expose only the existing exact-1:1 row.
-       Custom multi-elevator identities therefore remain inaccessible here
-       rather than being selected implicitly; their API operations stay exact. */
-    return selectedProject ? findChecklistInstance(state.checklists, selectedProject, tid) : null;
+    /* Canonical identity lookup (js/data/checklist-data.js): project +
+       elevator + template. No elevator picked => the legacy exact-1:1
+       projection, so single-elevator buildings behave exactly as before. */
+    return selectedProject ? findChecklistInstance(state.checklists, selectedProject, tid, selectedElevator || undefined) : null;
   }
 
   /* 4-state items: undefined/false=blank, true|'pass'=pass, 'fail'=fail, 'na'=N/A */
@@ -157,6 +162,10 @@ function renderChecklistDetail(idWithQuery) {
             ${eligible.map(p => `<option value="${p.id}" ${selectedProject === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}
           </select>
         </div>
+        ${elevatorsOfProject(selectedProject).length > 1 ? `<div class="field" style="margin-top:10px;margin-bottom:0">
+          <label>🛗 ${t('selectElevator')}</label>
+          <select id="chElevator">${elevatorOptsHTML(selectedProject, selectedElevator)}</select>
+        </div>` : ''}
       </div>
       <div class="check-progress-wrap">
         <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-bottom:7px;flex-wrap:wrap;gap:4px">
@@ -187,10 +196,17 @@ function renderChecklistDetail(idWithQuery) {
         <p class="calc-note">📖 ${t('standardRef')}</p>
       </div>`;
 
-    window._chCtx = { tid, selectedProject, tp, getInst, viewChecked };
+    window._chCtx = { tid, selectedProject, selectedElevator, tp, getInst, viewChecked };
     $('#chProject').onchange = e => {
       selectedProject = e.target.value;
+      selectedElevator = '';
       history.replaceState(null, '', '#/checklists/' + tid + (selectedProject ? '?project=' + selectedProject : ''));
+      draw();
+    };
+    const chEl = $('#chElevator');
+    if (chEl) chEl.onchange = e => {
+      selectedElevator = e.target.value;
+      history.replaceState(null, '', '#/checklists/' + tid + '?project=' + selectedProject + '&elevator=' + selectedElevator);
       draw();
     };
 
@@ -214,7 +230,7 @@ function renderChecklistDetail(idWithQuery) {
              so pushing a temporary object would poison the DB with a
              fake id ('tmp') that gets persisted. */
           try {
-            const d = await api('/checklists', { method: 'POST', body: { projectId: selectedProject, templateId: tid, checked: {} } });
+            const d = await api('/checklists', { method: 'POST', body: { projectId: selectedProject, elevatorId: selectedElevator || selectedProject, templateId: tid, checked: {} } });
             inst2 = d.checklist;
             if (!state.checklists.includes(inst2)) state.checklists.push(inst2);
           } catch (e) {
@@ -277,7 +293,7 @@ async function chFailedToIssue(tid) {
     const d = await api('/issues', { method: 'POST', body: {
       title: (ctx.tp.title.fa || '') + ' — ' + faNum(failed.length) + ' ' + t('chFailed'),
       kind: 'open',
-      projectId: ctx.selectedProject,
+      projectId: ctx.selectedProject, elevatorId: inst ? String(inst.elevatorId || '') : (ctx.selectedElevator || ctx.selectedProject),
       note: failed.map((f, i) => faNum(i + 1) + '. ' + f).join('\n'),
       closed: false
     } });
@@ -301,7 +317,7 @@ function chResetRun() {
         if (d && d.checklist) Object.assign(inst, d.checklist);
         inst.checked = {};
         closeModal(); toast(t('saved'));
-        navigate('/checklists/' + ctx.tid + (ctx.selectedProject ? '?project=' + ctx.selectedProject : ''));
+        navigate('/checklists/' + ctx.tid + (ctx.selectedProject ? '?project=' + ctx.selectedProject + (ctx.selectedElevator ? '&elevator=' + ctx.selectedElevator : '') : ''));
       } catch (e) { toast(errMsg(e), 'err'); }
     });
 }
