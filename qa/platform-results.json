@@ -14,7 +14,7 @@
       "area": "pbkdf2",
       "name": "ثبت‌نام جدید رمز را با PBKDF2 ذخیره می‌کند (v3 + شمارندهٔ تکرار)",
       "ok": true,
-      "evidence": "v3$250000$rFDI… iters=250000"
+      "evidence": "v3$250000$1NVr… iters=250000"
     },
     {
       "id": "W2",
@@ -49,7 +49,7 @@
       "area": "shaft-qr",
       "name": "لینک QR شفت، پارامتر elevator دارد و لینک ساختمان ساده می‌ماند",
       "ok": true,
-      "evidence": "http://localhost:4173/index.html#/projects/17ed154613081f3b?elevator=d9e349bad141b837"
+      "evidence": "http://localhost:4173/index.html#/projects/a8c535fca4ba3fe6?elevator=db1ea7aef72c7311"
     },
     {
       "id": "Q2",
