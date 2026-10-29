@@ -470,6 +470,21 @@ function openBackupModal() {
   };
 }
 
+/* One verified snapshot of the CURRENT workspace before anything destructive
+   (restore-replace or merge). Both flows roll back to this on failure. */
+async function savePreRestoreSafety(kind) {
+  const cur = await api('/backup');
+  const safety = enrichBackupMetadata(cur.backup);
+  const safetyValid = validateBackup(safety);
+  if (!safetyValid.ok) throw new Error('current-safety-backup-invalid:' + safetyValid.why);
+  if (STRUCTURED_DB.status().mode === 'indexedDB') {
+    await STRUCTURED_DB.putBackup({ id: 'pre-restore-' + Date.now(), app: 'zlift-auto', version: BACKUP_FORMAT_VERSION, appVersion: APP_VERSION, dbSchemaVersion: DB_SCHEMA_VERSION, createdAt: Date.now(), kind: kind || 'PRE_RESTORE', data: safety });
+  } else {
+    localStorage.setItem('zlift_pre_restore_backup', JSON.stringify(safety));
+  }
+  return safety;
+}
+
 function openRestorePreviewModal(bk, audit) {
   openModal(`
     <div class="modal-head"><h3>⬆️ ${t('restorePreviewTitle')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
@@ -479,21 +494,14 @@ function openRestorePreviewModal(bk, audit) {
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="closeModal()">${t('cancel')}</button>
+      <button class="btn btn-ghost" id="restorePreviewMerge">🔀 ${t('mergeImport')}</button>
       <button class="btn btn-primary" id="restorePreviewConfirm">${t('yesRestore')}</button>
     </div>`, { size: 'md' });
   $('#restorePreviewConfirm').onclick = guard('#restorePreviewConfirm', async () => {
     confirmDialog(t('restoreConfirmTitle'), t('restoreConfirmMsg'), async () => {
       let safety = null;
       try {
-        const cur = await api('/backup');
-        safety = enrichBackupMetadata(cur.backup);
-        const safetyValid = validateBackup(safety);
-        if (!safetyValid.ok) throw new Error('current-safety-backup-invalid:' + safetyValid.why);
-        if (STRUCTURED_DB.status().mode === 'indexedDB') {
-          await STRUCTURED_DB.putBackup({ id: 'pre-restore-' + Date.now(), app: 'zlift-auto', version: BACKUP_FORMAT_VERSION, appVersion: APP_VERSION, dbSchemaVersion: DB_SCHEMA_VERSION, createdAt: Date.now(), kind: 'PRE_RESTORE', data: safety });
-        } else {
-          localStorage.setItem('zlift_pre_restore_backup', JSON.stringify(safety));
-        }
+        safety = await savePreRestoreSafety('PRE_RESTORE');
         const restored = await api('/backup', { method: 'PUT', body: { backup: bk } });
         if (!restored || !restored.verified) throw new Error('restore-not-verified');
         await loadAll(true);
@@ -523,4 +531,44 @@ function openRestorePreviewModal(bk, audit) {
     const yesBtn = $('#confirmYes');
     if (yesBtn) { yesBtn.textContent = t('yesRestore'); yesBtn.classList.remove('btn-danger'); yesBtn.classList.add('btn-primary'); }
   });
+
+  $('#restorePreviewMerge').onclick = guard('#restorePreviewMerge', async () => {
+    confirmDialog(t('mergeConfirmTitle'), t('mergeConfirmMsg'), async () => {
+      let safety = null;
+      try {
+        safety = await savePreRestoreSafety('PRE_MERGE');
+        const merged = await api('/backup/merge', { method: 'POST', body: { backup: bk } });
+        if (!merged || !merged.verified) throw new Error('merge-not-verified');
+        await loadAll(true);
+        closeModal();
+        await render();
+        toast(t('mergeDone'));
+        openMergeReportModal(merged.report || {});
+      } catch (e) {
+        try {
+          if (!safety) safety = JSON.parse(localStorage.getItem('zlift_pre_restore_backup') || 'null');
+          if (safety) { await api('/backup', { method: 'PUT', body: { backup: safety } }); await loadAll(true); }
+        } catch (e2) { console.error('[ZLift] merge rollback failed', e2); }
+        reportError(e, 'merge');
+        render();
+      }
+    });
+  });
+}
+
+function openMergeReportModal(report) {
+  const labels = { projects: t('projects'), services: t('services'), invoices: t('invoices'), contracts: t('contracts'), parts: t('parts'), notes: t('notes'), checklists: t('checklists'), measurements: t('measures'), issues: t('issues'), photos: t('photos'), tools: t('tools') };
+  const rows = Object.keys(report.added || {})
+    .filter(k => (report.added[k] || 0) + ((report.updated || {})[k] || 0) + ((report.skipped || {})[k] || 0) > 0)
+    .map(k => `<tr><td>${esc(labels[k] || k)}</td><td>${faNum(report.added[k] || 0)}</td><td>${faNum((report.updated || {})[k] || 0)}</td><td>${faNum((report.skipped || {})[k] || 0)}</td></tr>`).join('');
+  openModal(`
+    <div class="modal-head"><h3>🔀 ${t('mergeReportTitle')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      ${rows ? `<div class="table-wrap"><table class="parts-table"><thead><tr><th></th><th>${t('mergeAdded')}</th><th>${t('mergeUpdated')}</th><th>${t('mergeSkipped')}</th></tr></thead><tbody>${rows}</tbody></table></div>` : ''}
+      ${(report.conflicts || []).length ? `<p style="font-size:12.5px;margin-top:10px">⚠️ ${faNum(report.conflicts.length)} · ${t('mergeConflictsN')}</p>` : ''}
+      ${(report.orphaned || []).length ? `<p style="font-size:12.5px;margin-top:6px">🧩 ${faNum(report.orphaned.length)} · ${t('mergeOrphanedN')}</p>` : ''}
+      ${(report.renumbered || []).length ? `<p style="font-size:12.5px;margin-top:6px">🧾 ${faNum(report.renumbered.length)} · ${t('mergeRenumberedN')}: ${report.renumbered.slice(0, 6).map(r => esc(r.from) + ' ← ' + esc(r.to)).join(' · ')}</p>` : ''}
+      <p style="font-size:12px;color:var(--text-3);margin-top:12px">${t('mergeSettingsNote')}</p>
+    </div>
+    <div class="modal-foot"><button class="btn btn-primary" onclick="closeModal()">${t('close')}</button></div>`, { size: 'md' });
 }

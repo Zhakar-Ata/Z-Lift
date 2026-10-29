@@ -20,6 +20,7 @@ function renderParts() {
         <button class="chip ${partFilter.low ? 'active' : ''}" data-low="1">⚠️ ${t('lowStockOnly')} ${lowCount ? '(' + faNum(lowCount) + ')' : ''}</button>
       </div>
       <button class="btn btn-ghost" onclick="exportPartsCsv()">📊 ${t('exportCsv')}</button>
+      <button class="btn btn-ghost" onclick="openCsvImport('parts')">⬆️ ${t('csvImport')}</button>
       <button class="btn btn-primary" onclick="openPartForm()">${IC.plus} ${t('newPart')}</button>
     </div>
     <div class="card" style="padding:6px 6px 2px"><div class="table-wrap" id="partList"></div></div>`;

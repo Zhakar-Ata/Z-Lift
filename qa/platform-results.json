@@ -1,0 +1,153 @@
+{
+  "pass": 21,
+  "fail": 0,
+  "results": [
+    {
+      "id": "W0",
+      "area": "pbkdf2",
+      "name": "محیط تست واقعاً SubtleCrypto دارد (مسیر PBKDF2 mock نیست)",
+      "ok": true,
+      "evidence": "subtle present"
+    },
+    {
+      "id": "W1",
+      "area": "pbkdf2",
+      "name": "ثبت‌نام جدید رمز را با PBKDF2 ذخیره می‌کند (v3 + شمارندهٔ تکرار)",
+      "ok": true,
+      "evidence": "v3$250000$rFDI… iters=250000"
+    },
+    {
+      "id": "W2",
+      "area": "pbkdf2",
+      "name": "ورود با رمز درست کار می‌کند و رمز اشتباه رد می‌شود (راستی‌آزمایی v3)",
+      "ok": true,
+      "evidence": "wrong rejected, correct accepted"
+    },
+    {
+      "id": "W3",
+      "area": "pbkdf2",
+      "name": "هش قدیمی (bare و v2) در اولین ورود موفق بی‌صدا به PBKDF2 ارتقا پیدا می‌کند",
+      "ok": true,
+      "evidence": "v2→v3 and legacy→v3 on login"
+    },
+    {
+      "id": "W4",
+      "area": "pbkdf2",
+      "name": "رکورد v3 دست‌کاری‌شده (هش خراب / تکرار نجومی) رد می‌شود و اپ قفل یا کرش نمی‌کند",
+      "ok": true,
+      "evidence": "tampered rejected in 1ms (invalid_credentials)"
+    },
+    {
+      "id": "W5",
+      "area": "pbkdf2",
+      "name": "بدون SubtleCrypto (مرورگر قدیمی/ناامن) ثبت‌نام و ورود با هش v2 ادامه دارد — کسی قفل نمی‌شود",
+      "ok": true,
+      "evidence": "v2 fallback register+login works"
+    },
+    {
+      "id": "Q1",
+      "area": "shaft-qr",
+      "name": "لینک QR شفت، پارامتر elevator دارد و لینک ساختمان ساده می‌ماند",
+      "ok": true,
+      "evidence": "http://localhost:4173/index.html#/projects/17ed154613081f3b?elevator=d9e349bad141b837"
+    },
+    {
+      "id": "Q2",
+      "area": "shaft-qr",
+      "name": "اسکن QR شفت روی ساختمان فرود می‌آید، همان شفت متمرکز و فرم سرویس از پیش روی آن است",
+      "ok": true,
+      "evidence": "picker preselected to scanned shaft"
+    },
+    {
+      "id": "Q3",
+      "area": "shaft-qr",
+      "name": "مودال QR برای شفت، نام شفت را روی برچسب می‌نویسد؛ QR ساختمان بدون پسوند شفت است",
+      "ok": true,
+      "evidence": "shaft label + building label correct"
+    },
+    {
+      "id": "C1",
+      "area": "csv",
+      "name": "پارسر CSV: BOM و CRLF و فیلد کوتیشن‌دار و جداکنندهٔ «؛» اکسل ایرانی درست خوانده می‌شوند",
+      "ok": true,
+      "evidence": "quotes/BOM/CRLF/semicolon all parse"
+    },
+    {
+      "id": "C2",
+      "area": "csv",
+      "name": "ایمپورت ساختمان‌ها: هدر فارسی، رقم فارسی، نگاشت نوع/وضعیت، ردِ بی‌نام و تکراری، و ورود دوباره بی‌اثر",
+      "ok": true,
+      "evidence": "2 imported, re-import is a no-op"
+    },
+    {
+      "id": "C3",
+      "area": "csv",
+      "name": "ایمپورت قطعات: تکرار با «کد فنی» (حتی با نام دیگر) و با نام، رد می‌شود",
+      "ok": true,
+      "evidence": "NW-1 imported with qty 5"
+    },
+    {
+      "id": "M1",
+      "area": "merge",
+      "name": "مرج فایل دستگاه الف: ساختمان و شفت دوم و سرویسش می‌آیند و دادهٔ خود دستگاه ب سر جایش می‌ماند",
+      "ok": true,
+      "evidence": "added.projects=5, elevators=2, shaft service carried"
+    },
+    {
+      "id": "M2",
+      "area": "merge",
+      "name": "شمارهٔ فاکتور تکراری بین دو دستگاه: فاکتور وارداتی پسوند می‌گیرد و شمارهٔ بعدی دستگاه درست ادامه پیدا می‌کند",
+      "ok": true,
+      "evidence": "numbers: 1,1-B,2"
+    },
+    {
+      "id": "M3",
+      "area": "merge",
+      "name": "نسخهٔ تازه‌تر برنده است، نسخهٔ قدیمی‌تر برنمی‌گردد، و مرج دوبارهٔ همان فایل بی‌اثر است",
+      "ok": true,
+      "evidence": "newer won, older ignored, repeat = no-op"
+    },
+    {
+      "id": "M4",
+      "area": "merge",
+      "name": "مرج تنظیمات شرکت و حساب‌های کاربری این دستگاه را دست نمی‌زند",
+      "ok": true,
+      "evidence": "company kept, users=2"
+    },
+    {
+      "id": "M5",
+      "area": "merge",
+      "name": "رکورد یتیم (سرویسِ ساختمانی که هیچ‌جا نیست) وارد نمی‌شود و دادهٔ سالم دست‌نخورده می‌ماند",
+      "ok": true,
+      "evidence": "stopped by validator (bad_backup:services:project-relation:orp)"
+    },
+    {
+      "id": "D1",
+      "area": "pwa",
+      "name": "مانیفست نصب‌پذیر است: نام/نمایش standalone و آیکون‌های 192 و 512 و maskable روی دیسک هستند",
+      "ok": true,
+      "evidence": "manifest installable, icons present"
+    },
+    {
+      "id": "D2",
+      "area": "pwa",
+      "name": "index.html متاهای موبایل (viewport-fit، theme-color، apple-touch-icon، manifest) را دارد و همهٔ ارجاع‌هایش روی دیسک‌اند",
+      "ok": true,
+      "evidence": "48 local refs resolve"
+    },
+    {
+      "id": "D3",
+      "area": "pwa",
+      "name": "سرویس‌ورکر: precache اتمیک است و تک‌تک ورودی‌های CORE روی دیسک وجود دارند (ورودی اشتباه = نصب آفلاین خراب)",
+      "ok": true,
+      "evidence": "52 core entries, all on disk"
+    },
+    {
+      "id": "ZZ",
+      "area": "hygiene",
+      "name": "هیچ خطای JS شنیده‌نشده‌ای در کل ران نبود",
+      "ok": true,
+      "evidence": "clean"
+    }
+  ]
+}

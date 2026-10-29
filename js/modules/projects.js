@@ -20,6 +20,7 @@ function renderProjects() {
         <option value="name" ${projFilter.sort === 'name' ? 'selected' : ''}>${t('sortBy')}: ${t('sortName')}</option>
         <option value="progress" ${projFilter.sort === 'progress' ? 'selected' : ''}>${t('sortBy')}: ${t('sortProgress')}</option>
       </select>
+      <button class="btn btn-ghost" onclick="openCsvImport('projects')">⬆️ ${t('csvImport')}</button>
       <button class="btn btn-primary" onclick="openProjectForm()">${IC.plus} ${t('newProject')}</button>
     </div>
     <div id="projList"></div>`;
@@ -302,6 +303,14 @@ async function _doDeleteProject(id) {
 }
 
 function renderProjectDetail(id) {
+  /* a shaft QR deep link looks like /projects/<pid>?elevator=<eid>: split the
+     query off the id so the building still resolves, and focus that shaft */
+  let focusElevator = '';
+  if (String(id).includes('?')) {
+    const seg = String(id).split('?');
+    id = seg[0];
+    try { focusElevator = new URLSearchParams(seg.slice(1).join('?')).get('elevator') || ''; } catch (e) {}
+  }
   const p = state.projects.find(x => x.id === id);
   const c = $('#content');
   if (!p) {
@@ -314,6 +323,7 @@ function renderProjectDetail(id) {
       </div></div>`;
     return;
   }
+  const focusEl = (focusElevator && p) ? (state.elevators || []).find(e => e.id === focusElevator && e.projectId === p.id) : null;
   const services = state.services.filter(s => s.projectId === id).sort((a, b) => b.date - a.date);
   const templates = CHECKLIST_TEMPLATES.filter(tp => tp.type === p.elevatorType || tp.type === 'both');
   const insts = state.checklists.filter(x => x.projectId === id);
@@ -355,6 +365,13 @@ function renderProjectDetail(id) {
       </div>
     </div>
 
+    ${focusEl ? `<div class="card" style="border:1.5px solid var(--accent);margin-bottom:14px">
+      <div class="card-title">🛗 ${t('shaftFocus')}: ${esc(elevatorLabel(focusEl, p.id))}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" onclick="openServiceForm(null,'${p.id}','${focusEl.id}')">🔧 ${t('shaftNewService')}</button>
+        <button class="btn btn-ghost btn-sm" onclick="openIssueForm(null,'${p.id}','${focusEl.id}')">🔴 ${t('shaftNewIssue')}</button>
+      </div>
+    </div>` : ''}
     ${(p.phone || p.location) ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
       ${p.phone && telHref(p.phone) ? `<a class="btn btn-ghost" href="${telHref(p.phone)}">📞 ${esc(p.phone)}</a>` : ''}
       ${p.location ? `<a class="btn btn-ghost" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.location)}" target="_blank" rel="noopener">🧭 ${LANG === 'fa' ? 'مسیریابی' : 'Directions'}</a>` : ''}
@@ -374,7 +391,7 @@ function renderProjectDetail(id) {
       ${p.notes ? `<div class="note-block" style="margin-top:14px">📝 ${esc(p.notes)}</div>` : ''}
     </div>
 
-    ${renderProjectElevators(p)}
+    ${renderProjectElevators(p, focusEl ? focusEl.id : '')}
 
     <div class="section-title"><h3>✅ ${t('projectChecklists')}</h3></div>
     <div class="grid-2">
@@ -383,7 +400,7 @@ function renderProjectDetail(id) {
         const total = tp.groups.reduce((a, g) => a + g.items.length, 0);
         const done = inst ? Object.values(inst.checked).filter(Boolean).length : 0;
         const pct = total ? Math.round(done / total * 100) : 0;
-        return `<div class="card kb-card" onclick="navigate('/checklists/${tp.id}?project=${p.id}')">
+        return `<div class="card kb-card" onclick="navigate('/checklists/${tp.id}?project=${p.id}${focusEl ? '&elevator=' + focusEl.id : ''}')">
           <h4>${tp.kind === 'install' ? '🏗️' : '🔧'} ${esc(tp.title[LANG] || tp.title.fa)}</h4>
           <div class="mini-progress" style="height:8px"><div class="fill" style="width:${pct}%"></div></div>
           <p style="margin-top:8px;font-size:12.5px">${faNum(done)} / ${faNum(total)} ${t('itemsDone')} (${faNum(pct)}٪)</p>
@@ -495,6 +512,10 @@ function renderProjectDetail(id) {
     saveProg(v);
   };
   hydratePhotoImgs();
+  if (focusEl) {
+    const row = document.getElementById('elevRow-' + focusEl.id);
+    if (row && typeof row.scrollIntoView === 'function') { try { row.scrollIntoView({ block: 'center' }); } catch (e) {} }
+  }
 }
 
 /* ================= ELEVATORS OF A BUILDING =================
@@ -502,7 +523,7 @@ function renderProjectDetail(id) {
    three technical profiles. The legacy elevator (id === projectId) mirrors
    the project fields, so it is presented read-only here; independent
    elevators get their own form. */
-function renderProjectElevators(p) {
+function renderProjectElevators(p, focusId) {
   const list = elevatorsOfProject(p.id);
   const rowFor = e => {
     const legacy = e.id === p.id;
@@ -513,13 +534,13 @@ function renderProjectElevators(p) {
       e.speed ? faNum(e.speed) + ' m/s' : '',
       e.controller || ''
     ].filter(Boolean).join(' · ');
-    return `<div class="row-item">
+    return `<div class="row-item" id="elevRow-${e.id}"${focusId === e.id ? ' style="border:1.5px solid var(--accent);border-radius:12px"' : ''}>
       <div class="row-icon" style="background:var(--accent-soft);font-size:19px">🛗</div>
       <div class="row-body">
         <strong>${esc(elevatorLabel(e, p.id))}</strong>${legacy ? ` <span class="badge b-gray badge-sm">${t('mainElevator')}</span>` : ''}
         <span class="sub">${esc(specs)}</span>
       </div>
-      <div class="row-side">${legacy
+      <div class="row-side"><button class="btn btn-ghost btn-sm" onclick="openQrModal('${p.id}','${e.id}')" title="QR">🏷️</button>${legacy
         ? `<span style="font-size:11px;color:var(--text-3)">${t('mainElevatorHint')}</span>`
         : `<button class="btn btn-ghost btn-sm" onclick="openElevatorForm('${p.id}','${e.id}')">${IC.edit}</button>
            <button class="btn btn-ghost btn-sm" onclick="deleteElevator('${p.id}','${e.id}')">${IC.trash}</button>`}

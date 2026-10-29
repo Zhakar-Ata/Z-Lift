@@ -709,7 +709,7 @@ async function _apiLocalCore(path, opts = {}) {
     const guard = db.settings.loginGuard;
     const now = Date.now();
     if (Object.keys(guard).length > 50) Object.keys(guard).forEach(k => { if ((guard[k].until || 0) < now && k !== uname) delete guard[k]; });
-    if (!u || !_lsVerify(String(b.password || ''), u.password)) {
+    if (!u || !(await _lsVerifyAsync(String(b.password || ''), u.password))) {
       const g = guard[uname] || { fails: 0, until: 0 };
       g.fails = (+g.fails || 0) + 1;
       if (g.fails >= 3) g.until = now + Math.min(60, 5 * Math.pow(2, g.fails - 3)) * 1000;
@@ -719,7 +719,7 @@ async function _apiLocalCore(path, opts = {}) {
       throw _lsErr('invalid_credentials', 401);
     }
     if (guard[uname]) delete guard[uname];
-    if (!String(u.password).startsWith('v2$')) u.password = _lsHashV2(String(b.password || '')); // upgrade legacy hash in place
+    if (_lsHashNeedsUpgrade(u.password)) u.password = await _lsHashV3(String(b.password || '')); // silent hash upgrade (legacy→v2→PBKDF2)
     const token = _lsUid() + _lsUid();
     db.sessions[token] = { userId: u.id, createdAt: Date.now() };
     await _lsSave();
@@ -730,7 +730,7 @@ async function _apiLocalCore(path, opts = {}) {
     if (!username || username.length < 3) throw _lsErr('bad_username');
     if (String(b.password || '').length < 6) throw _lsErr('weak_password');
     if (db.users.find(x => x.username === username)) throw _lsErr('username_taken', 409);
-    const u = { id: _lsUid(), username, name: String(b.name || '').trim() || username, password: _lsHashV2(String(b.password)), role: 'technician', createdAt: Date.now() };
+    const u = { id: _lsUid(), username, name: String(b.name || '').trim() || username, password: await _lsHashV3(String(b.password)), role: 'technician', createdAt: Date.now() };
     db.users.push(u);
     if (db.settings && db.settings.loginGuard) delete db.settings.loginGuard[username]; // a brand-new account starts with a clean guessing slate
     const token = _lsUid() + _lsUid();
@@ -750,9 +750,9 @@ async function _apiLocalCore(path, opts = {}) {
   }
   if (path === '/auth/change-password' && method === 'POST') {
     if (!me) throw _lsErr('unauthorized', 401);
-    if (!_lsVerify(String(b.current || ''), me.password)) throw _lsErr('invalid_credentials', 401);
+    if (!(await _lsVerifyAsync(String(b.current || ''), me.password))) throw _lsErr('invalid_credentials', 401);
     if (String(b.next || '').length < 6) throw _lsErr('weak_password');
-    me.password = _lsHashV2(String(b.next));
+    me.password = await _lsHashV3(String(b.next));
     await _lsSave();
     return { ok: true };
   }
@@ -1560,6 +1560,132 @@ async function _apiLocalCore(path, opts = {}) {
        safe inline fallback rather than a partial restore. */
     const photosOffloaded = await _migratePhotosToIdb();
     return { ok: true, verified: true, photosOffloaded: !!photosOffloaded, counts: valid.counts || {} };
+  }
+  if (path === '/backup/merge' && method === 'POST') {
+    /* Merge (not replace) a backup file into the live workspace — the
+       two-device workflow (technician phone + workshop tablet) without a
+       server. Rules, all reported back to the UI:
+       - unknown id          -> added (re-owned by the importing user)
+       - known id, newer     -> replaces the local copy (updated)
+       - known id, older     -> local copy kept (skipped)
+       - same timestamp but different content -> local kept, listed as conflict
+       - elevator-owned row whose building exists neither locally nor in the
+         file -> not imported (orphaned), never silently re-homed
+       - an imported invoice whose number another invoice already carries
+         gets a "-B" suffix so the unique-number invariant survives
+       Settings and user accounts are never merged. The merged candidate goes
+       through the exact restore pipeline (fold/repair/normalize/verify), so
+       a structurally impossible merge aborts before anything is written. */
+    const bk = b.backup || b;
+    const valid = validateBackup(bk);
+    if (!valid.ok) throw _lsErr('bad_backup:' + valid.why);
+    const MERGE_COLLS = ['projects', 'archivedProjects', 'services', 'notes', 'checklists', 'parts', 'diagSessions', 'calcSaves', 'issues', 'tools', 'photos', 'invoices', 'contracts', 'reminders', 'measurements', 'safetyLogs'];
+    const ELEV_OWNED = ['services', 'measurements', 'diagSessions', 'checklists', 'issues', 'safetyLogs'];
+    const report = { added: {}, updated: {}, skipped: {}, conflicts: [], orphaned: [], renumbered: [] };
+    const candidate = JSON.parse(JSON.stringify(db));
+    const rowTs = r => +((r && (r.updatedAt || r.createdAt || r.date || r.ts)) || 0);
+    const stableOf = r => {
+      const c = Object.assign({}, r); delete c._owner;
+      return (typeof stableBackupString === 'function') ? stableBackupString(c) : JSON.stringify(c);
+    };
+    const knownProjectIds = new Set(
+      [...(candidate.projects || []), ...(candidate.archivedProjects || []), ...(bk.projects || []), ...(bk.archivedProjects || [])]
+        .filter(Boolean).map(p => p.id));
+    const touched = new Set(); // "coll:id" of imported/updated rows -> re-owned by me
+    const localArchivedIds = new Set((candidate.archivedProjects || []).filter(Boolean).map(p => p.id));
+    MERGE_COLLS.forEach(coll => {
+      report.added[coll] = 0; report.updated[coll] = 0; report.skipped[coll] = 0;
+      if (!Array.isArray(candidate[coll])) candidate[coll] = [];
+      const idx = new Map(candidate[coll].filter(Boolean).map(r => [r.id, r]));
+      (Array.isArray(bk[coll]) ? bk[coll] : []).forEach(raw => {
+        if (!raw || !raw.id) { report.skipped[coll]++; return; }
+        const row = JSON.parse(JSON.stringify(raw));
+        if (coll === 'projects' && localArchivedIds.has(row.id)) {
+          /* the file has this building active while this device archived it:
+             un-archive it here and let the normal merge decide the copy */
+          candidate.archivedProjects = candidate.archivedProjects.filter(p => p && p.id !== row.id);
+          localArchivedIds.delete(row.id);
+          report.conflicts.push({ collection: coll, id: row.id, why: 'archived-here-active-in-file' });
+        }
+        if (coll === 'archivedProjects' && (candidate.projects || []).some(p => p && p.id === row.id)) {
+          report.conflicts.push({ collection: coll, id: row.id, why: 'active-here-archived-in-file' });
+          report.skipped[coll]++;
+          return;
+        }
+        if (ELEV_OWNED.includes(coll) && row.projectId && !knownProjectIds.has(row.projectId)) {
+          report.orphaned.push({ collection: coll, id: row.id, projectId: row.projectId });
+          return;
+        }
+        const cur = idx.get(row.id);
+        if (!cur) {
+          candidate[coll].push(row); idx.set(row.id, row);
+          touched.add(coll + ':' + row.id); report.added[coll]++;
+          return;
+        }
+        const ti = rowTs(row), tc = rowTs(cur);
+        if (ti > tc) {
+          candidate[coll][candidate[coll].indexOf(cur)] = row; idx.set(row.id, row);
+          touched.add(coll + ':' + row.id); report.updated[coll]++;
+        } else if (ti === tc && stableOf(cur) !== stableOf(row)) {
+          report.conflicts.push({ collection: coll, id: row.id, why: 'same-timestamp' });
+          report.skipped[coll]++;
+        } else report.skipped[coll]++;
+      });
+    });
+    /* imported/updated rows belong to the importing user, like a restore */
+    MERGE_COLLS.forEach(coll => (candidate[coll] || []).forEach(r => {
+      if (r && touched.has(coll + ':' + r.id)) r._owner = me.id;
+    }));
+    /* invoice numbers are unique device-wide: a merged invoice that carries
+       a number already used by a DIFFERENT invoice keeps its data but gets
+       a visible suffix (its printed copy stays traceable in the report) */
+    {
+      const usedNums = new Map();
+      (candidate.invoices || []).filter(Boolean).forEach(inv => {
+        const num = String(inv.number == null ? '' : inv.number).trim();
+        if (num && !usedNums.has(num)) usedNums.set(num, inv.id);
+      });
+      (candidate.invoices || []).filter(Boolean).forEach(inv => {
+        const num = String(inv.number == null ? '' : inv.number).trim();
+        if (!num || usedNums.get(num) === inv.id || !touched.has('invoices:' + inv.id)) return;
+        let cand = num + '-B', n = 2;
+        while (usedNums.has(cand)) { cand = num + '-B' + n; n++; }
+        usedNums.set(cand, inv.id);
+        report.renumbered.push({ id: inv.id, from: num, to: cand });
+        inv.number = cand;
+      });
+    }
+    /* document sequences must never reissue a merged-in number */
+    {
+      let maxInv = 0, maxSr = 0;
+      (candidate.invoices || []).forEach(i => { const n = parseInt(String(i && i.number || ''), 10); if (n > maxInv) maxInv = n; });
+      (candidate.services || []).forEach(sv => { const m = /^SR-(\d+)$/.exec(String(sv && sv.reportNo || '')); if (m && +m[1] > maxSr) maxSr = +m[1]; });
+      if (!candidate.settings || typeof candidate.settings !== 'object') candidate.settings = {};
+      candidate.settings.invoiceSeq = Math.max(+candidate.settings.invoiceSeq || 0, +(bk.settings && bk.settings.invoiceSeq) || 0, maxInv);
+      candidate.settings.reportSeq = Math.max(+candidate.settings.reportSeq || 0, maxSr);
+    }
+    const oldElevatorOwners = new Map((db.elevators || []).filter(Boolean).map(e => [e.id, e._owner]));
+    candidate.elevators = [];
+    if (typeof STRUCTURED_DB !== 'undefined') {
+      STRUCTURED_DB.foldArchivedProjects(candidate);
+      STRUCTURED_DB.repairProjectRefs(candidate);
+    }
+    _apiNormalizeRestoreOwnership(candidate); // rebuilds elevators; throws pre-save on impossible structure
+    /* an elevator belongs to whoever owns its building (never blindly to the
+       importer — other accounts on this device keep their shafts) */
+    (candidate.elevators || []).forEach(e => {
+      const pr = (candidate.projects || []).find(p => p && p.id === e.projectId);
+      e._owner = (pr && pr._owner) || oldElevatorOwners.get(e.id) || me.id;
+    });
+    if (!candidate._ownerSince) candidate._ownerSince = db._ownerSince || Date.now();
+    candidate.photos.forEach(p => { if (p && p.data) p.inIdb = false; });
+    await _lsSave(candidate);
+    const verifiedCandidate = STRUCTURED_DB.status().mode === 'indexedDB'
+      ? await STRUCTURED_DB.verifyAggregate(candidate)
+      : candidate;
+    _lsDB = verifiedCandidate;
+    await _migratePhotosToIdb();
+    return { ok: true, verified: true, report };
   }
 
   /* settings — per-user profile (company/tax/preferences); see _userSettings */
