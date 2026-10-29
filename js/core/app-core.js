@@ -1,8 +1,8 @@
 /* ================= VERSION SINGLE SOURCE OF TRUTH ================= */
-var APP_VERSION = '29.5.0';
+var APP_VERSION = '29.6.0';
 var DB_SCHEMA_VERSION = 3;
 var BACKUP_FORMAT_VERSION = 8;
-var CACHE_VERSION = 'zlift-pwa-v41';
+var CACHE_VERSION = 'zlift-pwa-v42';
 /* Display badge shown on Settings / about */
 var APP_BUILD = '2026-10-27';
 
@@ -521,6 +521,215 @@ function downloadCsv(filename, head, rows) {
   const cell = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
   const csv = '\ufeff' + [head, ...rows].map(r => r.map(cell).join(',')).join('\r\n');
   downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), filename);
+}
+
+/* ================= BULK CSV IMPORT =================
+   Onboarding a company with 200 buildings must not mean 200 form sessions.
+   The parser is deliberately forgiving: UTF-8 BOM, CRLF/CR/LF, quoted fields,
+   and the delimiter sniffed from the header line (Iranian Excel writes ';').
+   Headers are matched against English field names AND Persian labels, values
+   go through the same parseNum as every form field. Import is idempotent by
+   design: a row whose identity (building name / part code-or-name) already
+   exists is skipped and reported, so importing the same file twice — the
+   classic bulk-import accident — changes nothing the second time. */
+function parseCsvText(text) {
+  let s = String(text || '');
+  if (s.charCodeAt(0) === 0xFEFF) s = s.slice(1);
+  const firstLine = s.split(/\r\n|\r|\n/, 1)[0] || '';
+  const delim = [';', '\t', ','].map(d => [d, firstLine.split(d).length]).sort((a, c) => c[1] - a[1])[0][0];
+  const rows = [];
+  let row = [], field = '', inQ = false;
+  const endRow = () => {
+    row.push(field); field = '';
+    if (row.length > 1 || String(row[0] || '').trim() !== '') rows.push(row);
+    row = [];
+  };
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (inQ) {
+      if (ch === '"') { if (s[i + 1] === '"') { field += '"'; i++; } else inQ = false; }
+      else field += ch;
+    } else if (ch === '"' && field === '') inQ = true;
+    else if (ch === delim) { row.push(field); field = ''; }
+    else if (ch === '\r' || ch === '\n') { if (ch === '\r' && s[i + 1] === '\n') i++; endRow(); }
+    else field += ch;
+  }
+  endRow();
+  return rows;
+}
+function csvToObjects(rows) {
+  if (!rows.length) return { head: [], items: [] };
+  const head = rows[0].map(h => String(h || '').trim());
+  const items = rows.slice(1).map(r => {
+    const o = {};
+    head.forEach((h, i) => { if (h) o[h] = r[i] !== undefined ? String(r[i]) : ''; });
+    return o;
+  });
+  return { head, items };
+}
+function csvStatusValue(v) {
+  const n = norm(v).toLowerCase();
+  if (!n) return 'contract';
+  for (const k of Object.keys(STATUS_META)) {
+    if (n === k) return k;
+    const mk = STATUS_META[k].key;
+    if (norm((I18N.fa && I18N.fa[mk]) || '').toLowerCase() === n) return k;
+    if (norm((I18N.en && I18N.en[mk]) || '').toLowerCase() === n) return k;
+  }
+  return 'contract';
+}
+function csvTypeValue(v) {
+  const n = norm(v).toLowerCase();
+  return (n.includes('هیدرولیک') || n.includes('hydraulic')) ? 'hydraulic' : 'traction';
+}
+var CSV_IMPORT_KINDS = {
+  projects: {
+    titleKey: 'projects', helpKey: 'csvHelpProjects', fileName: 'zlift-projects-template.csv',
+    fields: [
+      ['name', ['name', 'نام', 'نام ساختمان', 'ساختمان', 'پروژه', 'building'], 0],
+      ['customer', ['customer', 'مشتری', 'کارفرما', 'client'], 0],
+      ['phone', ['phone', 'تلفن', 'موبایل', 'شماره تماس', 'tel', 'mobile'], 0],
+      ['location', ['location', 'آدرس', 'نشانی', 'address'], 0],
+      ['elevatorType', ['elevatortype', 'type', 'نوع', 'نوع آسانسور'], 0],
+      ['capacityKg', ['capacitykg', 'capacity', 'ظرفیت'], 1],
+      ['persons', ['persons', 'نفرات', 'نفر'], 1],
+      ['floors', ['floors', 'طبقات', 'طبقه'], 1],
+      ['stops', ['stops', 'توقف', 'ایستگاه'], 1],
+      ['speed', ['speed', 'سرعت'], 1],
+      ['controller', ['controller', 'تابلو', 'تابلو فرمان', 'کنترلر'], 0],
+      ['motor', ['motor', 'موتور'], 0],
+      ['status', ['status', 'وضعیت'], 0],
+      ['serviceIntervalDays', ['serviceintervaldays', 'interval', 'دوره سرویس', 'فاصله سرویس'], 1],
+      ['notes', ['notes', 'توضیحات', 'یادداشت', 'note'], 0]
+    ],
+    template: { name: 'ساختمان نمونه', customer: 'نام مشتری', phone: '09120000000', location: 'شهر، خیابان، پلاک', elevatorType: 'traction', capacityKg: 630, persons: 8, floors: 6, stops: 6, speed: 1, controller: '', motor: '', status: 'maintenance', serviceIntervalDays: 30, notes: '' },
+    dupKey: body => 'n:' + norm(body.name),
+    dupOf: body => (state.projects || []).some(p => norm(p.name) === norm(body.name)),
+    make: body => api('/projects', { method: 'POST', body }),
+    after: d => { if (d && d.project) { state.projects.push(d.project); if (d.elevator) state.elevators.push(d.elevator); } }
+  },
+  parts: {
+    titleKey: 'parts', helpKey: 'csvHelpParts', fileName: 'zlift-parts-template.csv',
+    fields: [
+      ['name', ['name', 'نام', 'نام قطعه', 'قطعه'], 0],
+      ['code', ['code', 'کد', 'کد فنی', 'sku'], 0],
+      ['category', ['category', 'دسته', 'گروه'], 0],
+      ['unit', ['unit', 'واحد'], 0],
+      ['qty', ['qty', 'موجودی', 'تعداد', 'stock', 'quantity'], 1],
+      ['minQty', ['minqty', 'حداقل موجودی', 'حداقل', 'min'], 1],
+      ['price', ['price', 'قیمت'], 1],
+      ['location', ['location', 'مکان', 'محل', 'انبار'], 0],
+      ['supplier', ['supplier', 'تأمین‌کننده', 'فروشنده'], 0],
+      ['note', ['note', 'توضیحات', 'یادداشت', 'notes'], 0]
+    ],
+    template: { name: 'میکروسوییچ درب', code: 'MS-101', category: 'عمومی', unit: 'عدد', qty: 10, minQty: 2, price: 450000, location: 'قفسه A', supplier: '', note: '' },
+    dupKey: body => body.code ? 'c:' + norm(body.code) : 'n:' + norm(body.name),
+    dupOf: body => (state.parts || []).some(x => (body.code && norm(x.code || '') === norm(body.code)) || norm(x.name) === norm(body.name)),
+    make: body => api('/parts', { method: 'POST', body }),
+    after: d => { if (d && d.part) state.parts.push(d.part); }
+  }
+};
+function csvClassify(kindName, parsedCsv) {
+  const kind = CSV_IMPORT_KINDS[kindName];
+  const headMap = {};
+  kind.fields.forEach(([field, aliases]) => {
+    const hit = parsedCsv.head.find(h => aliases.some(a => norm(a).toLowerCase() === norm(h).toLowerCase()));
+    if (hit) headMap[field] = hit;
+  });
+  const out = { ready: [], noName: 0, dup: [], total: parsedCsv.items.length, hasNameCol: !!headMap.name };
+  const seen = new Set();
+  parsedCsv.items.forEach(obj => {
+    const body = {};
+    kind.fields.forEach(([field, , numeric]) => {
+      let v = headMap[field] ? String(obj[headMap[field]] || '').trim() : '';
+      if (field === 'elevatorType') v = csvTypeValue(v);
+      else if (field === 'status') v = csvStatusValue(v);
+      else if (numeric) v = Math.max(0, (typeof parseNum === 'function' ? parseNum(v) : +v) || 0);
+      body[field] = v;
+    });
+    if (!String(body.name || '').trim()) { out.noName++; return; }
+    const key = kind.dupKey(body);
+    if (seen.has(key) || kind.dupOf(body)) { out.dup.push(body.name); return; }
+    seen.add(key);
+    out.ready.push(body);
+  });
+  return out;
+}
+function downloadCsvTemplate(kindName) {
+  const kind = CSV_IMPORT_KINDS[kindName];
+  if (!kind) return;
+  downloadCsv(kind.fileName, kind.fields.map(f => f[0]), [kind.fields.map(f => kind.template[f[0]] !== undefined ? kind.template[f[0]] : '')]);
+}
+function openCsvImport(kindName) {
+  const kind = CSV_IMPORT_KINDS[kindName];
+  if (!kind) return;
+  openModal(`
+    <div class="modal-head"><h3>⬆️ ${t('csvImportTitle')} — ${t(kind.titleKey)}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="note-block" style="margin-bottom:12px;font-size:12.5px">${t(kind.helpKey)}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <button class="btn btn-ghost" onclick="downloadCsvTemplate('${kindName}')">⬇️ ${t('csvTemplate')}</button>
+        <button class="btn btn-primary" id="csvPickBtn">📄 ${t('csvChoose')}</button>
+        <input type="file" id="csvFile" accept=".csv,text/csv,text/plain" class="hidden" />
+      </div>
+      <div id="csvPreview"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">${t('close')}</button>
+      <button class="btn btn-primary hidden" id="csvDoBtn">${t('csvDoImport')}</button>
+    </div>`, { size: 'md' });
+  let plan = null;
+  $('#csvPickBtn').onclick = () => $('#csvFile').click();
+  $('#csvFile').onchange = () => {
+    const f = $('#csvFile').files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const pv = $('#csvPreview');
+      try {
+        const parsedCsv = csvToObjects(parseCsvText(String(reader.result || '')));
+        if (!parsedCsv.items.length) throw new Error('empty');
+        const capped = parsedCsv.items.length > 1000;
+        if (capped) parsedCsv.items = parsedCsv.items.slice(0, 1000);
+        plan = csvClassify(kindName, parsedCsv);
+        if (!plan.hasNameCol) throw new Error('noname');
+        const names = plan.ready.slice(0, 6).map(b => esc(b.name)).join(' · ');
+        const dupNames = plan.dup.slice(0, 6).map(n => esc(n)).join(' · ');
+        pv.innerHTML = `
+          ${capped ? `<div class="note-block" style="margin-bottom:10px">⚠️ ${t('csvCapped')}</div>` : ''}
+          <div class="kv-grid">
+            <div class="kv-cell"><div class="k">📄 ${t('csvRowsRead')}</div><div class="v">${faNum(plan.total)}</div></div>
+            <div class="kv-cell"><div class="k">✅ ${t('csvWillImport')}</div><div class="v">${faNum(plan.ready.length)}</div></div>
+            <div class="kv-cell"><div class="k">⚠️ ${t('csvSkipNoName')}</div><div class="v">${faNum(plan.noName)}</div></div>
+            <div class="kv-cell"><div class="k">🔁 ${t('csvSkipDup')}</div><div class="v">${faNum(plan.dup.length)}</div></div>
+          </div>
+          ${names ? `<p style="font-size:12.5px;margin-top:10px">${names}${plan.ready.length > 6 ? ' …' : ''}</p>` : ''}
+          ${dupNames ? `<p style="font-size:12px;color:var(--text-3);margin-top:6px">🔁 ${dupNames}${plan.dup.length > 6 ? ' …' : ''}</p>` : ''}`;
+        if (plan.ready.length) $('#csvDoBtn').classList.remove('hidden');
+        else $('#csvDoBtn').classList.add('hidden');
+      } catch (e) {
+        plan = null;
+        $('#csvDoBtn').classList.add('hidden');
+        pv.innerHTML = `<div class="note-block" style="border-color:var(--danger)">❌ ${t('csvBadFile')}</div>`;
+      }
+    };
+    reader.readAsText(f);
+  };
+  $('#csvDoBtn').onclick = guard('#csvDoBtn', async () => {
+    if (!plan || !plan.ready.length) return;
+    const pv = $('#csvPreview');
+    let done = 0, failed = 0;
+    pv.innerHTML = `<p style="font-size:13px">${t('csvImporting')} <b id="csvProg">0/${faNum(plan.ready.length)}</b></p>`;
+    for (const body of plan.ready) {
+      try { const d = await kind.make(body); if (kind.after) kind.after(d); done++; }
+      catch (e) { failed++; }
+      const pr = $('#csvProg');
+      if (pr) pr.textContent = faNum(done + failed) + '/' + faNum(plan.ready.length);
+    }
+    closeModal();
+    toast(faNum(done) + ' ' + t('csvImported') + (failed ? ' · ' + faNum(failed) + ' ' + t('csvFailedN') : ''), failed ? 'err' : undefined);
+    render();
+  });
 }
 /* paint long lists in chunks: the first screenful is instant even with hundreds
    of records, the rest is appended silently while the user scrolls */

@@ -203,7 +203,7 @@
       "area": "bulk",
       "name": "با ۱۵۰ پروژه و ۶۰۰ سرویس، لیست‌ها رندر و جستجو درست کار می‌کند",
       "ok": true,
-      "evidence": "projects render 503ms (153 nodes), services 791ms, seed 13177ms"
+      "evidence": "projects render 477ms (153 nodes), services 675ms, seed 10984ms"
     },
     {
       "id": "B2",
@@ -315,7 +315,7 @@
       "area": "static",
       "name": "شکاف ترجمه: کلید گمشده‌ای در t()ها نیست (متن خام در UI)",
       "ok": true,
-      "evidence": "all 556 static keys resolve"
+      "evidence": "all 589 static keys resolve"
     }
   ]
 }

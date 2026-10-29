@@ -27,9 +27,9 @@ function issueRow(i) {
     <div class="row-side"><span class="badge ${m.cls}">${t(m.key)}</span></div>
   </div>`;
 }
-function openIssueForm(id, presetProject) {
+function openIssueForm(id, presetProject, presetElevator) {
   const i = id ? state.issues.find(x => x.id === id) : null;
-  const v = i || { title: '', kind: 'open', projectId: presetProject || '', note: '', closed: false };
+  const v = i || { title: '', kind: 'open', projectId: presetProject || '', elevatorId: presetElevator || '', note: '', closed: false };
   openModal(`
     <div class="modal-head"><h3>${i ? '✏️' : '🔴'} ${i ? t('edit') : t('newIssue')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body">

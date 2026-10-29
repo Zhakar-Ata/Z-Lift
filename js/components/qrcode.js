@@ -2335,33 +2335,41 @@ function qrSvg(text, px) {
   }
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${S} ${S}" width="${px}" height="${px}" style="background:#fff"><g fill="#000" shape-rendering="crispEdges">${rects}</g></svg>`;
 }
-function openQrModal(projectId) {
+function qrUrlFor(projectId, elevatorId) {
+  return location.origin + location.pathname + '#/projects/' + projectId + (elevatorId ? '?elevator=' + elevatorId : '');
+}
+function openQrModal(projectId, elevatorId) {
   const p = state.projects.find(x => x.id === projectId);
   if (!p) return;
-  const url = location.origin + location.pathname + '#/projects/' + p.id;
+  /* a shaft label points at ONE elevator of the building: scanning it lands
+     on the building page with that shaft focused and quick actions scoped */
+  const el = elevatorId ? (state.elevators || []).find(e => e.id === elevatorId && e.projectId === p.id) : null;
+  const url = qrUrlFor(p.id, el ? el.id : '');
   openModal(`
     <div class="modal-head"><h3>🏷️ ${t('qrCode')}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="modal-body" style="text-align:center">
       <div style="display:inline-block;background:#fff;padding:12px;border-radius:14px;border:1px solid var(--border)">${qrSvg(url, 200)}</div>
-      <p style="font-weight:800;margin-top:10px">${esc(p.name)}</p>
-      <p style="font-size:12px;color:var(--text-2);margin-top:8px">${t('qrHint')}</p>
+      <p style="font-weight:800;margin-top:10px">${esc(p.name)}${el ? ' — 🛗 ' + esc(elevatorLabel(el, p.id)) : ''}</p>
+      <p style="font-size:12px;color:var(--text-2);margin-top:8px">${el ? t('qrShaftHint') : t('qrHint')}</p>
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="closeModal()">${t('close')}</button>
-      <button class="btn btn-primary" onclick="printQrLabel('${p.id}')">${IC.print} ${t('qrPrint')}</button>
+      <button class="btn btn-primary" onclick="printQrLabel('${p.id}'${el ? `,'${el.id}'` : ''})">${IC.print} ${t('qrPrint')}</button>
     </div>`);
 }
-function printQrLabel(projectId) {
+function printQrLabel(projectId, elevatorId) {
   const p = state.projects.find(x => x.id === projectId);
   if (!p) return;
   const st = state.settings || {};
-  const url = location.origin + location.pathname + '#/projects/' + p.id;
+  const el = elevatorId ? (state.elevators || []).find(e => e.id === elevatorId && e.projectId === p.id) : null;
+  const url = qrUrlFor(p.id, el ? el.id : '');
   printDoc(`
     <div style="text-align:center;padding-top:30px">
       <h1 style="font-size:22px">🛗 ${esc(st.company || 'Z Lift')}</h1>
       <div class="ph-sub">${esc(st.phone || '')}</div>
       <div style="margin:24px auto;display:inline-block;border:2px solid #000;border-radius:12px;padding:16px">${qrSvg(url, 260)}</div>
       <h2 style="font-size:17px;margin-top:4px">${esc(p.name)}</h2>
+      ${el ? `<div style="font-size:15px;font-weight:700;margin-top:4px">🛗 ${esc(elevatorLabel(el, p.id))}</div>` : ''}
       <p style="font-size:12px;color:#444;margin-top:8px">${t('qrScanHint')}</p>
     </div>`);
 }

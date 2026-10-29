@@ -29,6 +29,71 @@ function _lsVerify(pw, stored) {
   return stored === _lsHash(String(pw));
 }
 
+/* v3 password storage (v29.6): PBKDF2-HMAC-SHA-256 via WebCrypto, per-password
+   random salt, iteration count stored in the record so it can be raised
+   later without invalidating existing hashes. Format:
+   v3$<iterations>$<salt b64>$<derived-key b64>
+   WebCrypto needs a secure context; where it is unavailable (very old
+   browser, plain-http LAN page) hashing gracefully falls back to v2 so
+   nobody is ever locked out by an upgrade. A v3 record can only exist on
+   an origin where subtle crypto was available, and origins do not lose
+   that status, so the fallback can never strand a v3 user either. */
+var PBKDF2_ITERS = 250000;
+function _lsSubtle() {
+  try {
+    return (typeof crypto !== 'undefined' && crypto.subtle && crypto.getRandomValues &&
+      typeof TextEncoder !== 'undefined' && typeof btoa !== 'undefined') ? crypto.subtle : null;
+  } catch (e) { return null; }
+}
+function _lsB64(bytes) {
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 8192) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+  return btoa(s);
+}
+function _lsUnB64(text) {
+  const bin = atob(String(text));
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+async function _lsPbkdf2(pw, salt, iterations, bitsLen) {
+  const subtle = _lsSubtle();
+  const key = await subtle.importKey('raw', new TextEncoder().encode(String(pw)), 'PBKDF2', false, ['deriveBits']);
+  const bits = await subtle.deriveBits({ name: 'PBKDF2', salt, iterations, hash: 'SHA-256' }, key, bitsLen);
+  return new Uint8Array(bits);
+}
+async function _lsHashV3(pw) {
+  if (!_lsSubtle()) return _lsHashV2(pw);
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const dk = await _lsPbkdf2(pw, salt, PBKDF2_ITERS, 256);
+  return 'v3$' + PBKDF2_ITERS + '$' + _lsB64(salt) + '$' + _lsB64(dk);
+}
+async function _lsVerifyAsync(pw, stored) {
+  if (typeof stored !== 'string') return false;
+  if (!stored.startsWith('v3$')) return _lsVerify(pw, stored);
+  if (!_lsSubtle()) return false;
+  const seg = stored.split('$');
+  if (seg.length !== 4) return false;
+  const iterations = +seg[1] || 0;
+  if (!iterations || iterations > 5000000) return false; // tampered record must not DoS the login
+  let salt, expected;
+  try { salt = _lsUnB64(seg[2]); expected = _lsUnB64(seg[3]); } catch (e) { return false; }
+  if (!salt.length || !expected.length || expected.length > 64) return false;
+  const bits = await _lsPbkdf2(pw, salt, iterations, expected.length * 8);
+  let diff = bits.length ^ expected.length;
+  for (let i = 0; i < Math.min(bits.length, expected.length); i++) diff |= bits[i] ^ expected[i];
+  return diff === 0;
+}
+/* Re-hash on next successful login when: the record predates v3 and strong
+   crypto exists here, or a v3 record was derived with fewer iterations than
+   the current policy. Legacy bare/v2 records always climb at least one rung. */
+function _lsHashNeedsUpgrade(stored) {
+  if (typeof stored !== 'string') return true;
+  if (stored.startsWith('v3$')) return (+stored.split('$')[1] || 0) < PBKDF2_ITERS && !!_lsSubtle();
+  if (stored.startsWith('v2$')) return !!_lsSubtle();
+  return true;
+}
+
 function _lsSeed() {
   const now = Date.now(), day = 86400000;
   const p1 = _lsUid(), p2 = _lsUid(), p3 = _lsUid(), p4 = _lsUid();
