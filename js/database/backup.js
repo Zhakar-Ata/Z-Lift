@@ -540,9 +540,11 @@ function openRestorePreviewModal(bk, audit) {
         const merged = await api('/backup/merge', { method: 'POST', body: { backup: bk } });
         if (!merged || !merged.verified) throw new Error('merge-not-verified');
         await loadAll(true);
-        closeModal();
         await render();
         toast(t('mergeDone'));
+        /* replace the confirm modal in place — closing it first would queue
+           a compensating history.back() whose popstate then kills the fresh
+           report modal (real-browser modal race) */
         openMergeReportModal(merged.report || {});
       } catch (e) {
         try {

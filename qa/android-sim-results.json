@@ -1,0 +1,112 @@
+{
+  "pass": 15,
+  "fail": 0,
+  "results": [
+    {
+      "id": "A1",
+      "area": "boot",
+      "name": "اپ در Chromium واقعی (موبایل) بدون خطای صفحه بالا می‌آید و صفحهٔ ورود رندر می‌شود",
+      "ok": true,
+      "evidence": "cold load 984ms"
+    },
+    {
+      "id": "A2",
+      "area": "pwa",
+      "name": "Service Worker واقعاً ثبت و فعال می‌شود و شل آفلاین در Cache Storage می‌نشیند",
+      "ok": true,
+      "evidence": "zlift-pwa-v42 · 52 entries"
+    },
+    {
+      "id": "A3",
+      "area": "pwa",
+      "name": "مانیفست از دید مرورگر قابل دریافت و معتبر است (پیش‌شرط نصب روی هوم‌اسکرین)",
+      "ok": true,
+      "evidence": "Z Lift — دستیار تکنسین آسانسور · 3 icons"
+    },
+    {
+      "id": "B1",
+      "area": "auth",
+      "name": "ثبت‌نام با تایپ و لمس واقعی؛ رمز در Chrome واقعی با PBKDF2 ذخیره می‌شود",
+      "ok": true,
+      "evidence": "stored v3$250000$Hj… · register+PBKDF2 675ms"
+    },
+    {
+      "id": "B2",
+      "area": "journey",
+      "name": "ساخت ساختمان از فرم (نام فارسی + ظرفیت با ارقام فارسی) و نمایش در لیست",
+      "ok": true,
+      "evidence": "id=afc4fa5be99bc283 capacityKg=630 (fa digits parsed)"
+    },
+    {
+      "id": "B3",
+      "area": "journey",
+      "name": "افزودن شفت دوم از رابط ساختمان و برچسب QR اختصاصی همان شفت",
+      "ok": true,
+      "evidence": "shaft QR modal with shaft name + QR svg"
+    },
+    {
+      "id": "B4",
+      "area": "journey",
+      "name": "ثبت سرویس روی شفت دوم با امضای لمسی روی canvas واقعی و پیوست عکس از فایل",
+      "ok": true,
+      "evidence": "signature 7694 chars · photos=1"
+    },
+    {
+      "id": "B5",
+      "area": "journey",
+      "name": "اسکن QR شفت (لود سرد از URL) روی همان شفت فرود می‌آید",
+      "ok": true,
+      "evidence": "focus card rendered on cold deep-link load"
+    },
+    {
+      "id": "B6",
+      "area": "layout",
+      "name": "هیچ صفحه‌ای در ویوپورت موبایل اسکرول افقی ندارد (لی‌اوت واقعی)",
+      "ok": true,
+      "evidence": "14 routes fit 412px"
+    },
+    {
+      "id": "D1",
+      "area": "backup",
+      "name": "خروجی بکاپ از گوشی A به‌صورت فایل واقعی دانلود می‌شود و فرمت v8 معتبر دارد",
+      "ok": true,
+      "evidence": "Z-Lift-Backup-2026-10-29-10-18.json · v8 · 5 projects"
+    },
+    {
+      "id": "D2",
+      "area": "merge",
+      "name": "گوشی B ساختمان خودش را می‌سازد، فایل A را آپلود و ادغام می‌کند و هر دو ساختمان کنار هم می‌آیند",
+      "ok": true,
+      "evidence": "both buildings + 2 shafts on phone B (boot 1982ms)"
+    },
+    {
+      "id": "D3",
+      "area": "csv",
+      "name": "ورود CSV فارسی از فایل واقعی روی گوشی B (پیش‌نمایش + ورود)",
+      "ok": true,
+      "evidence": "2 buildings imported from Persian CSV"
+    },
+    {
+      "id": "C1",
+      "area": "offline",
+      "name": "بعد از کنترل‌گرفتن SW، قطع کامل شبکه: اپ از کش بالا می‌آید و آفلاین هم ساختمان ثبت می‌شود",
+      "ok": true,
+      "evidence": "offline shell + offline write worked"
+    },
+    {
+      "id": "C2",
+      "area": "offline",
+      "name": "سرور کاملاً خاموش: ریلود همچنان از Cache Storage سرو می‌شود و دادهٔ آفلاین سر جاست",
+      "ok": true,
+      "evidence": "server dead, app alive from SW cache"
+    },
+    {
+      "id": "ZZ",
+      "area": "hygiene",
+      "name": "در کل ران هیچ خطای JS شنیده‌نشده‌ای (pageerror) روی هیچ‌کدام از دو گوشی نبود",
+      "ok": true,
+      "evidence": "clean console on both phones"
+    }
+  ],
+  "when": "2026-10-29T06:49:08.281Z"
+}
