@@ -1,12 +1,22 @@
 /* ================= INIT ================= */
 /* The boot splash (index.html) is dismissed by whichever view wins the
-   boot — the app shell (enterApp) or the auth screen (showAuth) — at the
-   exact moment that view becomes visible, so there is never a blank gap. */
+   boot — the app shell (enterApp) or the auth screen (showAuth). On fast
+   devices the whole boot can finish in ~200ms, faster than a launch
+   screen can even register, so dismissal waits out a short minimum
+   on-screen time (750ms from first paint; never longer than a slow real
+   boot). The running version is stamped on the splash so a field device
+   can prove at a glance which build actually booted. */
 function hideBootSplash() {
   var el = document.getElementById('bootSplash');
-  if (!el) return;
-  el.classList.add('done');
-  setTimeout(() => { try { el.remove(); } catch (e) {} }, 320);
+  if (!el || el.dataset.hiding) return;
+  el.dataset.hiding = '1';
+  var ver = el.querySelector('.bs-ver');
+  if (ver && typeof APP_VERSION !== 'undefined') ver.textContent = 'Z Lift v' + APP_VERSION;
+  var wait = Math.max(0, 750 - (Date.now() - (window.__zlT0 || Date.now())));
+  setTimeout(() => {
+    el.classList.add('done');
+    setTimeout(() => { try { el.remove(); } catch (e) {} }, 340);
+  }, wait);
 }
 /* ============ v26: theme/lang helpers + service-due notifications ============ */
 function setTheme(th) {
