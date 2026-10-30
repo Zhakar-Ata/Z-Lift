@@ -1,6 +1,6 @@
 {
   "name": "z-lift",
-  "version": "29.7.1",
+  "version": "29.7.2",
   "description": "Z Lift — offline-first PWA for elevator service technicians (FA/EN, RTL): multi-elevator buildings, service reports with photo & signature, EN 81-20 checklists, diagnostics, invoicing, verified local backups.",
   "private": true,
   "homepage": "https://github.com/Zhakar-Ata/Z-Lift",

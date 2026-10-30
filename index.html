@@ -33,7 +33,7 @@
   #bootSplash.done{opacity:0;pointer-events:none}
   #bootSplash::before{content:'';position:absolute;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(37,99,235,.38),rgba(37,99,235,0) 70%);animation:bsGlow 2.2s ease-in-out infinite}
   #bootSplash>*{position:relative}
-  #bootSplash svg{animation:bsPop .55s cubic-bezier(.2,.9,.3,1.25) both;filter:drop-shadow(0 10px 26px rgba(37,99,235,.45))}
+  #bootSplash .bs-logo{display:block;animation:bsPop .55s cubic-bezier(.2,.9,.3,1.25) both;filter:drop-shadow(0 10px 26px rgba(37,99,235,.45))}
   #bootSplash .bs-name{font-size:28px;font-weight:800;letter-spacing:.2px;animation:bsUp .5s .08s ease both}
   #bootSplash .bs-tag{font-size:13px;opacity:.72;animation:bsUp .5s .16s ease both}
   #bootSplash .bs-bar{width:136px;height:3px;border-radius:99px;background:rgba(232,238,250,.16);margin-top:16px;overflow:hidden;animation:bsUp .5s .24s ease both}
@@ -48,7 +48,7 @@
 </head>
 <body>
   <div id="bootSplash" role="status" aria-label="Z Lift">
-    <svg viewBox="0 0 32 32" width="72" height="72" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#2563eb"/><path d="M10 8h12l-8 7h8L10 24l4-7h-6z" fill="#fff"/></svg>
+    <img class="bs-logo" src="icons/splash-logo.png" width="72" height="72" alt="" aria-hidden="true" fetchpriority="high" />
     <div class="bs-name">Z Lift</div>
     <div class="bs-tag">دستیار حرفه‌ای تکنسین آسانسور</div>
     <div class="bs-bar" aria-hidden="true"><i></i></div>
@@ -60,7 +60,7 @@
     <div class="auth-card">
       <div class="auth-logo">
         <div class="logo-badge">
-          <svg viewBox="0 0 32 32" width="34" height="34"><rect width="32" height="32" rx="8" fill="var(--accent)"/><path d="M10 8h12l-8 7h8L10 24l4-7h-6z" fill="#fff"/></svg>
+          <img src="icons/splash-logo.png" width="34" height="34" alt="" aria-hidden="true" />
         </div>
         <h1>Z Lift</h1>
         <p data-i18n="tagline">دستیار حرفه‌ای تکنسین آسانسور</p>
@@ -98,7 +98,7 @@
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-head">
         <div class="logo-badge sm">
-          <svg viewBox="0 0 32 32" width="26" height="26"><rect width="32" height="32" rx="8" fill="var(--accent)"/><path d="M10 8h12l-8 7h8L10 24l4-7h-6z" fill="#fff"/></svg>
+          <img src="icons/splash-logo.png" width="26" height="26" alt="" aria-hidden="true" />
         </div>
         <div class="logo-text">
           <strong>Z Lift</strong>

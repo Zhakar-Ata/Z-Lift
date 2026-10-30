@@ -14,7 +14,7 @@
       "area": "pbkdf2",
       "name": "ثبت‌نام جدید رمز را با PBKDF2 ذخیره می‌کند (v3 + شمارندهٔ تکرار)",
       "ok": true,
-      "evidence": "v3$250000$VH6o… iters=250000"
+      "evidence": "v3$250000$dLyu… iters=250000"
     },
     {
       "id": "W2",
@@ -35,7 +35,7 @@
       "area": "pbkdf2",
       "name": "رکورد v3 دست‌کاری‌شده (هش خراب / تکرار نجومی) رد می‌شود و اپ قفل یا کرش نمی‌کند",
       "ok": true,
-      "evidence": "tampered rejected in 2ms (invalid_credentials)"
+      "evidence": "tampered rejected in 1ms (invalid_credentials)"
     },
     {
       "id": "W5",
@@ -49,7 +49,7 @@
       "area": "shaft-qr",
       "name": "لینک QR شفت، پارامتر elevator دارد و لینک ساختمان ساده می‌ماند",
       "ok": true,
-      "evidence": "http://localhost:4173/index.html#/projects/965f41347cdb5f0d?elevator=cf3cca4b21b6a524"
+      "evidence": "http://localhost:4173/index.html#/projects/e9aef5f65fd3b0bb?elevator=e8166cbc8c309477"
     },
     {
       "id": "Q2",
@@ -133,14 +133,14 @@
       "area": "pwa",
       "name": "index.html متاهای موبایل (viewport-fit، theme-color، apple-touch-icon، manifest) را دارد و همهٔ ارجاع‌هایش روی دیسک‌اند",
       "ok": true,
-      "evidence": "48 local refs resolve"
+      "evidence": "51 local refs resolve"
     },
     {
       "id": "D3",
       "area": "pwa",
       "name": "سرویس‌ورکر: precache اتمیک است و تک‌تک ورودی‌های CORE روی دیسک وجود دارند (ورودی اشتباه = نصب آفلاین خراب)",
       "ok": true,
-      "evidence": "52 core entries, all on disk"
+      "evidence": "53 core entries, all on disk"
     },
     {
       "id": "ZZ",

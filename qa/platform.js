@@ -411,7 +411,7 @@ const storedPw = (A, u) => A.ev(`(_lsDB.users.find(x => x.username === '${u}') |
     const man = JSON.parse(readSrc('manifest.json'));
     const sizes = new Set((man.icons || []).map(i => i.sizes));
     const maskable = (man.icons || []).some(i => String(i.purpose || '').includes('maskable'));
-    const missing = (man.icons || []).map(i => i.src).filter(s => !fs.existsSync(path.join(ROOT, s)) || fs.statSync(path.join(ROOT, s)).size === 0);
+    const missing = (man.icons || []).map(i => String(i.src || '').split('?')[0]).filter(s => !fs.existsSync(path.join(ROOT, s)) || fs.statSync(path.join(ROOT, s)).size === 0);
     const ok = !!man.name && !!man.short_name && man.display === 'standalone' && man.start_url &&
       sizes.has('192x192') && sizes.has('512x512') && maskable && !missing.length;
     return ok ? OK('manifest installable, icons present')
