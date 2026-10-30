@@ -203,7 +203,7 @@
       "area": "bulk",
       "name": "با ۱۵۰ پروژه و ۶۰۰ سرویس، لیست‌ها رندر و جستجو درست کار می‌کند",
       "ok": true,
-      "evidence": "projects render 511ms (153 nodes), services 761ms, seed 14049ms"
+      "evidence": "projects render 507ms (153 nodes), services 748ms, seed 12680ms"
     },
     {
       "id": "B2",
