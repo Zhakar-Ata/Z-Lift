@@ -7,14 +7,14 @@
       "area": "boot",
       "name": "اپ در Chromium واقعی (موبایل) بدون خطای صفحه بالا می‌آید و صفحهٔ ورود رندر می‌شود",
       "ok": true,
-      "evidence": "cold load 1574ms"
+      "evidence": "cold load 1623ms"
     },
     {
       "id": "A2",
       "area": "pwa",
       "name": "Service Worker واقعاً ثبت و فعال می‌شود و شل آفلاین در Cache Storage می‌نشیند",
       "ok": true,
-      "evidence": "zlift-pwa-v45 · 52 entries"
+      "evidence": "zlift-pwa-v46 · 53 entries"
     },
     {
       "id": "A3",
@@ -28,14 +28,14 @@
       "area": "auth",
       "name": "ثبت‌نام با تایپ و لمس واقعی؛ رمز در Chrome واقعی با PBKDF2 ذخیره می‌شود",
       "ok": true,
-      "evidence": "stored v3$250000$NZ… · register+PBKDF2 722ms"
+      "evidence": "stored v3$250000$sx… · register+PBKDF2 717ms"
     },
     {
       "id": "B2",
       "area": "journey",
       "name": "ساخت ساختمان از فرم (نام فارسی + ظرفیت با ارقام فارسی) و نمایش در لیست",
       "ok": true,
-      "evidence": "id=963f7fd08bc82864 capacityKg=630 (fa digits parsed)"
+      "evidence": "id=931ba9403353db1e capacityKg=630 (fa digits parsed)"
     },
     {
       "id": "B3",
@@ -70,14 +70,14 @@
       "area": "backup",
       "name": "خروجی بکاپ از گوشی A به‌صورت فایل واقعی دانلود می‌شود و فرمت v8 معتبر دارد",
       "ok": true,
-      "evidence": "Z-Lift-Backup-2026-10-30-11-16.json · v8 · 5 projects"
+      "evidence": "Z-Lift-Backup-2026-10-30-20-00.json · v8 · 5 projects"
     },
     {
       "id": "D2",
       "area": "merge",
       "name": "گوشی B ساختمان خودش را می‌سازد، فایل A را آپلود و ادغام می‌کند و هر دو ساختمان کنار هم می‌آیند",
       "ok": true,
-      "evidence": "both buildings + 2 shafts on phone B (boot 3187ms)"
+      "evidence": "both buildings + 2 shafts on phone B (boot 2766ms)"
     },
     {
       "id": "D3",
@@ -108,5 +108,5 @@
       "evidence": "clean console on both phones"
     }
   ],
-  "when": "2026-10-30T07:46:38.760Z"
+  "when": "2026-10-30T16:30:26.659Z"
 }

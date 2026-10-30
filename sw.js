@@ -7,7 +7,7 @@
      (defensive only: Z Lift has no backend today — all data is local; this branch
      exists so a future optional sync endpoint keeps working offline)
    Bump CACHE on every release so old shells are evicted. */
-const CACHE = 'zlift-pwa-v45';
+const CACHE = 'zlift-pwa-v46';
 const CORE = [
   './',
   './index.html',
@@ -60,7 +60,8 @@ const CORE = [
   './js/components/jdate-picker.js',
   './icons/icon-192.png',
   './icons/icon-512.png',
-  './icons/maskable-512.png'
+  './icons/maskable-512.png',
+  './icons/splash-logo.png'
 ];
 const NAV_TIMEOUT = 4000;
 
