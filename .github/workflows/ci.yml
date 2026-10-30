@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  suites:
+    name: Lint + jsdom suites (608 checks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run lint
+      - run: npm test
+      - run: npm run test:real-user
+      - run: npm run test:personas
+      - run: npm run test:elevators
+      - run: npm run test:platform
+
+  android:
+    name: Android simulation (real Chromium, 15 checks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run test:android
+      - name: Upload phone screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-shots
+          path: qa/android-shots
+          if-no-files-found: ignore

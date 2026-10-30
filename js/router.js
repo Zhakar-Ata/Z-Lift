@@ -21,6 +21,7 @@ function checkBackupNag() {
 function enterApp() {
   $('#authView').classList.add('hidden');
   $('#appView').classList.remove('hidden');
+  if (typeof hideBootSplash === 'function') hideBootSplash();
   checkBackupNag();
   $('#userName').textContent = state.user.name;
   $('#userAvatar').textContent = (state.user.name || '?').trim()[0] || '?';

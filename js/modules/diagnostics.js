@@ -143,7 +143,7 @@ function diagBack() {
   renderDiagnostics();
 }
 function diagExit() {
-  while (popTaggedLayer('diag')) {}
+  while (popTaggedLayer('diag')) { /* drain diag-tagged history layers */ }
   diagSession = null;
   _diagPersist();
   renderDiagnostics();

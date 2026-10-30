@@ -1,10 +1,10 @@
 /* ================= VERSION SINGLE SOURCE OF TRUTH ================= */
-var APP_VERSION = '29.6.1';
+var APP_VERSION = '29.7.0';
 var DB_SCHEMA_VERSION = 3;
 var BACKUP_FORMAT_VERSION = 8;
-var CACHE_VERSION = 'zlift-pwa-v43';
+var CACHE_VERSION = 'zlift-pwa-v44';
 /* Display badge shown on Settings / about */
-var APP_BUILD = '2026-10-27';
+var APP_BUILD = '2026-10-30';
 
 /* ================= Z Lift — SPA app ================= */
 'use strict';

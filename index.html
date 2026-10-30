@@ -6,6 +6,10 @@
 <meta name="theme-color" content="#2563eb" id="metaTheme" />
 <meta name="color-scheme" content="light dark" />
 <meta name="description" content="Z Lift — دستیار حرفه‌ای تکنسین آسانسور: مدیریت پروژه، گزارش سرویس، چک‌لیست EN 81-20، محاسبات، عیب‌یابی و فاکتور. کاملاً آفلاین." />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Z Lift — دستیار تکنسین آسانسور" />
+<meta property="og:description" content="اپلیکیشن آفلاین تکنسین آسانسور: ساختمان‌های چندآسانسوره، گزارش سرویس با امضا و عکس، چک‌لیست، عیب‌یابی، فاکتور و پشتیبان‌گیری امن." />
+<meta property="og:image" content="icons/icon-512.png" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -19,8 +23,22 @@
      first fully-offline launch already renders in the real font -->
 <link rel="preload" href="assets/fonts/Vazirmatn-var.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="stylesheet" href="css/app.css" />
+<style>
+  /* Boot splash: branded first paint instead of a white flash while the
+     module scripts load. Pure HTML/CSS (no JS dependency); dismissed by
+     hideBootSplash() the moment the auth or app view becomes visible. */
+  #bootSplash{position:fixed;inset:0;z-index:3000;background:#0b1220;color:#e8eefa;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-family:Vazirmatn,'Segoe UI',Tahoma,sans-serif;transition:opacity .25s ease}
+  #bootSplash.done{opacity:0;pointer-events:none}
+  #bootSplash .bs-name{font-size:27px;font-weight:800;letter-spacing:.2px}
+  #bootSplash .bs-tag{font-size:13px;opacity:.72}
+</style>
 </head>
 <body>
+  <div id="bootSplash" role="status" aria-label="Z Lift">
+    <svg viewBox="0 0 32 32" width="66" height="66" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#2563eb"/><path d="M10 8h12l-8 7h8L10 24l4-7h-6z" fill="#fff"/></svg>
+    <div class="bs-name">Z Lift</div>
+    <div class="bs-tag">دستیار حرفه‌ای تکنسین آسانسور</div>
+  </div>
   <!-- ================= AUTH ================= -->
   <div id="authView" class="auth-wrap hidden">
     <div class="auth-card">
