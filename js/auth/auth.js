@@ -3,6 +3,7 @@ var authMode = 'login';
 function showAuth() {
   $('#authView').classList.remove('hidden');
   $('#appView').classList.add('hidden');
+  if (typeof hideBootSplash === 'function') hideBootSplash();
 }
 function doLocalLogout() {
   flushUiLayers();

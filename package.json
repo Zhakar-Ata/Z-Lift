@@ -1,8 +1,25 @@
 {
-  "name": "z-lift-qa",
+  "name": "z-lift",
+  "version": "29.7.0",
+  "description": "Z Lift — offline-first PWA for elevator service technicians (FA/EN, RTL): multi-elevator buildings, service reports with photo & signature, EN 81-20 checklists, diagnostics, invoicing, verified local backups.",
   "private": true,
-  "version": "29.6.1",
-  "description": "Z Lift QA — end-to-end smoke test of the PWA front-end (jsdom)",
+  "homepage": "https://github.com/Zhakar-Ata/Z-Lift",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zhakar-Ata/Z-Lift.git"
+  },
+  "keywords": [
+    "pwa",
+    "elevator",
+    "lift",
+    "offline-first",
+    "indexeddb",
+    "jalali",
+    "service-report"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "test": "node qa/smoke.js && node qa/perf.js && node qa/migration.js && node qa/archive.js && node qa/phase2b2.js",
     "test:smoke": "node qa/smoke.js",
@@ -14,10 +31,13 @@
     "test:personas": "node qa/personas.js",
     "test:elevators": "node qa/elevators.js",
     "test:platform": "node qa/platform.js",
-    "test:android": "node qa/android-sim.js"
+    "test:android": "node qa/android-sim.js",
+    "lint": "eslint .",
+    "shots:store": "node qa/store-shots.js"
   },
   "devDependencies": {
     "@sparticuz/chromium": "^153.0.0",
+    "eslint": "^9.39.5",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^30.0.1",
     "puppeteer-core": "^25.16.0"

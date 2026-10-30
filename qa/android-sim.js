@@ -119,8 +119,8 @@ async function newPhone(browser, base, label) {
     },
     shot: async name => { await page.screenshot({ path: path.join(SHOTS, name + '.png') }); },
     waitFn: (fn, timeout = 20000, ...a) => page.waitForFunction(fn, { timeout }, ...a),
-    waitApp: async () => { await page.waitForFunction(() => { const a = document.querySelector('#appView'); return a && !a.classList.contains('hidden'); }, { timeout: 25000 }); await sleep(500); },
-    waitAuth: async () => { await page.waitForFunction(() => { const a = document.querySelector('#authView'); return a && !a.classList.contains('hidden'); }, { timeout: 25000 }); await sleep(300); },
+    waitApp: async () => { await page.waitForFunction(() => { const a = document.querySelector('#appView'); return a && !a.classList.contains('hidden') && !document.getElementById('bootSplash'); }, { timeout: 25000 }); await sleep(500); },
+    waitAuth: async () => { await page.waitForFunction(() => { const a = document.querySelector('#authView'); return a && !a.classList.contains('hidden') && !document.getElementById('bootSplash'); }, { timeout: 25000 }); await sleep(300); },
     nav: async r => { await page.evaluate(rt => navigate(rt), r); await sleep(650); }
   };
   return P;

@@ -377,19 +377,19 @@ function openBackupModal() {
             : t('backupNever');
           return `<div class="kv-cell" style="margin-bottom:14px"><div class="k">📊 ${t('storageUsage')}</div>
             <div class="v" style="font-weight:600;font-size:13px">${faNum(mb)} MB · ${faNum((state.photos || []).length)} ${t('storagePhotos')}</div>
-            <div class="k" style="margin-top:6px">🕓 LOCAL SNAPSHOT: <b style="color:${lastBk && days <= 7 ? 'var(--ok)' : 'var(--danger)'}">${lastTxt}</b></div>
-            <div class="k" style="margin-top:6px">💾 EXTERNAL BACKUP: ${externalBackupStatusBadge()}</div>
+            <div class="k" style="margin-top:6px">🕓 ${t('bkSnapLocal')}: <b style="color:${lastBk && days <= 7 ? 'var(--ok)' : 'var(--danger)'}">${lastTxt}</b></div>
+            <div class="k" style="margin-top:6px">💾 ${t('bkSnapExternal')}: ${externalBackupStatusBadge()}</div>
             <div class="mini-progress" style="height:7px;margin-top:6px"><div class="fill" style="width:${pct}%;background:${pct > 75 ? 'var(--danger)' : 'var(--accent)'}"></div></div></div>`;
         } catch (e) { return ''; }
       })()}
       <div class="kv-cell" style="margin-bottom:14px;font-size:12px;line-height:1.9">
-        <div><b>LOCAL SNAPSHOT:</b> ${LANG === 'fa' ? 'چرخشی، داخل IndexedDB همین مرورگر' : 'rotating copy inside this browser IndexedDB'}</div>
-        <div><b>MANUAL EXPORT / EXTERNAL BACKUP:</b> ${LANG === 'fa' ? 'فایل JSON قابل نگهداری خارج از دستگاه' : 'JSON file that can be stored off-device'}</div>
-        <div><b>FUTURE CLOUD BACKUP:</b> ${LANG === 'fa' ? 'در این نسخه پیاده‌سازی نشده است' : 'not implemented in this build'}</div>
+        <div><b>${t('bkSnapLocal')}:</b> ${t('bkKindLocalDesc')}</div>
+        <div><b>${t('bkSnapExternal')}:</b> ${t('bkKindManualDesc')}</div>
+        <div><b>${t('bkKindCloudTitle')}:</b> ${t('bkKindCloudDesc')}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
-        <button class="btn btn-primary" id="bkExport">⬇️ ${t('backupExport')} · MANUAL EXPORT</button>
-        <button class="btn btn-ghost" id="bkImport">⬆️ ${t('backupImport')} · EXTERNAL BACKUP</button>
+        <button class="btn btn-primary" id="bkExport">⬇️ ${t('backupExport')}</button>
+        <button class="btn btn-ghost" id="bkImport">⬆️ ${t('backupImport')}</button>
         <input type="file" id="bkFile" accept=".json,application/json" class="hidden" />
       </div>
       <div class="section-title" style="margin:0 0 8px"><h3 style="font-size:14px">🕓 ${t('autoSnapshots')}</h3></div>

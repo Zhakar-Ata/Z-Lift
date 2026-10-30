@@ -306,7 +306,7 @@ function contrast(hex1, hex2) {
     const survives = !!$('#svcSave');
     if (modalOpen()) { await ev(`closeModal()`); await wait(200); }
     return (race.backs === 0 && survives) ? OK('no queued back')
-      : BAD(`کلیک ${race.backs} بار history.back() صف کرد و بعد از فرود popstate فرم کپی ${survives ? 'ماند' : 'نابود شد'} — دقیقاً همان ریشه‌ای که در ARCHIVE_BUTTON_FIX.md روی دستگاه واقعی دیده و برای «بایگانی» فیکس شد، ولی duplicateService (services.js:523)، انتقال عیب‌یابی به سرویس (measurement-engine.js:106 و :90) و ردیف‌های جستجوی سراسری (:758,:778) هنوز الگوی closeModal();openModal() را دارند`);
+      : BAD(`کلیک ${race.backs} بار history.back() صف کرد و بعد از فرود popstate فرم کپی ${survives ? 'ماند' : 'نابود شد'} — دقیقاً همان ریشه‌ای که در docs/ARCHIVE_BUTTON_FIX.md روی دستگاه واقعی دیده و برای «بایگانی» فیکس شد، ولی duplicateService (services.js:523)، انتقال عیب‌یابی به سرویس (measurement-engine.js:106 و :90) و ردیف‌های جستجوی سراسری (:758,:778) هنوز الگوی closeModal();openModal() را دارند`);
   });
 
   console.log('\n== F) خرابی‌ها و چک‌لیست ==');

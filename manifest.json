@@ -81,5 +81,28 @@
   "display_override": [
     "standalone",
     "minimal-ui"
+  ],
+  "screenshots": [
+    {
+      "src": "assets/store/shot-dashboard.png",
+      "sizes": "1082x2402",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "داشبورد امروز — موعد هر شفت جدا"
+    },
+    {
+      "src": "assets/store/shot-projects.png",
+      "sizes": "1082x2402",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "ساختمان‌ها و شفت‌های آسانسور"
+    },
+    {
+      "src": "assets/store/shot-project.png",
+      "sizes": "1082x2402",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "پروندهٔ ساختمان و شفت‌های آسانسور"
+    }
   ]
 }

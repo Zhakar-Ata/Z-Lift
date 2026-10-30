@@ -1,4 +1,13 @@
 /* ================= INIT ================= */
+/* The boot splash (index.html) is dismissed by whichever view wins the
+   boot — the app shell (enterApp) or the auth screen (showAuth) — at the
+   exact moment that view becomes visible, so there is never a blank gap. */
+function hideBootSplash() {
+  var el = document.getElementById('bootSplash');
+  if (!el) return;
+  el.classList.add('done');
+  setTimeout(() => { try { el.remove(); } catch (e) {} }, 320);
+}
 /* ============ v26: theme/lang helpers + service-due notifications ============ */
 function setTheme(th) {
   if (th !== 'dark') th = 'light';
